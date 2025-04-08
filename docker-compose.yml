@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: Jimbo132
+      POSTGRES_DB: dbname
+    ports:
+      - "5433:5433"
