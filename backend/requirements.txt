@@ -1,8 +1,8 @@
-fastapi==0.95.0
-uvicorn==0.21.1
-sqlalchemy==2.0.0
-psycopg2-binary==2.9.6
-pyrebase4==4.6.0
-google-auth==2.17.0
-google-api-python-client==2.86.0
-pytest==7.3.1
+fastapi==0.115.0
+uvicorn==0.32.0
+sqlalchemy==2.0.35
+psycopg2-binary==2.9.9
+pyrebase4==4.8.0
+google-auth==2.35.0
+google-api-python-client==2.149.0
+pytest==8.3.3

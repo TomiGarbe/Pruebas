@@ -1,4 +1,6 @@
-from api.routes import app
+# backend/src/main.py
+from fastapi import FastAPI
+from src.api.routes import app
 
 if __name__ == "__main__":
     import uvicorn

@@ -4,7 +4,18 @@ services:
     image: postgres:latest
     environment:
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: Jimbo132
+      POSTGRES_PASSWORD: password
       POSTGRES_DB: dbname
     ports:
-      - "5433:5433"
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
