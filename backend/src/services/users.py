@@ -1,44 +1,60 @@
-# backend/src/api/services/users.py
 from sqlalchemy.orm import Session
 from src.api.models import Usuario
 from fastapi import HTTPException
+from passlib.context import CryptContext
+
+# Configuración para hashear contraseñas
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_users(db: Session):
     return db.query(Usuario).all()
 
 def get_user(db: Session, user_id: int):
     user = db.query(Usuario).filter(Usuario.id == user_id).first()
-    if user is None:
+    if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return user
 
 def create_user(db: Session, nombre: str, email: str, contrasena: str, rol: str):
-    user = Usuario(nombre=nombre, email=email, contrasena=contrasena, rol=rol)
-    db.add(user)
+    # Verifica si el email ya existe
+    existing_user = db.query(Usuario).filter(Usuario.email == email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="El email ya está registrado")
+    
+    # Hashea la contraseña antes de guardarla
+    hashed_password = pwd_context.hash(contrasena)
+    db_user = Usuario(nombre=nombre, email=email, contrasena=hashed_password, rol=rol)
+    db.add(db_user)
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(db_user)
+    return db_user
 
 def update_user(db: Session, user_id: int, nombre: str = None, email: str = None, contrasena: str = None, rol: str = None):
-    user = db.query(Usuario).filter(Usuario.id == user_id).first()
-    if user is None:
+    db_user = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not db_user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    if nombre is not None:
-        user.nombre = nombre
-    if email is not None:
-        user.email = email
-    if contrasena is not None:
-        user.contrasena = contrasena
-    if rol is not None:
-        user.rol = rol
+    
+    if nombre:
+        db_user.nombre = nombre
+    if email:
+        # Verifica si el nuevo email ya existe (excepto para el usuario actual)
+        existing_user = db.query(Usuario).filter(Usuario.email == email, Usuario.id != user_id).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="El email ya está registrado")
+        db_user.email = email
+    if contrasena:
+        # Hashea la nueva contraseña
+        db_user.contrasena = pwd_context.hash(contrasena)
+    if rol:
+        db_user.rol = rol
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(db_user)
+    return db_user
 
 def delete_user(db: Session, user_id: int):
-    user = db.query(Usuario).filter(Usuario.id == user_id).first()
-    if user is None:
+    db_user = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not db_user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    db.delete(user)
+    db.delete(db_user)
     db.commit()
     return {"message": f"Usuario con id {user_id} eliminado"}

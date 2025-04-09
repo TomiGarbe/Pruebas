@@ -6,7 +6,7 @@ Base = declarative_base()
 
 class Sucursal(Base):
     __tablename__ = "sucursal"
-    id = Column("id_sucursal", Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     nombre = Column(String)
     zona = Column(String)
     direccion = Column(String)
@@ -17,7 +17,7 @@ class Sucursal(Base):
 
 class Cuadrilla(Base):
     __tablename__ = "cuadrilla"
-    id = Column("id_cuadrilla", Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     nombre = Column(String)
     zona = Column(String)
     email = Column(String)
@@ -29,8 +29,8 @@ class Cuadrilla(Base):
 
 class Preventivo(Base):
     __tablename__ = "preventivo"
-    id = Column("id_preventivo", Integer, primary_key=True)
-    id_sucursal = Column(Integer, ForeignKey("sucursal.id_sucursal"))
+    id = Column(Integer, primary_key=True)
+    id_sucursal = Column(Integer, ForeignKey("sucursal.id"))
     frecuencia = Column(String)
     
     sucursal = relationship("Sucursal", back_populates="preventivos")
@@ -38,9 +38,9 @@ class Preventivo(Base):
 
 class MantenimientoPreventivo(Base):
     __tablename__ = "mantenimiento_preventivo"
-    id = Column("id_mantenimiento_preventivo", Integer, primary_key=True)
-    id_preventivo = Column(Integer, ForeignKey("preventivo.id_preventivo"))
-    id_cuadrilla = Column(Integer, ForeignKey("cuadrilla.id_cuadrilla"))
+    id = Column(Integer, primary_key=True)
+    id_preventivo = Column(Integer, ForeignKey("preventivo.id"))
+    id_cuadrilla = Column(Integer, ForeignKey("cuadrilla.id"))
     fecha_apertura = Column(Date)
     fecha_cierre = Column(Date)
     planilla_1 = Column(String)
@@ -53,9 +53,9 @@ class MantenimientoPreventivo(Base):
 
 class MantenimientoCorrectivo(Base):
     __tablename__ = "mantenimiento_correctivo"
-    id = Column("id_correctivo", Integer, primary_key=True)
-    id_sucursal = Column(Integer, ForeignKey("sucursal.id_sucursal"))
-    id_cuadrilla = Column(Integer, ForeignKey("cuadrilla.id_cuadrilla"))
+    id = Column(Integer, primary_key=True)
+    id_sucursal = Column(Integer, ForeignKey("sucursal.id"))
+    id_cuadrilla = Column(Integer, ForeignKey("cuadrilla.id"))
     fecha_apertura = Column(Date)
     fecha_cierre = Column(Date)
     numero_caso = Column(String)
@@ -71,7 +71,7 @@ class MantenimientoCorrectivo(Base):
 
 class Usuario(Base):
     __tablename__ = "usuario"
-    id = Column("id_usuario", Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     nombre = Column(String)
     email = Column(String)
     contrasena = Column(String)
@@ -81,8 +81,8 @@ class Usuario(Base):
 
 class Reporte(Base):
     __tablename__ = "reporte"
-    id = Column("id_reporte", Integer, primary_key=True)
-    id_usuario = Column(Integer, ForeignKey("usuario.id_usuario"))
+    id = Column(Integer, primary_key=True)
+    id_usuario = Column(Integer, ForeignKey("usuario.id"))
     tipo = Column(String)
     contenido = Column(Text)
     fecha = Column(Date)

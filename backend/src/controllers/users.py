@@ -1,8 +1,8 @@
-# backend/src/api/controllers/users.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.config.database import SessionLocal
 from src.services.users import get_users, get_user, create_user, update_user, delete_user
+from src.api.schemas import UserCreate, UserUpdate
 from typing import List
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -25,15 +25,15 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return {"id": user.id, "nombre": user.nombre, "email": user.email, "rol": user.rol}
 
 @router.post("/", response_model=dict)
-def create_user(nombre: str, email: str, contrasena: str, rol: str, db: Session = Depends(get_db)):
-    user = create_user(db, nombre, email, contrasena, rol)
-    return {"id": user.id, "nombre": user.nombre, "email": user.email, "rol": user.rol}
+def create_new_user(user: UserCreate, db: Session = Depends(get_db)):  # Renombramos el endpoint
+    new_user = create_user(db, user.nombre, user.email, user.contrasena, user.rol)
+    return {"id": new_user.id, "nombre": new_user.nombre, "email": new_user.email, "rol": new_user.rol}
 
 @router.put("/{user_id}", response_model=dict)
-def update_user(user_id: int, nombre: str = None, email: str = None, contrasena: str = None, rol: str = None, db: Session = Depends(get_db)):
-    user = update_user(db, user_id, nombre, email, contrasena, rol)
-    return {"id": user.id, "nombre": user.nombre, "email": user.email, "rol": user.rol}
+def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
+    updated_user = update_user(db, user_id, user.nombre, user.email, user.contrasena, user.rol)
+    return {"id": updated_user.id, "nombre": updated_user.nombre, "email": updated_user.email, "rol": updated_user.rol}
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", response_model=dict)
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     return delete_user(db, user_id)
