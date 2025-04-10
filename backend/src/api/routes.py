@@ -1,8 +1,22 @@
-# backend/src/api/routes.py
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from src.controllers import users, cuadrillas, sucursales, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, reportes
 
 app = FastAPI()
+
+# Configuración de CORS
+origins = [
+    "http://localhost:5173",  # Origen del frontend (Vite)
+    "https://mantenimiento-frontend-6ceb4f00ece6.herokuapp.com",  # Heroku Frontend App
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Permitir solicitudes desde estos orígenes
+    allow_credentials=True,
+    allow_methods=["*"],  # Permitir todos los métodos (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Permitir todos los encabezados
+)
 
 app.include_router(users.router)
 app.include_router(cuadrillas.router)

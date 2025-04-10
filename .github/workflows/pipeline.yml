@@ -1,9 +1,11 @@
-name: PIPELINE
+name: Pipeline Heroku
+
 on:
   push:
-    branches: [none]
+    branches: [main]
   pull_request:
-    branches: [none]
+    branches: [main]
+
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -12,7 +14,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.13.3"
       - name: Install dependencies
         run: |
           cd backend
@@ -21,6 +23,7 @@ jobs:
         run: |
           cd backend
           pytest
+
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -28,7 +31,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: "22"
       - name: Install dependencies
         run: |
           cd frontend
@@ -37,3 +40,43 @@ jobs:
         run: |
           cd frontend
           npm test
+
+  deploy-backend:
+    needs: [backend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy to Heroku (Backend)
+        uses: akhileshns/heroku-deploy@v3.14.15
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_BACKEND_APP_NAME }}
+          heroku_email: "2105905@ucc.edu.ar"
+          appdir: "backend"
+
+  deploy-frontend:
+    needs: [frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+      - name: Generate .env file
+        run: |
+          cd frontend
+          echo "VITE_API_URL=${{ secrets.HEROKU_BACKEND_URL }}" > .env
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
+      - name: Deploy to Heroku (Frontend)
+        uses: akhileshns/heroku-deploy@v3.14.15
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_FRONTEND_APP_NAME }}
+          heroku_email: "2105905@ucc.edu.ar"
+          appdir: "frontend"
