@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.config.database import SessionLocal
 from src.services.users import get_users, get_user, create_user, update_user, delete_user
-from src.api.schemas import UserCreate, UserUpdate
+from api.schemas import UserCreate, UserUpdate
 from typing import List
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -25,7 +25,7 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return {"id": user.id, "nombre": user.nombre, "email": user.email, "rol": user.rol}
 
 @router.post("/", response_model=dict)
-def create_new_user(user: UserCreate, db: Session = Depends(get_db)):  # Renombramos el endpoint
+def create_new_user(user: UserCreate, db: Session = Depends(get_db)):
     new_user = create_user(db, user.nombre, user.email, user.contrasena, user.rol)
     return {"id": new_user.id, "nombre": new_user.nombre, "email": new_user.email, "rol": new_user.rol}
 

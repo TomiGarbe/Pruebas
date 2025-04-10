@@ -1,44 +1,54 @@
 from sqlalchemy.orm import Session
-from src.api.models import Reporte
+from api.models import Reporte, Usuario
 from fastapi import HTTPException
 from datetime import date
+from typing import Optional
 
 def get_reportes(db: Session):
     return db.query(Reporte).all()
 
 def get_reporte(db: Session, reporte_id: int):
     reporte = db.query(Reporte).filter(Reporte.id == reporte_id).first()
-    if reporte is None:
+    if not reporte:
         raise HTTPException(status_code=404, detail="Reporte no encontrado")
     return reporte
 
 def create_reporte(db: Session, id_usuario: int, tipo: str, contenido: str, fecha: date):
-    reporte = Reporte(id_usuario=id_usuario, tipo=tipo, contenido=contenido, fecha=fecha)
-    db.add(reporte)
+    # Verifica si el usuario existe
+    usuario = db.query(Usuario).filter(Usuario.id == id_usuario).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    db_reporte = Reporte(id_usuario=id_usuario, tipo=tipo, contenido=contenido, fecha=fecha)
+    db.add(db_reporte)
     db.commit()
-    db.refresh(reporte)
-    return reporte
+    db.refresh(db_reporte)
+    return db_reporte
 
-def update_reporte(db: Session, reporte_id: int, id_usuario: int = None, tipo: str = None, contenido: str = None, fecha: date = None):
-    reporte = db.query(Reporte).filter(Reporte.id == reporte_id).first()
-    if reporte is None:
+def update_reporte(db: Session, reporte_id: int, id_usuario: Optional[int] = None, tipo: Optional[str] = None, contenido: Optional[str] = None, fecha: Optional[date] = None):
+    db_reporte = db.query(Reporte).filter(Reporte.id == reporte_id).first()
+    if not db_reporte:
         raise HTTPException(status_code=404, detail="Reporte no encontrado")
-    if id_usuario is not None:
-        reporte.id_usuario = id_usuario
-    if tipo is not None:
-        reporte.tipo = tipo
-    if contenido is not None:
-        reporte.contenido = contenido
-    if fecha is not None:
-        reporte.fecha = fecha
+    
+    if id_usuario:
+        usuario = db.query(Usuario).filter(Usuario.id == id_usuario).first()
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        db_reporte.id_usuario = id_usuario
+    if tipo:
+        db_reporte.tipo = tipo
+    if contenido:
+        db_reporte.contenido = contenido
+    if fecha:
+        db_reporte.fecha = fecha
     db.commit()
-    db.refresh(reporte)
-    return reporte
+    db.refresh(db_reporte)
+    return db_reporte
 
 def delete_reporte(db: Session, reporte_id: int):
-    reporte = db.query(Reporte).filter(Reporte.id == reporte_id).first()
-    if reporte is None:
+    db_reporte = db.query(Reporte).filter(Reporte.id == reporte_id).first()
+    if not db_reporte:
         raise HTTPException(status_code=404, detail="Reporte no encontrado")
-    db.delete(reporte)
+    db.delete(db_reporte)
     db.commit()
     return {"message": f"Reporte con id {reporte_id} eliminado"}

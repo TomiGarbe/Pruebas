@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.api.models import Usuario
+from api.models import Usuario
 from fastapi import HTTPException
 from passlib.context import CryptContext
 
@@ -37,13 +37,11 @@ def update_user(db: Session, user_id: int, nombre: str = None, email: str = None
     if nombre:
         db_user.nombre = nombre
     if email:
-        # Verifica si el nuevo email ya existe (excepto para el usuario actual)
         existing_user = db.query(Usuario).filter(Usuario.email == email, Usuario.id != user_id).first()
         if existing_user:
             raise HTTPException(status_code=400, detail="El email ya está registrado")
         db_user.email = email
     if contrasena:
-        # Hashea la nueva contraseña
         db_user.contrasena = pwd_context.hash(contrasena)
     if rol:
         db_user.rol = rol

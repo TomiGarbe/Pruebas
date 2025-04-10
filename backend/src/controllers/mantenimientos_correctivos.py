@@ -1,14 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.config.database import SessionLocal
-from src.services.mantenimientos_correctivos import (
-    get_mantenimientos_correctivos,
-    get_mantenimiento_correctivo,
-    create_mantenimiento_correctivo,
-    update_mantenimiento_correctivo,
-    delete_mantenimiento_correctivo
-)
-from datetime import date, datetime
+from src.services.mantenimientos_correctivos import get_mantenimientos_correctivos, get_mantenimiento_correctivo, create_mantenimiento_correctivo, update_mantenimiento_correctivo, delete_mantenimiento_correctivo
+from api.schemas import MantenimientoCorrectivoCreate, MantenimientoCorrectivoUpdate
 from typing import List
 
 router = APIRouter(prefix="/mantenimientos-correctivos", tags=["mantenimientos-correctivos"])
@@ -22,109 +16,106 @@ def get_db():
 
 @router.get("/", response_model=List[dict])
 def read_mantenimientos_correctivos(db: Session = Depends(get_db)):
-    correctivos = get_mantenimientos_correctivos(db)
+    mantenimientos = get_mantenimientos_correctivos(db)
     return [
         {
-            "id": c.id,
-            "id_sucursal": c.id_sucursal,
-            "id_cuadrilla": c.id_cuadrilla,
-            "fecha_apertura": c.fecha_apertura,
-            "fecha_cierre": c.fecha_cierre,
-            "numero_caso": c.numero_caso,
-            "incidente": c.incidente,
-            "rubro": c.rubro,
-            "estado": c.estado,
-            "prioridad": c.prioridad,
-            "extendido": c.extendido
-        } for c in correctivos
+            "id": m.id,
+            "id_sucursal": m.id_sucursal,
+            "id_cuadrilla": m.id_cuadrilla,
+            "fecha_apertura": m.fecha_apertura,
+            "fecha_cierre": m.fecha_cierre,
+            "numero_caso": m.numero_caso,
+            "incidente": m.incidente,
+            "rubro": m.rubro,
+            "planilla": m.planilla,
+            "estado": m.estado,
+            "prioridad": m.prioridad,
+            "extendido": m.extendido
+        }
+        for m in mantenimientos
     ]
 
-@router.get("/{correctivo_id}", response_model=dict)
-def read_mantenimiento_correctivo(correctivo_id: int, db: Session = Depends(get_db)):
-    correctivo = get_mantenimiento_correctivo(db, correctivo_id)
+@router.get("/{mantenimiento_id}", response_model=dict)
+def read_mantenimiento_correctivo(mantenimiento_id: int, db: Session = Depends(get_db)):
+    mantenimiento = get_mantenimiento_correctivo(db, mantenimiento_id)
     return {
-        "id": correctivo.id,
-        "id_sucursal": correctivo.id_sucursal,
-        "id_cuadrilla": correctivo.id_cuadrilla,
-        "fecha_apertura": correctivo.fecha_apertura,
-        "fecha_cierre": correctivo.fecha_cierre,
-        "numero_caso": correctivo.numero_caso,
-        "incidente": correctivo.incidente,
-        "rubro": correctivo.rubro,
-        "estado": correctivo.estado,
-        "prioridad": correctivo.prioridad,
-        "extendido": correctivo.extendido
+        "id": mantenimiento.id,
+        "id_sucursal": mantenimiento.id_sucursal,
+        "id_cuadrilla": mantenimiento.id_cuadrilla,
+        "fecha_apertura": mantenimiento.fecha_apertura,
+        "fecha_cierre": mantenimiento.fecha_cierre,
+        "numero_caso": mantenimiento.numero_caso,
+        "incidente": mantenimiento.incidente,
+        "rubro": mantenimiento.rubro,
+        "planilla": mantenimiento.planilla,
+        "estado": mantenimiento.estado,
+        "prioridad": mantenimiento.prioridad,
+        "extendido": mantenimiento.extendido
     }
 
 @router.post("/", response_model=dict)
-async def create_mantenimiento_correctivo(
-    id_sucursal: int,
-    id_cuadrilla: int,
-    fecha_apertura: date,
-    fecha_cierre: date,
-    numero_caso: str,
-    incidente: str,
-    rubro: str,
-    planilla: str,
-    estado: str,
-    prioridad: str,
-    extendido: datetime = None,
-    db: Session = Depends(get_db)
-):
-    planilla_data = await planilla.read()
-    correctivo = await create_mantenimiento_correctivo(
-        db, id_sucursal, id_cuadrilla, fecha_apertura, fecha_cierre,
-        numero_caso, incidente, rubro, planilla_data, estado, prioridad, extendido
+def create_new_mantenimiento_correctivo(mantenimiento: MantenimientoCorrectivoCreate, db: Session = Depends(get_db)):
+    new_mantenimiento = create_mantenimiento_correctivo(
+        db,
+        mantenimiento.id_sucursal,
+        mantenimiento.id_cuadrilla,
+        mantenimiento.fecha_apertura,
+        mantenimiento.fecha_cierre,
+        mantenimiento.numero_caso,
+        mantenimiento.incidente,
+        mantenimiento.rubro,
+        mantenimiento.planilla,
+        mantenimiento.estado,
+        mantenimiento.prioridad,
+        mantenimiento.extendido
     )
     return {
-        "id": correctivo.id,
-        "id_sucursal": correctivo.id_sucursal,
-        "id_cuadrilla": correctivo.id_cuadrilla,
-        "fecha_apertura": correctivo.fecha_apertura,
-        "fecha_cierre": correctivo.fecha_cierre,
-        "numero_caso": correctivo.numero_caso,
-        "incidente": correctivo.incidente,
-        "rubro": correctivo.rubro,
-        "estado": correctivo.estado,
-        "prioridad": correctivo.prioridad,
-        "extendido": correctivo.extendido
+        "id": new_mantenimiento.id,
+        "id_sucursal": new_mantenimiento.id_sucursal,
+        "id_cuadrilla": new_mantenimiento.id_cuadrilla,
+        "fecha_apertura": new_mantenimiento.fecha_apertura,
+        "fecha_cierre": new_mantenimiento.fecha_cierre,
+        "numero_caso": new_mantenimiento.numero_caso,
+        "incidente": new_mantenimiento.incidente,
+        "rubro": new_mantenimiento.rubro,
+        "planilla": new_mantenimiento.planilla,
+        "estado": new_mantenimiento.estado,
+        "prioridad": new_mantenimiento.prioridad,
+        "extendido": new_mantenimiento.extendido
     }
 
-@router.put("/{correctivo_id}", response_model=dict)
-async def update_mantenimiento_correctivo(
-    correctivo_id: int,
-    id_sucursal: int = None,
-    id_cuadrilla: int = None,
-    fecha_apertura: date = None,
-    fecha_cierre: date = None,
-    numero_caso: str = None,
-    incidente: str = None,
-    rubro: str = None,
-    planilla: str = None,
-    estado: str = None,
-    prioridad: str = None,
-    extendido: datetime = None,
-    db: Session = Depends(get_db)
-):
-    planilla_data = await planilla.read() if planilla else None
-    correctivo = update_mantenimiento_correctivo(
-        db, correctivo_id, id_sucursal, id_cuadrilla, fecha_apertura, fecha_cierre,
-        numero_caso, incidente, rubro, planilla_data, estado, prioridad, extendido
+@router.put("/{mantenimiento_id}", response_model=dict)
+def update_mantenimiento_correctivo(mantenimiento_id: int, mantenimiento: MantenimientoCorrectivoUpdate, db: Session = Depends(get_db)):
+    updated_mantenimiento = update_mantenimiento_correctivo(
+        db,
+        mantenimiento_id,
+        mantenimiento.id_sucursal,
+        mantenimiento.id_cuadrilla,
+        mantenimiento.fecha_apertura,
+        mantenimiento.fecha_cierre,
+        mantenimiento.numero_caso,
+        mantenimiento.incidente,
+        mantenimiento.rubro,
+        mantenimiento.planilla,
+        mantenimiento.estado,
+        mantenimiento.prioridad,
+        mantenimiento.extendido
     )
     return {
-        "id": correctivo.id,
-        "id_sucursal": correctivo.id_sucursal,
-        "id_cuadrilla": correctivo.id_cuadrilla,
-        "fecha_apertura": correctivo.fecha_apertura,
-        "fecha_cierre": correctivo.fecha_cierre,
-        "numero_caso": correctivo.numero_caso,
-        "incidente": correctivo.incidente,
-        "rubro": correctivo.rubro,
-        "estado": correctivo.estado,
-        "prioridad": correctivo.prioridad,
-        "extendido": correctivo.extendido
+        "id": updated_mantenimiento.id,
+        "id_sucursal": updated_mantenimiento.id_sucursal,
+        "id_cuadrilla": updated_mantenimiento.id_cuadrilla,
+        "fecha_apertura": updated_mantenimiento.fecha_apertura,
+        "fecha_cierre": updated_mantenimiento.fecha_cierre,
+        "numero_caso": updated_mantenimiento.numero_caso,
+        "incidente": updated_mantenimiento.incidente,
+        "rubro": updated_mantenimiento.rubro,
+        "planilla": updated_mantenimiento.planilla,
+        "estado": updated_mantenimiento.estado,
+        "prioridad": updated_mantenimiento.prioridad,
+        "extendido": updated_mantenimiento.extendido
     }
 
-@router.delete("/{correctivo_id}")
-def delete_mantenimiento_correctivo(correctivo_id: int, db: Session = Depends(get_db)):
-    return delete_mantenimiento_correctivo(db, correctivo_id)
+@router.delete("/{mantenimiento_id}", response_model=dict)
+def delete_mantenimiento_correctivo(mantenimiento_id: int, db: Session = Depends(get_db)):
+    return delete_mantenimiento_correctivo(db, mantenimiento_id)

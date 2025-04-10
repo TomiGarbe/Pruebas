@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.config.database import SessionLocal
 from src.services.sucursales import get_sucursales, get_sucursal, create_sucursal, update_sucursal, delete_sucursal
+from api.schemas import SucursalCreate, SucursalUpdate
 from typing import List
 
 router = APIRouter(prefix="/sucursales", tags=["sucursales"])
@@ -24,15 +25,15 @@ def read_sucursal(sucursal_id: int, db: Session = Depends(get_db)):
     return {"id": sucursal.id, "nombre": sucursal.nombre, "zona": sucursal.zona, "direccion": sucursal.direccion, "superficie": sucursal.superficie}
 
 @router.post("/", response_model=dict)
-def create_sucursal(nombre: str, zona: str, direccion: str, superficie: str, db: Session = Depends(get_db)):
-    sucursal = create_sucursal(db, nombre, zona, direccion, superficie)
-    return {"id": sucursal.id, "nombre": sucursal.nombre, "zona": sucursal.zona, "direccion": sucursal.direccion, "superficie": sucursal.superficie}
+def create_new_sucursal(sucursal: SucursalCreate, db: Session = Depends(get_db)):
+    new_sucursal = create_sucursal(db, sucursal.nombre, sucursal.zona, sucursal.direccion, sucursal.superficie)
+    return {"id": new_sucursal.id, "nombre": new_sucursal.nombre, "zona": new_sucursal.zona, "direccion": new_sucursal.direccion, "superficie": new_sucursal.superficie}
 
 @router.put("/{sucursal_id}", response_model=dict)
-def update_sucursal(sucursal_id: int, nombre: str = None, zona: str = None, direccion: str = None, superficie: str = None, db: Session = Depends(get_db)):
-    sucursal = update_sucursal(db, sucursal_id, nombre, zona, direccion, superficie)
-    return {"id": sucursal.id, "nombre": sucursal.nombre, "zona": sucursal.zona, "direccion": sucursal.direccion, "superficie": sucursal.superficie}
+def update_sucursal(sucursal_id: int, sucursal: SucursalUpdate, db: Session = Depends(get_db)):
+    updated_sucursal = update_sucursal(db, sucursal_id, sucursal.nombre, sucursal.zona, sucursal.direccion, sucursal.superficie)
+    return {"id": updated_sucursal.id, "nombre": updated_sucursal.nombre, "zona": updated_sucursal.zona, "direccion": updated_sucursal.direccion, "superficie": updated_sucursal.superficie}
 
-@router.delete("/{sucursal_id}")
+@router.delete("/{sucursal_id}", response_model=dict)
 def delete_sucursal(sucursal_id: int, db: Session = Depends(get_db)):
     return delete_sucursal(db, sucursal_id)

@@ -1,32 +1,30 @@
 from sqlalchemy.orm import Session
-from src.api.models import MantenimientoCorrectivo
+from api.models import MantenimientoCorrectivo, Sucursal, Cuadrilla
 from fastapi import HTTPException
 from datetime import date, datetime
+from typing import Optional
 
 def get_mantenimientos_correctivos(db: Session):
     return db.query(MantenimientoCorrectivo).all()
 
-def get_mantenimiento_correctivo(db: Session, correctivo_id: int):
-    correctivo = db.query(MantenimientoCorrectivo).filter(MantenimientoCorrectivo.id == correctivo_id).first()
-    if correctivo is None:
+def get_mantenimiento_correctivo(db: Session, mantenimiento_id: int):
+    mantenimiento = db.query(MantenimientoCorrectivo).filter(MantenimientoCorrectivo.id == mantenimiento_id).first()
+    if not mantenimiento:
         raise HTTPException(status_code=404, detail="Mantenimiento correctivo no encontrado")
-    return correctivo
+    return mantenimiento
 
-async def create_mantenimiento_correctivo(
-    db: Session,
-    id_sucursal: int,
-    id_cuadrilla: int,
-    fecha_apertura: date,
-    fecha_cierre: date,
-    numero_caso: str,
-    incidente: str,
-    rubro: str,
-    planilla: str,
-    estado: str,
-    prioridad: str,
-    extendido: datetime = None
-):
-    correctivo = MantenimientoCorrectivo(
+def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla: int, fecha_apertura: date, fecha_cierre: Optional[date] = None, numero_caso: str = None, incidente: str = None, rubro: str = None, planilla: Optional[str] = None, estado: str = None, prioridad: str = None, extendido: Optional[datetime] = None):
+    # Verifica si la sucursal existe
+    sucursal = db.query(Sucursal).filter(Sucursal.id == id_sucursal).first()
+    if not sucursal:
+        raise HTTPException(status_code=404, detail="Sucursal no encontrada")
+    
+    # Verifica si la cuadrilla existe
+    cuadrilla = db.query(Cuadrilla).filter(Cuadrilla.id == id_cuadrilla).first()
+    if not cuadrilla:
+        raise HTTPException(status_code=404, detail="Cuadrilla no encontrada")
+    
+    db_mantenimiento = MantenimientoCorrectivo(
         id_sucursal=id_sucursal,
         id_cuadrilla=id_cuadrilla,
         fecha_apertura=fecha_apertura,
@@ -39,59 +37,52 @@ async def create_mantenimiento_correctivo(
         prioridad=prioridad,
         extendido=extendido
     )
-    db.add(correctivo)
+    db.add(db_mantenimiento)
     db.commit()
-    db.refresh(correctivo)
-    return correctivo
+    db.refresh(db_mantenimiento)
+    return db_mantenimiento
 
-def update_mantenimiento_correctivo(
-    db: Session,
-    correctivo_id: int,
-    id_sucursal: int = None,
-    id_cuadrilla: int = None,
-    fecha_apertura: date = None,
-    fecha_cierre: date = None,
-    numero_caso: str = None,
-    incidente: str = None,
-    rubro: str = None,
-    planilla: str = None,
-    estado: str = None,
-    prioridad: str = None,
-    extendido: datetime = None
-):
-    correctivo = db.query(MantenimientoCorrectivo).filter(MantenimientoCorrectivo.id == correctivo_id).first()
-    if correctivo is None:
+def update_mantenimiento_correctivo(db: Session, mantenimiento_id: int, id_sucursal: Optional[int] = None, id_cuadrilla: Optional[int] = None, fecha_apertura: Optional[date] = None, fecha_cierre: Optional[date] = None, numero_caso: Optional[str] = None, incidente: Optional[str] = None, rubro: Optional[str] = None, planilla: Optional[str] = None, estado: Optional[str] = None, prioridad: Optional[str] = None, extendido: Optional[datetime] = None):
+    db_mantenimiento = db.query(MantenimientoCorrectivo).filter(MantenimientoCorrectivo.id == mantenimiento_id).first()
+    if not db_mantenimiento:
         raise HTTPException(status_code=404, detail="Mantenimiento correctivo no encontrado")
-    if id_sucursal is not None:
-        correctivo.id_sucursal = id_sucursal
-    if id_cuadrilla is not None:
-        correctivo.id_cuadrilla = id_cuadrilla
-    if fecha_apertura is not None:
-        correctivo.fecha_apertura = fecha_apertura
+    
+    if id_sucursal:
+        sucursal = db.query(Sucursal).filter(Sucursal.id == id_sucursal).first()
+        if not sucursal:
+            raise HTTPException(status_code=404, detail="Sucursal no encontrada")
+        db_mantenimiento.id_sucursal = id_sucursal
+    if id_cuadrilla:
+        cuadrilla = db.query(Cuadrilla).filter(Cuadrilla.id == id_cuadrilla).first()
+        if not cuadrilla:
+            raise HTTPException(status_code=404, detail="Cuadrilla no encontrada")
+        db_mantenimiento.id_cuadrilla = id_cuadrilla
+    if fecha_apertura:
+        db_mantenimiento.fecha_apertura = fecha_apertura
     if fecha_cierre is not None:
-        correctivo.fecha_cierre = fecha_cierre
-    if numero_caso is not None:
-        correctivo.numero_caso = numero_caso
-    if incidente is not None:
-        correctivo.incidente = incidente
-    if rubro is not None:
-        correctivo.rubro = rubro
+        db_mantenimiento.fecha_cierre = fecha_cierre
+    if numero_caso:
+        db_mantenimiento.numero_caso = numero_caso
+    if incidente:
+        db_mantenimiento.incidente = incidente
+    if rubro:
+        db_mantenimiento.rubro = rubro
     if planilla is not None:
-        correctivo.planilla = planilla
-    if estado is not None:
-        correctivo.estado = estado
-    if prioridad is not None:
-        correctivo.prioridad = prioridad
+        db_mantenimiento.planilla = planilla
+    if estado:
+        db_mantenimiento.estado = estado
+    if prioridad:
+        db_mantenimiento.prioridad = prioridad
     if extendido is not None:
-        correctivo.extendido = extendido
+        db_mantenimiento.extendido = extendido
     db.commit()
-    db.refresh(correctivo)
-    return correctivo
+    db.refresh(db_mantenimiento)
+    return db_mantenimiento
 
-def delete_mantenimiento_correctivo(db: Session, correctivo_id: int):
-    correctivo = db.query(MantenimientoCorrectivo).filter(MantenimientoCorrectivo.id == correctivo_id).first()
-    if correctivo is None:
+def delete_mantenimiento_correctivo(db: Session, mantenimiento_id: int):
+    db_mantenimiento = db.query(MantenimientoCorrectivo).filter(MantenimientoCorrectivo.id == mantenimiento_id).first()
+    if not db_mantenimiento:
         raise HTTPException(status_code=404, detail="Mantenimiento correctivo no encontrado")
-    db.delete(correctivo)
+    db.delete(db_mantenimiento)
     db.commit()
-    return {"message": f"Mantenimiento correctivo con id {correctivo_id} eliminado"}
+    return {"message": f"Mantenimiento correctivo con id {mantenimiento_id} eliminado"}

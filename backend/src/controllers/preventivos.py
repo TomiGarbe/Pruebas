@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.config.database import SessionLocal
 from src.services.preventivos import get_preventivos, get_preventivo, create_preventivo, update_preventivo, delete_preventivo
+from api.schemas import PreventivoCreate, PreventivoUpdate
 from typing import List
 
 router = APIRouter(prefix="/preventivos", tags=["preventivos"])
@@ -24,15 +25,15 @@ def read_preventivo(preventivo_id: int, db: Session = Depends(get_db)):
     return {"id": preventivo.id, "id_sucursal": preventivo.id_sucursal, "frecuencia": preventivo.frecuencia}
 
 @router.post("/", response_model=dict)
-def create_preventivo(id_sucursal: int, frecuencia: str, db: Session = Depends(get_db)):
-    preventivo = create_preventivo(db, id_sucursal, frecuencia)
-    return {"id": preventivo.id, "id_sucursal": preventivo.id_sucursal, "frecuencia": preventivo.frecuencia}
+def create_new_preventivo(preventivo: PreventivoCreate, db: Session = Depends(get_db)):
+    new_preventivo = create_preventivo(db, preventivo.id_sucursal, preventivo.frecuencia)
+    return {"id": new_preventivo.id, "id_sucursal": new_preventivo.id_sucursal, "frecuencia": new_preventivo.frecuencia}
 
 @router.put("/{preventivo_id}", response_model=dict)
-def update_preventivo(preventivo_id: int, id_sucursal: int = None, frecuencia: str = None, db: Session = Depends(get_db)):
-    preventivo = update_preventivo(db, preventivo_id, id_sucursal, frecuencia)
-    return {"id": preventivo.id, "id_sucursal": preventivo.id_sucursal, "frecuencia": preventivo.frecuencia}
+def update_preventivo(preventivo_id: int, preventivo: PreventivoUpdate, db: Session = Depends(get_db)):
+    updated_preventivo = update_preventivo(db, preventivo_id, preventivo.id_sucursal, preventivo.frecuencia)
+    return {"id": updated_preventivo.id, "id_sucursal": updated_preventivo.id_sucursal, "frecuencia": updated_preventivo.frecuencia}
 
-@router.delete("/{preventivo_id}")
+@router.delete("/{preventivo_id}", response_model=dict)
 def delete_preventivo(preventivo_id: int, db: Session = Depends(get_db)):
     return delete_preventivo(db, preventivo_id)

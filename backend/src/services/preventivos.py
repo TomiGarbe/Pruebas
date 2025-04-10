@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.api.models import Preventivo
+from api.models import Preventivo, Sucursal
 from fastapi import HTTPException
 
 def get_preventivos(db: Session):
@@ -7,33 +7,42 @@ def get_preventivos(db: Session):
 
 def get_preventivo(db: Session, preventivo_id: int):
     preventivo = db.query(Preventivo).filter(Preventivo.id == preventivo_id).first()
-    if preventivo is None:
+    if not preventivo:
         raise HTTPException(status_code=404, detail="Preventivo no encontrado")
     return preventivo
 
 def create_preventivo(db: Session, id_sucursal: int, frecuencia: str):
-    preventivo = Preventivo(id_sucursal=id_sucursal, frecuencia=frecuencia)
-    db.add(preventivo)
+    # Verifica si la sucursal existe
+    sucursal = db.query(Sucursal).filter(Sucursal.id == id_sucursal).first()
+    if not sucursal:
+        raise HTTPException(status_code=404, detail="Sucursal no encontrada")
+    
+    db_preventivo = Preventivo(id_sucursal=id_sucursal, frecuencia=frecuencia)
+    db.add(db_preventivo)
     db.commit()
-    db.refresh(preventivo)
-    return preventivo
+    db.refresh(db_preventivo)
+    return db_preventivo
 
 def update_preventivo(db: Session, preventivo_id: int, id_sucursal: int = None, frecuencia: str = None):
-    preventivo = db.query(Preventivo).filter(Preventivo.id == preventivo_id).first()
-    if preventivo is None:
+    db_preventivo = db.query(Preventivo).filter(Preventivo.id == preventivo_id).first()
+    if not db_preventivo:
         raise HTTPException(status_code=404, detail="Preventivo no encontrado")
-    if id_sucursal is not None:
-        preventivo.id_sucursal = id_sucursal
-    if frecuencia is not None:
-        preventivo.frecuencia = frecuencia
+    
+    if id_sucursal:
+        sucursal = db.query(Sucursal).filter(Sucursal.id == id_sucursal).first()
+        if not sucursal:
+            raise HTTPException(status_code=404, detail="Sucursal no encontrada")
+        db_preventivo.id_sucursal = id_sucursal
+    if frecuencia:
+        db_preventivo.frecuencia = frecuencia
     db.commit()
-    db.refresh(preventivo)
-    return preventivo
+    db.refresh(db_preventivo)
+    return db_preventivo
 
 def delete_preventivo(db: Session, preventivo_id: int):
-    preventivo = db.query(Preventivo).filter(Preventivo.id == preventivo_id).first()
-    if preventivo is None:
+    db_preventivo = db.query(Preventivo).filter(Preventivo.id == preventivo_id).first()
+    if not db_preventivo:
         raise HTTPException(status_code=404, detail="Preventivo no encontrado")
-    db.delete(preventivo)
+    db.delete(db_preventivo)
     db.commit()
     return {"message": f"Preventivo con id {preventivo_id} eliminado"}
