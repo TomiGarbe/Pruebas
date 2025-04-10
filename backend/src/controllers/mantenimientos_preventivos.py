@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.config.database import SessionLocal
 from src.services.mantenimientos_preventivos import get_mantenimientos_preventivos, get_mantenimiento_preventivo, create_mantenimiento_preventivo, update_mantenimiento_preventivo, delete_mantenimiento_preventivo
-from api.schemas import MantenimientoPreventivoCreate, MantenimientoPreventivoUpdate
+from src.api.schemas import MantenimientoPreventivoCreate, MantenimientoPreventivoUpdate
 from typing import List
 
 router = APIRouter(prefix="/mantenimientos-preventivos", tags=["mantenimientos-preventivos"])
@@ -15,7 +15,7 @@ def get_db():
         db.close()
 
 @router.get("/", response_model=List[dict])
-def read_mantenimientos_preventivos(db: Session = Depends(get_db)):
+def mantenimientos_preventivos_get(db: Session = Depends(get_db)):
     mantenimientos = get_mantenimientos_preventivos(db)
     return [
         {
@@ -33,7 +33,7 @@ def read_mantenimientos_preventivos(db: Session = Depends(get_db)):
     ]
 
 @router.get("/{mantenimiento_id}", response_model=dict)
-def read_mantenimiento_preventivo(mantenimiento_id: int, db: Session = Depends(get_db)):
+def mantenimiento_preventivo_get(mantenimiento_id: int, db: Session = Depends(get_db)):
     mantenimiento = get_mantenimiento_preventivo(db, mantenimiento_id)
     return {
         "id": mantenimiento.id,
@@ -48,7 +48,7 @@ def read_mantenimiento_preventivo(mantenimiento_id: int, db: Session = Depends(g
     }
 
 @router.post("/", response_model=dict)
-def create_new_mantenimiento_preventivo(mantenimiento: MantenimientoPreventivoCreate, db: Session = Depends(get_db)):
+def mantenimiento_preventivo_create(mantenimiento: MantenimientoPreventivoCreate, db: Session = Depends(get_db)):
     new_mantenimiento = create_mantenimiento_preventivo(
         db,
         mantenimiento.id_preventivo,
@@ -73,7 +73,7 @@ def create_new_mantenimiento_preventivo(mantenimiento: MantenimientoPreventivoCr
     }
 
 @router.put("/{mantenimiento_id}", response_model=dict)
-def update_mantenimiento_preventivo(mantenimiento_id: int, mantenimiento: MantenimientoPreventivoUpdate, db: Session = Depends(get_db)):
+def mantenimiento_preventivo_update(mantenimiento_id: int, mantenimiento: MantenimientoPreventivoUpdate, db: Session = Depends(get_db)):
     updated_mantenimiento = update_mantenimiento_preventivo(
         db,
         mantenimiento_id,
@@ -99,5 +99,5 @@ def update_mantenimiento_preventivo(mantenimiento_id: int, mantenimiento: Manten
     }
 
 @router.delete("/{mantenimiento_id}", response_model=dict)
-def delete_mantenimiento_preventivo(mantenimiento_id: int, db: Session = Depends(get_db)):
+def mantenimiento_preventivo_delete(mantenimiento_id: int, db: Session = Depends(get_db)):
     return delete_mantenimiento_preventivo(db, mantenimiento_id)

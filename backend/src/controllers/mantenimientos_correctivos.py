@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.config.database import SessionLocal
 from src.services.mantenimientos_correctivos import get_mantenimientos_correctivos, get_mantenimiento_correctivo, create_mantenimiento_correctivo, update_mantenimiento_correctivo, delete_mantenimiento_correctivo
-from api.schemas import MantenimientoCorrectivoCreate, MantenimientoCorrectivoUpdate
+from src.api.schemas import MantenimientoCorrectivoCreate, MantenimientoCorrectivoUpdate
 from typing import List
 
 router = APIRouter(prefix="/mantenimientos-correctivos", tags=["mantenimientos-correctivos"])
@@ -15,7 +15,7 @@ def get_db():
         db.close()
 
 @router.get("/", response_model=List[dict])
-def read_mantenimientos_correctivos(db: Session = Depends(get_db)):
+def mantenimientos_correctivos_get(db: Session = Depends(get_db)):
     mantenimientos = get_mantenimientos_correctivos(db)
     return [
         {
@@ -36,7 +36,7 @@ def read_mantenimientos_correctivos(db: Session = Depends(get_db)):
     ]
 
 @router.get("/{mantenimiento_id}", response_model=dict)
-def read_mantenimiento_correctivo(mantenimiento_id: int, db: Session = Depends(get_db)):
+def mantenimiento_correctivo_get(mantenimiento_id: int, db: Session = Depends(get_db)):
     mantenimiento = get_mantenimiento_correctivo(db, mantenimiento_id)
     return {
         "id": mantenimiento.id,
@@ -54,7 +54,7 @@ def read_mantenimiento_correctivo(mantenimiento_id: int, db: Session = Depends(g
     }
 
 @router.post("/", response_model=dict)
-def create_new_mantenimiento_correctivo(mantenimiento: MantenimientoCorrectivoCreate, db: Session = Depends(get_db)):
+def mantenimiento_correctivo_create(mantenimiento: MantenimientoCorrectivoCreate, db: Session = Depends(get_db)):
     new_mantenimiento = create_mantenimiento_correctivo(
         db,
         mantenimiento.id_sucursal,
@@ -85,7 +85,7 @@ def create_new_mantenimiento_correctivo(mantenimiento: MantenimientoCorrectivoCr
     }
 
 @router.put("/{mantenimiento_id}", response_model=dict)
-def update_mantenimiento_correctivo(mantenimiento_id: int, mantenimiento: MantenimientoCorrectivoUpdate, db: Session = Depends(get_db)):
+def mantenimiento_correctivo_update(mantenimiento_id: int, mantenimiento: MantenimientoCorrectivoUpdate, db: Session = Depends(get_db)):
     updated_mantenimiento = update_mantenimiento_correctivo(
         db,
         mantenimiento_id,
@@ -117,5 +117,5 @@ def update_mantenimiento_correctivo(mantenimiento_id: int, mantenimiento: Manten
     }
 
 @router.delete("/{mantenimiento_id}", response_model=dict)
-def delete_mantenimiento_correctivo(mantenimiento_id: int, db: Session = Depends(get_db)):
+def mantenimiento_correctivo_delete(mantenimiento_id: int, db: Session = Depends(get_db)):
     return delete_mantenimiento_correctivo(db, mantenimiento_id)

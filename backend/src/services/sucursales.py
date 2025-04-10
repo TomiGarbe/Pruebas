@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from api.models import Sucursal
+from src.api.models import Sucursal
 from fastapi import HTTPException
 
 def get_sucursales(db: Session):

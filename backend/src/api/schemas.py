@@ -26,29 +26,6 @@ class Prioridad(str, Enum):
     BAJA = "Baja"
     MEDIA = "Media"
     ALTA = "Alta"
-    
-class Prioridad(str, Enum):
-    BAJA = "Baja"
-    MEDIA = "Media"
-    ALTA = "Alta"
-    
-# zona (cba, arroyito, san francisco, etc)
-
-#class Zona(str, Enum):
-#    CBA = "Cordoba"
-#    ARROYITO = "Arroyito"
-#    SANFRANCISCO = "San Francisco"
-
-
-
-
-
-
-
-
-
-
-
 
 # Enum para el estado de los mantenimientos correctivos
 class Rubro(str, Enum):
@@ -143,7 +120,7 @@ class MantenimientoCorrectivoCreate(BaseModel):
     fecha_cierre: Optional[date] = None
     numero_caso: str
     incidente: str
-    rubro: str
+    rubro: Rubro
     planilla: Optional[str] = None
     estado: Estado
     prioridad: Prioridad
@@ -156,7 +133,7 @@ class MantenimientoCorrectivoUpdate(BaseModel):
     fecha_cierre: Optional[date] = None
     numero_caso: Optional[str] = None
     incidente: Optional[str] = None
-    rubro: Optional[str] = None
+    rubro: Optional[Rubro] = None
     planilla: Optional[str] = None
     estado: Optional[Estado] = None
     prioridad: Optional[Prioridad] = None
