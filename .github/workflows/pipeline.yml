@@ -74,7 +74,7 @@ jobs:
       - name: Deploy to App Engine
         run: |
           cd backend
-          gcloud app deploy app.yaml --quiet
+          gcloud app deploy app.yaml --quiet --verbosity=debug
 
   #deploy-frontend:
   #  needs: [frontend]
