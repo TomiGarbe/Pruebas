@@ -7,7 +7,6 @@ app = FastAPI()
 # Configuración de CORS
 origins = [
     "http://localhost:5173",  # Origen del frontend (Vite)
-    "https://mantenimiento-frontend-6ceb4f00ece6.herokuapp.com",  # Heroku Frontend App
 ]
 
 app.add_middleware(
