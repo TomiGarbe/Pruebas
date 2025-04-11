@@ -2,9 +2,9 @@ name: Pipeline Heroku
 
 on:
   push:
-    branches: [main]
+    branches: [none]
   pull_request:
-    branches: [main]
+    branches: [none]
 
 jobs:
   backend:
@@ -50,6 +50,10 @@ jobs:
       - name: Install Heroku CLI
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
+      - name: Generate .env file
+        run: |
+          cd frontend
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
       - name: Deploy to Heroku (Backend)
         uses: akhileshns/heroku-deploy@v3.14.15
         with:
