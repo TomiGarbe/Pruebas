@@ -40,6 +40,17 @@ class Rubro(str, Enum):
     MOBILIARIO = "Mobiliario"
     SENALECTICA = "Senalectica"
     OTROS = "Otros"
+    
+# Enum para la frecuencia de los preventivos
+class Frecuencia(str, Enum):
+    MENSUAL = "Mensual"
+    TRIMESTRAL = "Trimestral"
+    CUATRIMESTRAL = "Cuatrimestral"
+    SEMESTRAL = "Semestral"
+
+# Esquemas para Zona
+class Zona(BaseModel):
+    nombre: str
 
 # Esquemas para Usuario
 class UserCreate(BaseModel):
@@ -60,14 +71,12 @@ class CuadrillaCreate(BaseModel):
     zona: str
     email: EmailStr
     contrasena: str
-    rol: Role
 
 class CuadrillaUpdate(BaseModel):
     nombre: Optional[str] = None
     zona: Optional[str] = None
     email: Optional[EmailStr] = None
     contrasena: Optional[str] = None
-    rol: Optional[Role] = None
 
 # Esquemas para Sucursal
 class SucursalCreate(BaseModel):
@@ -85,11 +94,13 @@ class SucursalUpdate(BaseModel):
 # Esquemas para Preventivo
 class PreventivoCreate(BaseModel):
     id_sucursal: int
-    frecuencia: str
+    nombre_sucursal: str
+    frecuencia: Frecuencia
 
 class PreventivoUpdate(BaseModel):
     id_sucursal: Optional[int] = None
-    frecuencia: Optional[str] = None
+    nombre_sucursal: Optional[str] = None
+    frecuencia: Optional[Frecuencia] = None
 
 # Esquemas para Mantenimiento Preventivo
 class MantenimientoPreventivoCreate(BaseModel):

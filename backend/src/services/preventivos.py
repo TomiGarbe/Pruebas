@@ -11,19 +11,19 @@ def get_preventivo(db: Session, preventivo_id: int):
         raise HTTPException(status_code=404, detail="Preventivo no encontrado")
     return preventivo
 
-def create_preventivo(db: Session, id_sucursal: int, frecuencia: str):
+def create_preventivo(db: Session, id_sucursal: int, nombre_sucursal: str, frecuencia: str):
     # Verifica si la sucursal existe
     sucursal = db.query(Sucursal).filter(Sucursal.id == id_sucursal).first()
     if not sucursal:
         raise HTTPException(status_code=404, detail="Sucursal no encontrada")
     
-    db_preventivo = Preventivo(id_sucursal=id_sucursal, frecuencia=frecuencia)
+    db_preventivo = Preventivo(id_sucursal=id_sucursal, nombre_sucursal=nombre_sucursal, frecuencia=frecuencia)
     db.add(db_preventivo)
     db.commit()
     db.refresh(db_preventivo)
     return db_preventivo
 
-def update_preventivo(db: Session, preventivo_id: int, id_sucursal: int = None, frecuencia: str = None):
+def update_preventivo(db: Session, preventivo_id: int, id_sucursal: int = None, nombre_sucursal: str = None, frecuencia: str = None):
     db_preventivo = db.query(Preventivo).filter(Preventivo.id == preventivo_id).first()
     if not db_preventivo:
         raise HTTPException(status_code=404, detail="Preventivo no encontrado")
@@ -33,6 +33,7 @@ def update_preventivo(db: Session, preventivo_id: int, id_sucursal: int = None, 
         if not sucursal:
             raise HTTPException(status_code=404, detail="Sucursal no encontrada")
         db_preventivo.id_sucursal = id_sucursal
+        db_preventivo.nombre_sucursal = nombre_sucursal
     if frecuencia:
         db_preventivo.frecuencia = frecuencia
     db.commit()

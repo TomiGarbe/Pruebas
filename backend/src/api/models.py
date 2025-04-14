@@ -4,6 +4,11 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+class Zona(Base):
+    __tablename__ = "zona"
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String, unique=True, nullable=False)
+
 class Sucursal(Base):
     __tablename__ = "sucursal"
     id = Column(Integer, primary_key=True)
@@ -22,7 +27,6 @@ class Cuadrilla(Base):
     zona = Column(String)
     email = Column(String)
     contrasena = Column(String)
-    rol = Column(String)
     
     mantenimientos_preventivos = relationship("MantenimientoPreventivo", back_populates="cuadrilla")
     mantenimientos_correctivos = relationship("MantenimientoCorrectivo", back_populates="cuadrilla")
@@ -31,6 +35,7 @@ class Preventivo(Base):
     __tablename__ = "preventivo"
     id = Column(Integer, primary_key=True)
     id_sucursal = Column(Integer, ForeignKey("sucursal.id"))
+    nombre_sucursal = Column(String)
     frecuencia = Column(String)
     
     sucursal = relationship("Sucursal", back_populates="preventivos")

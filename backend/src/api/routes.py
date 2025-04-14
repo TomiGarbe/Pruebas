@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.controllers import users, cuadrillas, sucursales, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, reportes
+from src.controllers import users, cuadrillas, sucursales, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, reportes, zonas
 
 app = FastAPI()
 
@@ -24,3 +24,4 @@ app.include_router(preventivos.router)
 app.include_router(mantenimientos_preventivos.router)
 app.include_router(mantenimientos_correctivos.router)
 app.include_router(reportes.router)
+app.include_router(zonas.router)

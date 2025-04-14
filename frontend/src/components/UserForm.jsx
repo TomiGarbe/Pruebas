@@ -83,9 +83,8 @@ const UserForm = ({ user, onClose }) => {
               value={formData.rol}
               onChange={handleChange}
             >
-              <option value="Usuario">Usuario</option>
               <option value="Administrador">Administrador</option>
-              <option value="SuperAdmin">SuperAdmin</option>
+              <option value="SuperAdmin">Encargado de Mantenimiento</option>
             </Form.Select>
           </Form.Group>
           <Button variant="primary" type="submit">
