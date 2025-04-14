@@ -2,7 +2,7 @@
 Sistema de gestión de cuadrillas para obras de mantenimiento.
 
 ## Tecnologías
-- Backend: Python (FastAPI)
+- Backend: Python FastAPI (Python 3.12.10)
 - Frontend: React
 - Bases de datos: PostgreSQL, Firebase
 - CI/CD: GitHub Actions
