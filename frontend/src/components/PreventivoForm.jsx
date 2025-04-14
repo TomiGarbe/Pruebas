@@ -5,8 +5,8 @@ import { getSucursales } from '../services/sucursalService';
 
 const PreventivoForm = ({ preventivo, onClose }) => {
   const [formData, setFormData] = useState({
-    id_sucursal: '',
-    nombre_sucursal: '',
+    id_sucursal: null,
+    nombre_sucursal: null,
     frecuencia: 'Mensual',
   });
   const [sucursales, setSucursales] = useState([]);
@@ -38,7 +38,7 @@ const PreventivoForm = ({ preventivo, onClose }) => {
       setFormData({
         ...formData,
         id_sucursal: value,
-        nombre_sucursal: sucursal ? sucursal.nombre : ''
+        nombre_sucursal: sucursal ? sucursal.nombre : null
       });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -47,8 +47,6 @@ const PreventivoForm = ({ preventivo, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(formData.id_sucursal)
-    alert(formData.nombre_sucursal)
     try {
       if (preventivo) {
         await updatePreventivo(preventivo.id, formData);
@@ -69,7 +67,7 @@ const PreventivoForm = ({ preventivo, onClose }) => {
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Sucursal</Form.Label>
+            <Form.Label className="required required-asterisk">Sucursal</Form.Label>
             <Form.Select
               name="id_sucursal"
               value={formData.id_sucursal}
@@ -85,7 +83,7 @@ const PreventivoForm = ({ preventivo, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Frecuencia</Form.Label>
+            <Form.Label className="required required-asterisk">Frecuencia</Form.Label>
             <Form.Select
               name="frecuencia"
               value={formData.frecuencia}

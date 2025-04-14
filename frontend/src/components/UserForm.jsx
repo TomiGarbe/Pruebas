@@ -4,10 +4,10 @@ import { createUser, updateUser } from '../services/userService';
 
 const UserForm = ({ user, onClose }) => {
   const [formData, setFormData] = useState({
-    nombre: '',
-    email: '',
-    contrasena: '',
-    rol: 'Usuario',
+    nombre: null,
+    email: null,
+    contrasena: null,
+    rol: 'Administrador',
   });
 
   useEffect(() => {
@@ -15,7 +15,7 @@ const UserForm = ({ user, onClose }) => {
       setFormData({
         nombre: user.nombre,
         email: user.email,
-        contrasena: '',
+        contrasena: null,
         rol: user.rol,
       });
     }
@@ -47,7 +47,7 @@ const UserForm = ({ user, onClose }) => {
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Nombre</Form.Label>
+            <Form.Label className="required required-asterisk">Nombre</Form.Label>
             <Form.Control
               type="text"
               name="nombre"
@@ -57,7 +57,7 @@ const UserForm = ({ user, onClose }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Email</Form.Label>
+            <Form.Label className="required required-asterisk">Email</Form.Label>
             <Form.Control
               type="email"
               name="email"
@@ -67,7 +67,7 @@ const UserForm = ({ user, onClose }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Contraseña</Form.Label>
+            <Form.Label className="required required-asterisk">Contraseña</Form.Label>
             <Form.Control
               type="password"
               name="contrasena"
@@ -77,14 +77,15 @@ const UserForm = ({ user, onClose }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Rol</Form.Label>
+            <Form.Label className="required required-asterisk">Rol</Form.Label>
             <Form.Select
               name="rol"
               value={formData.rol}
               onChange={handleChange}
+              required
             >
               <option value="Administrador">Administrador</option>
-              <option value="SuperAdmin">Encargado de Mantenimiento</option>
+              <option value="Encargado de Mantenimiento">Encargado de Mantenimiento</option>
             </Form.Select>
           </Form.Group>
           <Button variant="primary" type="submit">

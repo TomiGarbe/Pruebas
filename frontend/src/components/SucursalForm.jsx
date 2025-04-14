@@ -5,10 +5,10 @@ import { getZonas, createZona, deleteZona } from '../services/zonaService';
 
 const SucursalForm = ({ sucursal, onClose }) => {
   const [formData, setFormData] = useState({
-    nombre: '',
-    zona: '',
-    direccion: '',
-    superficie: '',
+    nombre: null,
+    zona: null,
+    direccion: null,
+    superficie: null,
   });
   const [zonas, setZonas] = useState([]);
   const [newZona, setNewZona] = useState('');
@@ -32,10 +32,10 @@ const SucursalForm = ({ sucursal, onClose }) => {
 
     if (sucursal) {
       setFormData({
-        nombre: sucursal.nombre || '',
-        zona: sucursal.zona || '',
-        direccion: sucursal.direccion || '',
-        superficie: sucursal.superficie || '',
+        nombre: sucursal.nombre || null,
+        zona: sucursal.zona || null,
+        direccion: sucursal.direccion || null,
+        superficie: sucursal.superficie || null,
       });
     }
   }, [sucursal]);
@@ -47,7 +47,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
   const handleZonaSelect = (zonaNombre) => {
     if (zonaNombre === 'new') {
       setShowNewZonaInput(true);
-      setFormData({ ...formData, zona: '' });
+      setFormData({ ...formData, zona: null });
     } else {
       setShowNewZonaInput(false);
       setFormData({ ...formData, zona: zonaNombre });
@@ -77,7 +77,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
       await deleteZona(id);
       setZonas(zonas.filter((zona) => zona.id !== id));
       if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
-        setFormData({ ...formData, zona: '' });
+        setFormData({ ...formData, zona: null });
       }
       setError(null);
     } catch (error) {
@@ -119,7 +119,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
         )}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Nombre</Form.Label>
+            <Form.Label className="required required-asterisk">Nombre</Form.Label>
             <Form.Control
               type="text"
               name="nombre"
@@ -129,7 +129,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Zona</Form.Label>
+            <Form.Label className="required required-asterisk">Zona</Form.Label>
             <Dropdown show={dropdownOpen} onToggle={toggleDropdown} ref={dropdownRef}>
               <FormControl
                 value={formData.zona}
@@ -180,7 +180,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
             )}
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Dirección</Form.Label>
+            <Form.Label className="required required-asterisk">Dirección</Form.Label>
             <Form.Control
               type="text"
               name="direccion"

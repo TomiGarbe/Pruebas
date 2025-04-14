@@ -6,20 +6,21 @@ import { getCuadrillas } from '../services/cuadrillaService';
 
 const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
   const [formData, setFormData] = useState({
-    id_sucursal: '',
-    id_cuadrilla: '',
-    fecha_apertura: '',
-    fecha_cierre: '',
-    numero_caso: '',
-    incidente: '',
-    rubro: '',
-    planilla: '',
+    id_sucursal: null,
+    id_cuadrilla: null,
+    fecha_apertura: null,
+    fecha_cierre: null,
+    numero_caso: null,
+    incidente: null,
+    rubro: null,
+    planilla: null,
     estado: 'Pendiente',
     prioridad: 'Media',
-    extendido: '',
+    extendido: null,
   });
   const [sucursales, setSucursales] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,34 +33,55 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
         setCuadrillas(cuadrillasResponse.data);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setError('Error al cargar los datos. Por favor, intenta de nuevo.');
       }
     };
     fetchData();
 
     if (mantenimiento) {
       setFormData({
-        id_sucursal: mantenimiento.id_sucursal,
-        id_cuadrilla: mantenimiento.id_cuadrilla,
-        fecha_apertura: mantenimiento.fecha_apertura?.split('T')[0] || '',
-        fecha_cierre: mantenimiento.fecha_cierre?.split('T')[0] || '',
-        numero_caso: mantenimiento.numero_caso,
-        incidente: mantenimiento.incidente,
-        rubro: mantenimiento.rubro,
-        planilla: mantenimiento.planilla,
-        estado: mantenimiento.estado,
-        prioridad: mantenimiento.prioridad,
-        extendido: mantenimiento.extendido?.split('.')[0] || '',
+        id_sucursal: mantenimiento.id_sucursal || null,
+        id_cuadrilla: mantenimiento.id_cuadrilla || null,
+        fecha_apertura: mantenimiento.fecha_apertura?.split('T')[0] || null,
+        fecha_cierre: mantenimiento.fecha_cierre?.split('T')[0] || null,
+        numero_caso: mantenimiento.numero_caso || null,
+        incidente: mantenimiento.incidente || null,
+        rubro: mantenimiento.rubro || null,
+        planilla: mantenimiento.planilla || null,
+        estado: mantenimiento.estado || 'Pendiente',
+        prioridad: mantenimiento.prioridad || 'Media',
+        extendido: mantenimiento.extendido?.split('.')[0] || null,
       });
     }
   }, [mantenimiento]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Si el valor es una cadena vacía y el campo es opcional, lo convertimos a null
+    const newValue =
+      value === '' && ['fecha_cierre', 'planilla', 'extendido'].includes(name)
+        ? null
+        : value;
+    setFormData({ ...formData, [name]: newValue });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Validar que los campos obligatorios no estén vacíos
+      if (
+        !formData.id_sucursal ||
+        !formData.fecha_apertura ||
+        !formData.numero_caso ||
+        !formData.incidente ||
+        !formData.rubro ||
+        !formData.estado ||
+        !formData.prioridad
+      ) {
+        setError('Por favor, completa todos los campos obligatorios.');
+        return;
+      }
+
       if (mantenimiento) {
         await updateMantenimientoCorrectivo(mantenimiento.id, formData);
       } else {
@@ -68,6 +90,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
       onClose();
     } catch (error) {
       console.error('Error saving mantenimiento correctivo:', error);
+      setError('Error al guardar el mantenimiento correctivo. Por favor, intenta de nuevo.');
     }
   };
 
@@ -77,9 +100,10 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
         <Modal.Title>{mantenimiento ? 'Editar Mantenimiento Correctivo' : 'Crear Mantenimiento Correctivo'}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {error && <div className="alert alert-danger">{error}</div>}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Sucursal</Form.Label>
+            <Form.Label className="required required-asterisk">Sucursal</Form.Label>
             <Form.Select
               name="id_sucursal"
               value={formData.id_sucursal}
@@ -100,7 +124,6 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               name="id_cuadrilla"
               value={formData.id_cuadrilla}
               onChange={handleChange}
-              required
             >
               <option value="">Seleccione una cuadrilla</option>
               {cuadrillas.map((cuadrilla) => (
@@ -111,11 +134,11 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Fecha Apertura</Form.Label>
+            <Form.Label className="required required-asterisk">Fecha Apertura</Form.Label>
             <Form.Control
               type="date"
               name="fecha_apertura"
-              value={formData.fecha_apertura}
+              value={formData.fecha_apertura || ''}
               onChange={handleChange}
               required
             />
@@ -125,35 +148,35 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             <Form.Control
               type="date"
               name="fecha_cierre"
-              value={formData.fecha_cierre}
+              value={formData.fecha_cierre || ''}
               onChange={handleChange}
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Número de Caso</Form.Label>
+            <Form.Label className="required required-asterisk">Número de Caso</Form.Label>
             <Form.Control
               type="text"
               name="numero_caso"
-              value={formData.numero_caso}
+              value={formData.numero_caso || ''}
               onChange={handleChange}
               required
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Incidente</Form.Label>
+            <Form.Label className="required required-asterisk">Incidente</Form.Label>
             <Form.Control
               type="text"
               name="incidente"
-              value={formData.incidente}
+              value={formData.incidente || ''}
               onChange={handleChange}
               required
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Rubro</Form.Label>
+            <Form.Label className="required required-asterisk">Rubro</Form.Label>
             <Form.Select
               name="rubro"
-              value={formData.rubro}
+              value={formData.rubro || ''}
               onChange={handleChange}
               required
             >
@@ -176,15 +199,15 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             <Form.Control
               type="text"
               name="planilla"
-              value={formData.planilla}
+              value={formData.planilla || ''}
               onChange={handleChange}
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Estado</Form.Label>
+            <Form.Label className="required required-asterisk">Estado</Form.Label>
             <Form.Select
               name="estado"
-              value={formData.estado}
+              value={formData.estado || ''}
               onChange={handleChange}
               required
             >
@@ -201,10 +224,10 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Prioridad</Form.Label>
+            <Form.Label className="required required-asterisk">Prioridad</Form.Label>
             <Form.Select
               name="prioridad"
-              value={formData.prioridad}
+              value={formData.prioridad || ''}
               onChange={handleChange}
               required
             >
@@ -218,7 +241,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             <Form.Control
               type="datetime-local"
               name="extendido"
-              value={formData.extendido}
+              value={formData.extendido || ''}
               onChange={handleChange}
             />
           </Form.Group>

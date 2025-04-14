@@ -19,10 +19,11 @@ def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla:
     if not sucursal:
         raise HTTPException(status_code=404, detail="Sucursal no encontrada")
     
-    # Verifica si la cuadrilla existe
-    cuadrilla = db.query(Cuadrilla).filter(Cuadrilla.id == id_cuadrilla).first()
-    if not cuadrilla:
-        raise HTTPException(status_code=404, detail="Cuadrilla no encontrada")
+    if id_cuadrilla:
+        # Verifica si la cuadrilla existe
+        cuadrilla = db.query(Cuadrilla).filter(Cuadrilla.id == id_cuadrilla).first()
+        if not cuadrilla:
+            raise HTTPException(status_code=404, detail="Cuadrilla no encontrada")
     
     db_mantenimiento = MantenimientoCorrectivo(
         id_sucursal=id_sucursal,

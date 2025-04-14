@@ -6,17 +6,18 @@ import { getCuadrillas } from '../services/cuadrillaService';
 
 const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
   const [formData, setFormData] = useState({
-    id_preventivo: '',
-    id_cuadrilla: '',
-    fecha_apertura: '',
-    fecha_cierre: '',
-    planilla_1: '',
-    planilla_2: '',
-    planilla_3: '',
-    extendido: '',
+    id_preventivo: null,
+    id_cuadrilla: null,
+    fecha_apertura: null,
+    fecha_cierre: null,
+    planilla_1: null,
+    planilla_2: null,
+    planilla_3: null,
+    extendido: null,
   });
   const [preventivos, setPreventivos] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,31 +30,44 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
         setCuadrillas(cuadrillasResponse.data);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setError('Error al cargar los datos. Por favor, intenta de nuevo.');
       }
     };
     fetchData();
 
     if (mantenimiento) {
       setFormData({
-        id_preventivo: mantenimiento.id_preventivo,
-        id_cuadrilla: mantenimiento.id_cuadrilla,
-        fecha_apertura: mantenimiento.fecha_apertura?.split('T')[0] || '',
-        fecha_cierre: mantenimiento.fecha_cierre?.split('T')[0] || '',
-        planilla_1: mantenimiento.planilla_1,
-        planilla_2: mantenimiento.planilla_2,
-        planilla_3: mantenimiento.planilla_3,
-        extendido: mantenimiento.extendido?.split('.')[0] || '',
+        id_preventivo: mantenimiento.id_preventivo || null,
+        id_cuadrilla: mantenimiento.id_cuadrilla || null,
+        fecha_apertura: mantenimiento.fecha_apertura?.split('T')[0] || null,
+        fecha_cierre: mantenimiento.fecha_cierre?.split('T')[0] || null,
+        planilla_1: mantenimiento.planilla_1 || null,
+        planilla_2: mantenimiento.planilla_2 || null,
+        planilla_3: mantenimiento.planilla_3 || null,
+        extendido: mantenimiento.extendido?.split('.')[0] || null,
       });
     }
   }, [mantenimiento]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Si el valor es una cadena vacía y el campo es opcional, lo convertimos a null
+    const newValue =
+      value === '' && ['fecha_cierre', 'planilla_1', 'planilla_2', 'planilla_3', 'extendido'].includes(name)
+        ? null
+        : value;
+    setFormData({ ...formData, [name]: newValue });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Validar que los campos obligatorios no estén vacíos
+      if (!formData.id_preventivo || !formData.id_cuadrilla || !formData.fecha_apertura) {
+        setError('Por favor, completa todos los campos obligatorios.');
+        return;
+      }
+
       if (mantenimiento) {
         await updateMantenimientoPreventivo(mantenimiento.id, formData);
       } else {
@@ -62,6 +76,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
       onClose();
     } catch (error) {
       console.error('Error saving mantenimiento preventivo:', error);
+      setError('Error al guardar el mantenimiento preventivo. Por favor, intenta de nuevo.');
     }
   };
 
@@ -71,9 +86,10 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
         <Modal.Title>{mantenimiento ? 'Editar Mantenimiento Preventivo' : 'Crear Mantenimiento Preventivo'}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {error && <div className="alert alert-danger">{error}</div>}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Preventivo</Form.Label>
+            <Form.Label className="required required-asterisk">Preventivo</Form.Label>
             <Form.Select
               name="id_preventivo"
               value={formData.id_preventivo}
@@ -89,7 +105,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Cuadrilla</Form.Label>
+            <Form.Label className="required required-asterisk">Cuadrilla</Form.Label>
             <Form.Select
               name="id_cuadrilla"
               value={formData.id_cuadrilla}
@@ -105,11 +121,11 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Fecha Apertura</Form.Label>
+            <Form.Label className="required required-asterisk">Fecha Apertura</Form.Label>
             <Form.Control
               type="date"
               name="fecha_apertura"
-              value={formData.fecha_apertura}
+              value={formData.fecha_apertura || ''}
               onChange={handleChange}
               required
             />
@@ -119,7 +135,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
             <Form.Control
               type="date"
               name="fecha_cierre"
-              value={formData.fecha_cierre}
+              value={formData.fecha_cierre || ''}
               onChange={handleChange}
             />
           </Form.Group>
@@ -128,7 +144,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
             <Form.Control
               type="text"
               name="planilla_1"
-              value={formData.planilla_1}
+              value={formData.planilla_1 || ''}
               onChange={handleChange}
             />
           </Form.Group>
@@ -137,7 +153,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
             <Form.Control
               type="text"
               name="planilla_2"
-              value={formData.planilla_2}
+              value={formData.planilla_2 || ''}
               onChange={handleChange}
             />
           </Form.Group>
@@ -146,7 +162,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
             <Form.Control
               type="text"
               name="planilla_3"
-              value={formData.planilla_3}
+              value={formData.planilla_3 || ''}
               onChange={handleChange}
             />
           </Form.Group>
@@ -155,7 +171,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
             <Form.Control
               type="datetime-local"
               name="extendido"
-              value={formData.extendido}
+              value={formData.extendido || ''}
               onChange={handleChange}
             />
           </Form.Group>
