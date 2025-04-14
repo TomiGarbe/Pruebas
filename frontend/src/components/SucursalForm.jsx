@@ -119,7 +119,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
         )}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Nombre</Form.Label>
+            <Form.Label className="required required-asterisk">Nombre</Form.Label>
             <Form.Control
               type="text"
               name="nombre"
@@ -129,7 +129,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Zona</Form.Label>
+            <Form.Label className="required required-asterisk">Zona</Form.Label>
             <Dropdown show={dropdownOpen} onToggle={toggleDropdown} ref={dropdownRef}>
               <FormControl
                 value={formData.zona}
@@ -180,7 +180,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
             )}
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Dirección</Form.Label>
+            <Form.Label className="required required-asterisk">Dirección</Form.Label>
             <Form.Control
               type="text"
               name="direccion"

@@ -9,14 +9,14 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
     id_sucursal: '',
     id_cuadrilla: '',
     fecha_apertura: '',
-    fecha_cierre: '',
+    fecha_cierre: null,
     numero_caso: '',
     incidente: '',
     rubro: '',
-    planilla: '',
+    planilla: null,
     estado: 'Pendiente',
     prioridad: 'Media',
-    extendido: '',
+    extendido: null,
   });
   const [sucursales, setSucursales] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
@@ -79,7 +79,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Sucursal</Form.Label>
+            <Form.Label className="required required-asterisk">Sucursal</Form.Label>
             <Form.Select
               name="id_sucursal"
               value={formData.id_sucursal}
@@ -95,7 +95,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Cuadrilla</Form.Label>
+            <Form.Label className="required required-asterisk">Cuadrilla</Form.Label>
             <Form.Select
               name="id_cuadrilla"
               value={formData.id_cuadrilla}
@@ -111,7 +111,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Fecha Apertura</Form.Label>
+            <Form.Label className="required required-asterisk">Fecha Apertura</Form.Label>
             <Form.Control
               type="date"
               name="fecha_apertura"
@@ -130,7 +130,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Número de Caso</Form.Label>
+            <Form.Label className="required required-asterisk">Número de Caso</Form.Label>
             <Form.Control
               type="text"
               name="numero_caso"
@@ -140,7 +140,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Incidente</Form.Label>
+            <Form.Label className="required required-asterisk">Incidente</Form.Label>
             <Form.Control
               type="text"
               name="incidente"
@@ -150,7 +150,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Rubro</Form.Label>
+            <Form.Label className="required required-asterisk">Rubro</Form.Label>
             <Form.Select
               name="rubro"
               value={formData.rubro}
@@ -181,7 +181,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Estado</Form.Label>
+            <Form.Label className="required required-asterisk">Estado</Form.Label>
             <Form.Select
               name="estado"
               value={formData.estado}
@@ -201,7 +201,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Prioridad</Form.Label>
+            <Form.Label className="required required-asterisk">Prioridad</Form.Label>
             <Form.Select
               name="prioridad"
               value={formData.prioridad}

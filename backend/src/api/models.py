@@ -26,7 +26,6 @@ class Cuadrilla(Base):
     nombre = Column(String)
     zona = Column(String)
     email = Column(String)
-    contrasena = Column(String)
     
     mantenimientos_preventivos = relationship("MantenimientoPreventivo", back_populates="cuadrilla")
     mantenimientos_correctivos = relationship("MantenimientoCorrectivo", back_populates="cuadrilla")
@@ -79,7 +78,6 @@ class Usuario(Base):
     id = Column(Integer, primary_key=True)
     nombre = Column(String)
     email = Column(String)
-    contrasena = Column(String)
     rol = Column(String)
 
     reportes = relationship("Reporte", back_populates="usuario")

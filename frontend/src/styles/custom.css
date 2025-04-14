@@ -20,3 +20,19 @@
   .custom-select option {
     padding: 8px;
   }
+
+  /* Asterisco rojo para campos obligatorios */
+.required-asterisk::after {
+  content: '*';
+  color: red;
+  font-size: 1rem;
+  position: absolute;
+  top: 0;
+  right: -1px;
+}
+
+/* Contenedor del label para posicionar el asterisco */
+.form-label.required {
+  position: relative;
+  padding-right: 15px; /* Espacio para el asterisco */
+}

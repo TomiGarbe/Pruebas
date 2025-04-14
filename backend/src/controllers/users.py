@@ -26,12 +26,12 @@ def user_get(user_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=dict)
 def user_create(user: UserCreate, db: Session = Depends(get_db)):
-    new_user = create_user(db, user.nombre, user.email, user.contrasena, user.rol)
+    new_user = create_user(db, user.nombre, user.email, user.rol)
     return {"id": new_user.id, "nombre": new_user.nombre, "email": new_user.email, "rol": new_user.rol}
 
 @router.put("/{user_id}", response_model=dict)
 def user_update(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
-    updated_user = update_user(db, user_id, user.nombre, user.email, user.contrasena, user.rol)
+    updated_user = update_user(db, user_id, user.nombre, user.email, user.rol)
     return {"id": updated_user.id, "nombre": updated_user.nombre, "email": updated_user.email, "rol": updated_user.rol}
 
 @router.delete("/{user_id}", response_model=dict)

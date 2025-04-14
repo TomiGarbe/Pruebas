@@ -56,13 +56,11 @@ class Zona(BaseModel):
 class UserCreate(BaseModel):
     nombre: str
     email: EmailStr
-    contrasena: str
     rol: Role
 
 class UserUpdate(BaseModel):
     nombre: Optional[str] = None
     email: Optional[EmailStr] = None
-    contrasena: Optional[str] = None
     rol: Optional[Role] = None
 
 # Esquemas para Cuadrilla
@@ -70,20 +68,18 @@ class CuadrillaCreate(BaseModel):
     nombre: str
     zona: str
     email: EmailStr
-    contrasena: str
 
 class CuadrillaUpdate(BaseModel):
     nombre: Optional[str] = None
     zona: Optional[str] = None
     email: Optional[EmailStr] = None
-    contrasena: Optional[str] = None
 
 # Esquemas para Sucursal
 class SucursalCreate(BaseModel):
     nombre: str
     zona: str
     direccion: str
-    superficie: str
+    superficie: Optional[str] = None
 
 class SucursalUpdate(BaseModel):
     nombre: Optional[str] = None

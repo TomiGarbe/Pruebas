@@ -9,11 +9,11 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
     id_preventivo: '',
     id_cuadrilla: '',
     fecha_apertura: '',
-    fecha_cierre: '',
-    planilla_1: '',
-    planilla_2: '',
-    planilla_3: '',
-    extendido: '',
+    fecha_cierre: null,
+    planilla_1: null,
+    planilla_2: null,
+    planilla_3: null,
+    extendido: null,
   });
   const [preventivos, setPreventivos] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
@@ -73,7 +73,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Preventivo</Form.Label>
+            <Form.Label className="required required-asterisk">Preventivo</Form.Label>
             <Form.Select
               name="id_preventivo"
               value={formData.id_preventivo}
@@ -89,7 +89,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Cuadrilla</Form.Label>
+            <Form.Label className="required required-asterisk">Cuadrilla</Form.Label>
             <Form.Select
               name="id_cuadrilla"
               value={formData.id_cuadrilla}
@@ -105,7 +105,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Fecha Apertura</Form.Label>
+            <Form.Label className="required required-asterisk">Fecha Apertura</Form.Label>
             <Form.Control
               type="date"
               name="fecha_apertura"
