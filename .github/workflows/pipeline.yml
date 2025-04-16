@@ -103,14 +103,14 @@ jobs:
           name: backend-artifact
           path: backend/
 
-      # Mover los archivos de backend/src/ a la raíz
-      - name: Move Files to Root
-        run: |
-          mv backend/src/* .
-          mv backend/env.config .
-          rm -rf backend/
-          ls -R .
-          ls -la .
+      ## Mover los archivos de backend/src/ a la raíz
+      #- name: Move Files to Root
+      #  run: |
+      #    mv backend/src/* .
+      #    mv backend/env.config .
+      #    rm -rf backend/
+      #    ls -R .
+      #    ls -la .
 
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service

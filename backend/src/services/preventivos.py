@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from api.models import Preventivo, Sucursal
+from src.api.models import Preventivo, Sucursal
 from fastapi import HTTPException
 
 def get_preventivos(db: Session):

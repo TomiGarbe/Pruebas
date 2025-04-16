@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from api.models import Zona, Sucursal, Cuadrilla
+from src.api.models import Zona, Sucursal, Cuadrilla
 from fastapi import HTTPException
 
 def get_zonas(db: Session):

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
-from services.sucursales import get_sucursales, get_sucursal, create_sucursal, update_sucursal, delete_sucursal
-from api.schemas import SucursalCreate, SucursalUpdate
+from src.config.database import SessionLocal
+from src.services.sucursales import get_sucursales, get_sucursal, create_sucursal, update_sucursal, delete_sucursal
+from src.api.schemas import SucursalCreate, SucursalUpdate
 from typing import List
 
 router = APIRouter(prefix="/sucursales", tags=["sucursales"])

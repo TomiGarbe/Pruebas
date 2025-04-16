@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from api.models import Reporte, Usuario
+from src.api.models import Reporte, Usuario
 from fastapi import HTTPException
 from datetime import date
 from typing import Optional

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
-from services.users import get_users, get_user, create_user, update_user, delete_user
-from api.schemas import UserCreate, UserUpdate
+from src.config.database import SessionLocal
+from src.services.users import get_users, get_user, create_user, update_user, delete_user
+from src.api.schemas import UserCreate, UserUpdate
 from typing import List
 
 router = APIRouter(prefix="/users", tags=["users"])

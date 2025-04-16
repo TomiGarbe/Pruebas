@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
-from services.reportes import get_reportes, get_reporte, create_reporte, update_reporte, delete_reporte
-from api.schemas import ReporteCreate, ReporteUpdate
+from src.config.database import SessionLocal
+from src.services.reportes import get_reportes, get_reporte, create_reporte, update_reporte, delete_reporte
+from src.api.schemas import ReporteCreate, ReporteUpdate
 from typing import List
 
 router = APIRouter(prefix="/reportes", tags=["reportes"])

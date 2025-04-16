@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from api.routes import app
+from src.api.routes import app
 
 load_dotenv('env.config')
 

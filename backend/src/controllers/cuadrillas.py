@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
-from services.cuadrillas import get_cuadrillas, get_cuadrilla, create_cuadrilla, update_cuadrilla, delete_cuadrilla
-from api.schemas import CuadrillaCreate, CuadrillaUpdate
+from src.config.database import SessionLocal
+from src.services.cuadrillas import get_cuadrillas, get_cuadrilla, create_cuadrilla, update_cuadrilla, delete_cuadrilla
+from src.api.schemas import CuadrillaCreate, CuadrillaUpdate
 from typing import List
 
 router = APIRouter(prefix="/cuadrillas", tags=["cuadrillas"])

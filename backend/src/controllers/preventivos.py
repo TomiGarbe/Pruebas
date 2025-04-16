@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
-from services.preventivos import get_preventivos, get_preventivo, create_preventivo, update_preventivo, delete_preventivo
-from api.schemas import PreventivoCreate, PreventivoUpdate
+from src.config.database import SessionLocal
+from src.services.preventivos import get_preventivos, get_preventivo, create_preventivo, update_preventivo, delete_preventivo
+from src.api.schemas import PreventivoCreate, PreventivoUpdate
 from typing import List
 
 router = APIRouter(prefix="/preventivos", tags=["preventivos"])
