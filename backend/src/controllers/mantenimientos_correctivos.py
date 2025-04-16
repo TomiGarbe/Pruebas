@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from src.config.database import SessionLocal
-from src.services.mantenimientos_correctivos import get_mantenimientos_correctivos, get_mantenimiento_correctivo, create_mantenimiento_correctivo, update_mantenimiento_correctivo, delete_mantenimiento_correctivo
-from src.api.schemas import MantenimientoCorrectivoCreate, MantenimientoCorrectivoUpdate
+from config.database import SessionLocal
+from services.mantenimientos_correctivos import get_mantenimientos_correctivos, get_mantenimiento_correctivo, create_mantenimiento_correctivo, update_mantenimiento_correctivo, delete_mantenimiento_correctivo
+from api.schemas import MantenimientoCorrectivoCreate, MantenimientoCorrectivoUpdate
 from typing import List
 
 router = APIRouter(prefix="/mantenimientos-correctivos", tags=["mantenimientos-correctivos"])

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.api.models import MantenimientoPreventivo, Preventivo, Cuadrilla
+from api.models import MantenimientoPreventivo, Preventivo, Cuadrilla
 from fastapi import HTTPException
 from datetime import date, datetime
 from typing import Optional

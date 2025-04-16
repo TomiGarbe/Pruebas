@@ -1,7 +1,7 @@
 # Configuración de PostgreSQL con SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.api.models import Base
+from api.models import Base
 from dotenv import load_dotenv
 import os
 
