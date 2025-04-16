@@ -18,11 +18,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Verificar el contenido del directorio backend/ después del checkout
-      - name: Debug Backend Directory Contents After Checkout
-        run: |
-          ls -R backend/
-
       # Instalar dependencias
       - name: Install Backend Dependencies
         run: |
@@ -43,11 +38,6 @@ jobs:
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
 
-      # Verificar el contenido del directorio backend/ antes de subir el artefacto
-      - name: Debug Backend Directory Contents Before Upload
-        run: |
-          ls -R backend/
-
       # Guardar el directorio backend como artefacto para el despliegue
       - name: Upload Backend Artifact
         uses: actions/upload-artifact@v4
@@ -67,11 +57,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      # Verificar el contenido del directorio frontend/ después del checkout
-      - name: Debug Frontend Directory Contents After Checkout
-        run: |
-          ls -R frontend/
 
       # Instalar dependencias
       - name: Install Frontend Dependencies
@@ -97,17 +82,17 @@ jobs:
           cd frontend
           npm run build
 
-      # Verificar el contenido del directorio frontend/ antes de subir el artefacto
-      - name: Debug Frontend Directory Contents Before Upload
+      # Verificar el contenido del directorio dist/ después de construir
+      - name: Debug Build Directory Contents
         run: |
-          ls -R frontend/
+          ls -R frontend/dist/
 
-      # Guardar el directorio frontend como artefacto para el despliegue
-      - name: Upload Frontend Artifact
+      # Guardar el directorio dist/ como artefacto para el despliegue
+      - name: Upload Frontend Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-artifact
-          path: frontend/
+          name: frontend-build-artifact
+          path: frontend/dist/
           if-no-files-found: error  # Falla si no se encuentran archivos
 
   deploy-backend:
@@ -121,11 +106,6 @@ jobs:
           name: backend-artifact
           path: backend/
 
-      # Verificar el contenido del directorio backend/ después de descargar
-      - name: Debug Backend Artifact Contents
-        run: |
-          ls -R backend/
-
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v2
@@ -137,23 +117,18 @@ jobs:
     needs: build-and-test-frontend
     runs-on: ubuntu-latest
     steps:
-      # Descargar el artefacto del frontend
-      - name: Download Frontend Artifact
+      # Descargar el artefacto del frontend (solo el directorio dist/)
+      - name: Download Frontend Build Artifact
         uses: actions/download-artifact@v4
         with:
-          name: frontend-artifact
-          path: frontend/
+          name: frontend-build-artifact
+          path: frontend/dist/
 
-      # Verificar el contenido del directorio frontend/ después de descargar
-      - name: Debug Frontend Artifact Contents
-        run: |
-          ls -R frontend/
-
-      # Desplegar en Azure Static Web Apps
+      # Desplegar en Azure Static Web Apps, omitiendo la construcción
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "frontend"
-          output_location: "dist"
+          app_location: "frontend/dist"  # Apunta al directorio pre-construido
+          skip_app_build: true  # Omite la construcción en Azure
