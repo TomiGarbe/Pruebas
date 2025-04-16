@@ -34,8 +34,15 @@ jobs:
       # Generar archivo env.config para el backend
       - name: Create Backend Environment File
         run: |
+          pwd
+          ls -la
+          cd backend
+          pwd
+          ls -la
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
+          ls -la
+          cat env.config || echo "Failed to create or read env.config file"
 
       # Guardar el directorio backend como artefacto para el despliegue
       - name: Upload Backend Artifact
