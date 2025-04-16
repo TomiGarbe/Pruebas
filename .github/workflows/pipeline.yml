@@ -34,20 +34,8 @@ jobs:
       # Generar archivo env.config para el backend
       - name: Create Backend Environment File
         run: |
-          pwd
-          ls -la
-          cd backend
-          pwd
-          ls -la
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
-          ls -la
-          cat env.config || echo "Failed to create or read env.config file"
-
-      # Verificar el contenido del directorio backend/ antes de subir el artefacto
-      - name: Debug Backend Directory Contents Before Upload
-        run: |
-          ls -R backend/
 
       # Guardar el directorio backend como artefacto para el despliegue
       - name: Upload Backend Artifact
@@ -113,26 +101,14 @@ jobs:
           name: backend-artifact
           path: backend/
 
-      # Verificar el contenido del directorio backend/ después de descargar
-      - name: Debug Backend Artifact Contents
-        run: |
-          echo "Listing all files in backend/ (including hidden):"
-          ls -la backend/
-          echo "Recursive listing of backend/:"
-          ls -R backend/
-          echo "Using find to list all files in backend/:"
-          find backend/ -type f
-          echo "Checking contents of env.config (if it exists):"
-          cat backend/env.config || echo "env.config not found in backend/"
-
-      # Mover los archivos de backend/src/ a la raíz
-      - name: Move Files to Root
-        run: |
-          mv backend/src/* .
-          mv backend/env.config .
-          rm -rf backend/
-          ls -R .
-          ls -la .
+      ## Mover los archivos de backend/src/ a la raíz
+      #- name: Move Files to Root
+      #  run: |
+      #    mv backend/src/* .
+      #    mv backend/env.config .
+      #    rm -rf backend/
+      #    ls -R .
+      #    ls -la .
 
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
