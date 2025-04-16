@@ -129,7 +129,7 @@ jobs:
       - name: Move Files to Root
         run: |
           mv backend/src/* .
-          mv backend/env.config .env || echo "No env.config file found, skipping..."
+          mv backend/env.config || echo "No env.config file found, skipping..."
           rm -rf backend/
           ls -R .
           ls -la .
