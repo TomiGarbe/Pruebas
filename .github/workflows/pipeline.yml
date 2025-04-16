@@ -37,6 +37,10 @@ jobs:
           cd backend
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
+      
+      - name: Debug Backend Directory Contents Before Upload
+        run: |
+          ls -R backend/
 
       # Guardar el directorio backend como artefacto para el despliegue
       - name: Upload Backend Artifact
