@@ -56,7 +56,6 @@ jobs:
           name: backend-artifact
           path: |
             backend/
-            backend/env.config
           if-no-files-found: error  # Falla si no se encuentran archivos
 
   build-and-test-frontend:
@@ -87,7 +86,7 @@ jobs:
       - name: Create Frontend .env File
         run: |
           cd frontend
-          echo "REACT_APP_API_URL=${{ secrets.BACKEND_URL }}" > .env
+          echo "BACKEND_URL=${{ secrets.BACKEND_URL }}" > .env
 
       # Construir el frontend
       - name: Build Frontend
@@ -117,8 +116,8 @@ jobs:
       # Mover los archivos de backend/src/ a la raíz
       - name: Move Files to Root
         run: |
-          mv backend/src/* .
           mv backend/env.config .env || echo "No env.config file found, skipping..."
+          mv backend/src/* .
           rm -rf backend/
           ls -R .
 
