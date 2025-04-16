@@ -6,7 +6,7 @@ import os
 
 app = FastAPI()
 
-load_dotenv()
+load_dotenv(dotenv_path="env.config")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 # Configuración de CORS

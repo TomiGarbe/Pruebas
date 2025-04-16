@@ -31,18 +31,11 @@ jobs:
       #    cd backend
       #    pytest  # Asegúrate de tener pytest configurado para tus pruebas
 
-      # Generar archivo .env para el backend
-      - name: Create Backend .env File
+      # Generar archivo env.config para el backend
+      - name: Create Backend Environment File
         run: |
-          pwd
-          ls -la
-          cd backend
-          pwd
-          ls -la
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
-          ls -la
-          cat .env || echo "Failed to create or read .env file"
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
 
       # Verificar el contenido del directorio backend/ antes de subir el artefacto
       - name: Debug Backend Directory Contents Before Upload
@@ -54,7 +47,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backend-artifact
-          path: backend/
+          path: |
+            backend/
+            backend/env.config
           if-no-files-found: error  # Falla si no se encuentran archivos
 
   build-and-test-frontend:
@@ -116,7 +111,7 @@ jobs:
       - name: Move Files to Root
         run: |
           mv backend/src/* .
-          mv backend/.env .
+          mv backend/env.config .env || echo "No env.config file found, skipping..."
           rm -rf backend/
           ls -R .
 
