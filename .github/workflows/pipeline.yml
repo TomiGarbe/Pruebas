@@ -34,10 +34,17 @@ jobs:
       # Generar archivo .env para el backend
       - name: Create Backend .env File
         run: |
+          pwd
+          ls -la
           cd backend
+          pwd
+          ls -la
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
-      
+          ls -la
+          cat .env || echo "Failed to create or read .env file"
+
+      # Verificar el contenido del directorio backend/ antes de subir el artefacto
       - name: Debug Backend Directory Contents Before Upload
         run: |
           ls -R backend/
