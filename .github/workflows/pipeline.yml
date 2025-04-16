@@ -10,13 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Checkout del código
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Configurar Python para el backend FastAPI
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+
+      # Verificar el contenido del directorio backend/ después del checkout
+      - name: Debug Backend Directory Contents After Checkout
+        run: |
+          ls -R backend/
 
       # Instalar dependencias
       - name: Install Backend Dependencies
@@ -38,24 +43,35 @@ jobs:
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
 
+      # Verificar el contenido del directorio backend/ antes de subir el artefacto
+      - name: Debug Backend Directory Contents Before Upload
+        run: |
+          ls -R backend/
+
       # Guardar el directorio backend como artefacto para el despliegue
       - name: Upload Backend Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-artifact
           path: backend/
+          if-no-files-found: error  # Falla si no se encuentran archivos
 
   build-and-test-frontend:
     runs-on: ubuntu-latest
     steps:
       # Checkout del código
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Configurar Node.js para el frontend React
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
+
+      # Verificar el contenido del directorio frontend/ después del checkout
+      - name: Debug Frontend Directory Contents After Checkout
+        run: |
+          ls -R frontend/
 
       # Instalar dependencias
       - name: Install Frontend Dependencies
@@ -67,7 +83,7 @@ jobs:
       #- name: Run Frontend Tests
       #  run: |
       #    cd frontend
-      #    npm test -- --watchAll=false  # Asegúrate de tener pruebas configuradas (por ejemplo, con Jest)
+      #    npm test -- --watchAll=false  # Asegúrate de tener pruebas configuradas
 
       # Generar archivo .env para el frontend
       - name: Create Frontend .env File
@@ -81,12 +97,18 @@ jobs:
           cd frontend
           npm run build
 
+      # Verificar el contenido del directorio frontend/ antes de subir el artefacto
+      - name: Debug Frontend Directory Contents Before Upload
+        run: |
+          ls -R frontend/
+
       # Guardar el directorio frontend como artefacto para el despliegue
       - name: Upload Frontend Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-artifact
           path: frontend/
+          if-no-files-found: error  # Falla si no se encuentran archivos
 
   deploy-backend:
     needs: build-and-test-backend
@@ -94,12 +116,17 @@ jobs:
     steps:
       # Descargar el artefacto del backend
       - name: Download Backend Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: backend-artifact
           path: backend/
 
-      # Desplegar en Azure App Service
+      # Verificar el contenido del directorio backend/ después de descargar
+      - name: Debug Backend Artifact Contents
+        run: |
+          ls -R backend/
+
+      # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v2
         with:
@@ -113,10 +140,15 @@ jobs:
     steps:
       # Descargar el artefacto del frontend
       - name: Download Frontend Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: frontend-artifact
           path: frontend/
+
+      # Verificar el contenido del directorio frontend/ después de descargar
+      - name: Debug Frontend Artifact Contents
+        run: |
+          ls -R frontend/
 
       # Desplegar en Azure Static Web Apps
       - name: Deploy to Azure Static Web Apps
@@ -125,4 +157,4 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
           app_location: "frontend"
-          output_location: "build"
+          output_location: "dist"
