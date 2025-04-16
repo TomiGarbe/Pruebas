@@ -113,13 +113,26 @@ jobs:
           name: backend-artifact
           path: backend/
 
+      # Verificar el contenido del directorio backend/ después de descargar
+      - name: Debug Backend Artifact Contents
+        run: |
+          echo "Listing all files in backend/ (including hidden):"
+          ls -la backend/
+          echo "Recursive listing of backend/:"
+          ls -R backend/
+          echo "Using find to list all files in backend/:"
+          find backend/ -type f
+          echo "Checking contents of env.config (if it exists):"
+          cat backend/env.config || echo "env.config not found in backend/"
+
       # Mover los archivos de backend/src/ a la raíz
       - name: Move Files to Root
         run: |
-          mv backend/env.config .env || echo "No env.config file found, skipping..."
           mv backend/src/* .
+          mv backend/env.config .env || echo "No env.config file found, skipping..."
           rm -rf backend/
           ls -R .
+          ls -la .
 
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
