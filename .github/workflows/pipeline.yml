@@ -2,106 +2,127 @@ name: Pipeline
 
 on:
   push:
-    branches: [none]
-  pull_request:
-    branches: [none]
+    branches:
+      - SinLogin
 
 jobs:
-  backend:
+  build-and-test-backend:
     runs-on: ubuntu-latest
     steps:
+      # Checkout del código
       - uses: actions/checkout@v3
+
+      # Configurar Python para el backend FastAPI
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.12.10"
-      - name: Install dependencies
+          python-version: '3.11'
+
+      # Instalar dependencias
+      - name: Install Backend Dependencies
         run: |
           cd backend
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-      # - name: Run tests
-      #   run: |
-      #     cd backend
-      #     pytest
 
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "22"
-      - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
-      - name: Build
-        run: |
-          cd frontend
-          npm run build
-      # - name: Run tests
-      #   run: |
-      #     cd frontend
-      #     npm test
+      ## Ejecutar pruebas del backend (ajusta según tu configuración de pruebas)
+      #- name: Run Backend Tests
+      #  run: |
+      #    cd backend
+      #    pytest  # Asegúrate de tener pytest configurado para tus pruebas
 
-  deploy-backend:
-    needs: [backend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12.10"
-      - name: Install dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-      - name: Generate .env file
+      # Generar archivo .env para el backend
+      - name: Create Backend .env File
         run: |
           cd backend
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: massive-physics-453901-s4
-      - name: Deploy to App Engine
-        run: |
-          cd backend
-          gcloud app deploy app.yaml --quiet --verbosity=debug
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
 
-  #deploy-frontend:
-  #  needs: [frontend]
-  #  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - uses: actions/checkout@v3
-  #    - name: Set up Node.js
-  #      uses: actions/setup-node@v3
-  #      with:
-  #        node-version: "22"
-  #    - name: Install dependencies
-  #      run: |
-  #        cd frontend
-  #        npm ci
-  #    - name: Generate .env file
-  #      run: |
-  #        cd frontend
-  #        echo "VITE_API_URL=${{ secrets.API_URL }}" > .env
-  #    - name: Build
-  #      run: |
-  #        cd frontend
-  #        npm run build
-  #    - name: Deploy to Firebase Hosting
-  #      uses: FirebaseExtended/action-hosting-deploy@v0
-  #      with:
-  #        repoToken: '${{ secrets.GITHUB_TOKEN }}'
-  #        firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}'
-  #        channelId: live
-  #        projectId: mantenimiento-project
+      # Guardar el directorio backend como artefacto para el despliegue
+      - name: Upload Backend Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-artifact
+          path: backend/
+
+  build-and-test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout del código
+      - uses: actions/checkout@v3
+
+      # Configurar Node.js para el frontend React
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Instalar dependencias
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
+
+      ## Ejecutar pruebas del frontend (ajusta según tu configuración de pruebas)
+      #- name: Run Frontend Tests
+      #  run: |
+      #    cd frontend
+      #    npm test -- --watchAll=false  # Asegúrate de tener pruebas configuradas (por ejemplo, con Jest)
+
+      # Generar archivo .env para el frontend
+      - name: Create Frontend .env File
+        run: |
+          cd frontend
+          echo "REACT_APP_API_URL=${{ secrets.BACKEND_URL }}" > .env
+
+      # Construir el frontend
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+      # Guardar el directorio frontend como artefacto para el despliegue
+      - name: Upload Frontend Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-artifact
+          path: frontend/
+
+  deploy-backend:
+    needs: build-and-test-backend
+    runs-on: ubuntu-latest
+    steps:
+      # Descargar el artefacto del backend
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-artifact
+          path: backend/
+
+      # Desplegar en Azure App Service
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'student-fastapi-app'
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+
+  deploy-frontend:
+    needs: build-and-test-frontend
+    runs-on: ubuntu-latest
+    steps:
+      # Descargar el artefacto del frontend
+      - name: Download Frontend Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-artifact
+          path: frontend/
+
+      # Desplegar en Azure Static Web Apps
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: "upload"
+          app_location: "frontend"
+          output_location: "build"
