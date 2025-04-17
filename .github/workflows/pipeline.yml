@@ -18,14 +18,13 @@ jobs:
         with:
           python-version: '3.12'
       
-      # Instalar dependencias
-      - name: Create and activate virtual environment
+      - name: Create and start virtual environment
         run: |
-          cd backend/src
           python -m venv venv
           source venv/bin/activate
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       
       - name: Check virtual environment size
         run: |
@@ -46,12 +45,23 @@ jobs:
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
           cat env.config || echo "Failed to create or read env.config file"
 
-      # Guardar el directorio backend como artefacto para el despliegue
-      - name: Upload Backend Artifact
+      - name: Zip artifact for deployment
+        run: zip release.zip ./backend/src/* -r
+  
+      - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: backend-artifact
-          path: backend/src
+          path: |
+            release.zip
+            !venv/
+
+      ## Guardar el directorio backend como artefacto para el despliegue
+      #- name: Upload Backend Artifact
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: backend-artifact
+      #    path: backend/src
 
   build-and-test-frontend:
     runs-on: ubuntu-latest
@@ -106,10 +116,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-artifact
+      
+      - name: Unzip artifact for deployment
+        run: unzip release.zip
 
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
           app-name: 'Inversur-QA'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}

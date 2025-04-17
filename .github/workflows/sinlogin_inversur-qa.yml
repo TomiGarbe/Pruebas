@@ -7,7 +7,7 @@ name: Build and deploy Python app to Azure Web App - Inversur-QA
 on:
   push:
     branches:
-      - SinLogin
+      - none
   workflow_dispatch:
 
 jobs:
