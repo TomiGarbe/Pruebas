@@ -1,12 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.controllers import users, cuadrillas, sucursales, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, reportes, zonas
+from dotenv import load_dotenv
+import os
 
 app = FastAPI()
+
+load_dotenv(dotenv_path="env.config")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 # Configuración de CORS
 origins = [
     "http://localhost:5173",  # Origen del frontend (Vite)
+    FRONTEND_URL,  # Origen del frontend
 ]
 
 app.add_middleware(
