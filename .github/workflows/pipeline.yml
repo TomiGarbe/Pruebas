@@ -85,29 +85,12 @@ jobs:
           npm run build
 
       # Guardar el directorio dist/ como artefacto para el despliegue
-      - name: Upload Frontend Build Artifact
+      - name: Upload Frontend Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-build-artifact
+          name: frontend-artifact
           path: frontend/dist/
           if-no-files-found: error  # Falla si no se encuentran archivos
-
-  #deploy-backend:
-  #  needs: build-and-test-backend
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    # Descargar el artefacto del backend
-  #    - name: Download Backend Artifact
-  #      uses: actions/download-artifact@v4
-  #      with:
-  #        name: backend-artifact
-#
-  #    # Desplegar el backend en Azure App Service usando el perfil de publicación
-  #    - name: Deploy to Azure App Service
-  #      uses: azure/webapps-deploy@v2
-  #      with:
-  #        app-name: 'Inversur-QA'
-  #        publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
 
   deploy-backend:
     needs: build-and-test-backend
@@ -118,25 +101,42 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-artifact
-          path: backend/src
-      
+
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'Inversur-QA'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
-          package: backend/src
+
+  #deploy-backend:
+  #  needs: build-and-test-backend
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    # Descargar el artefacto del backend
+  #    - name: Download Backend Artifact
+  #      uses: actions/download-artifact@v4
+  #      with:
+  #        name: backend-artifact
+  #        path: backend/src
+  #    
+  #    # Desplegar el backend en Azure App Service usando el perfil de publicación
+  #    - name: Deploy to Azure App Service
+  #      uses: azure/webapps-deploy@v2
+  #      with:
+  #        app-name: 'Inversur-QA'
+  #        publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+  #        package: backend/src
 
   deploy-frontend:
     needs: build-and-test-frontend
     runs-on: ubuntu-latest
     steps:
       # Descargar el artefacto del frontend (solo el directorio dist/)
-      - name: Download Frontend Build Artifact
+      - name: Download Frontend Artifact
         uses: actions/download-artifact@v4
         with:
-          name: frontend-build-artifact
+          name: frontend-artifact
           path: frontend/dist/
 
       # Desplegar en Azure Static Web Apps, omitiendo la construcción
