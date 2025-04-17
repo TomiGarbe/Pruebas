@@ -38,6 +38,12 @@ jobs:
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
           cat env.config || echo "Failed to create or read env.config file"
+      
+      # Verificar el contenido del directorio backend/src antes de crear el artefacto
+      - name: Debug - List Files in backend/src Before Artifact Creation
+        run: |
+          cd backend/src
+          ls -R -la
 
       # Guardar el directorio backend como artefacto para el despliegue
       - name: Upload Backend Artifact
@@ -99,6 +105,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-artifact
+      
+      # Verificar el contenido del artefacto después de descargarlo
+      - name: Debug - List Files in Downloaded Artifact
+        run: |
+          cd backend-artifact
+          ls -R -la
 
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
