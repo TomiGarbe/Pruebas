@@ -3,7 +3,7 @@ name: Pipeline-Front
 on:
   push:
     branches:
-      - SinLogin
+      - none
 
 jobs:
   build-and-test-frontend:
