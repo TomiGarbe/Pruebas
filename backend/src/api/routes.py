@@ -12,7 +12,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL")
 # Configuración de CORS
 origins = [
     FRONTEND_URL,  # Origen del frontend
-    "https://salmon-smoke-05b51a40f.6.azurestaticapps.net",
+    "https://wonderful-sea-0e4cdf60f.6.azurestaticapps.net",
     "http://181.169.92.128:5173",
 ]
 
