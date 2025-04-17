@@ -5,7 +5,7 @@ from src.api.models import Base
 from dotenv import load_dotenv
 import os
 
-load_dotenv(dotenv_path="env.config")
+load_dotenv(dotenv_path="src/env.config")
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

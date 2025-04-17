@@ -6,13 +6,12 @@ import os
 
 app = FastAPI()
 
-load_dotenv(dotenv_path="env.config")
+load_dotenv(dotenv_path="src/env.config")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 # Configuración de CORS
 origins = [
     FRONTEND_URL,  # Origen del frontend
-    "http://localhost:5173",
 ]
 
 app.add_middleware(

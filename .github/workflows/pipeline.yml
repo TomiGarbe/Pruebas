@@ -3,7 +3,7 @@ name: Pipeline
 on:
   push:
     branches:
-      - none
+      - SinLogin
 
 jobs:
   build-and-test-backend:
@@ -34,21 +34,17 @@ jobs:
       # Generar archivo env.config para el backend
       - name: Create Backend Environment File
         run: |
-          cd backend
+          cd backend/src
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
           cat env.config || echo "Failed to create or read env.config file"
-      
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
 
       # Guardar el directorio backend como artefacto para el despliegue
       - name: Upload Backend Artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-artifact
-          path: |
-            release.zip
+          path: backend/src
 
   build-and-test-frontend:
     runs-on: ubuntu-latest
@@ -103,9 +99,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-artifact
-
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
 
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
