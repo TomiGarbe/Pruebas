@@ -111,6 +111,13 @@ jobs:
         run: |
           pwd
           ls -R -la
+      
+      # Mover los archivos de backend/src/ al directorio raíz
+      - name: Flatten Directory Structure
+        run: |
+          mv backend/src/* .
+          rm -rf backend
+          ls -la
 
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
