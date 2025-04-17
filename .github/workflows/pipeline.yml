@@ -39,10 +39,9 @@ jobs:
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
           cat env.config || echo "Failed to create or read env.config file"
       
-      # Verificar el contenido del directorio backend/src antes de crear el artefacto
-      - name: Debug - List Files in backend/src Before Artifact Creation
+      # Verificar el contenido del directorio raíz antes del despliegue
+      - name: Debug - List Files in Root Before Deployment
         run: |
-          cd backend/src
           ls -R -la
 
       # Guardar el directorio backend como artefacto para el despliegue
