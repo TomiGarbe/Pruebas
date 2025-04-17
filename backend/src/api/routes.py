@@ -12,6 +12,8 @@ FRONTEND_URL = os.getenv("FRONTEND_URL")
 # Configuración de CORS
 origins = [
     FRONTEND_URL,  # Origen del frontend
+    "https://delightful-river-0a7e64e0f.6.azurestaticapps.net/",
+    "http://181.169.92.128:5173",
 ]
 
 app.add_middleware(
