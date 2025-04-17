@@ -106,10 +106,10 @@ jobs:
         with:
           name: backend-artifact
       
-      # Verificar el contenido del artefacto después de descargarlo
-      - name: Debug - List Files in Downloaded Artifact
+      # Verificar el directorio de trabajo después de descargar el artefacto
+      - name: Debug - List Working Directory After Artifact Download
         run: |
-          cd backend-artifact
+          pwd
           ls -R -la
 
       # Desplegar el backend en Azure App Service usando el perfil de publicación
