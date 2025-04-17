@@ -117,6 +117,8 @@ jobs:
         with:
           app-name: 'Inversur-QA'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+        env: 
+          POST_BUILD_COMMAND: /dsvm/tools/python/3.12/bin/pip install -r requirements.txt
 
   deploy-frontend:
     needs: build-and-test-frontend
