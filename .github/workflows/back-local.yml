@@ -34,7 +34,7 @@ jobs:
       - name: Create Frontend .env File
         run: |
           cd frontend
-          echo "BACKEND_URL=${{ secrets.BACKEND_URL_LOCAL }}" > .env
+          echo "VITE_API_URL=${{ secrets.BACKEND_URL_LOCAL }}" > .env
 
       # Construir el frontend
       - name: Build Frontend
