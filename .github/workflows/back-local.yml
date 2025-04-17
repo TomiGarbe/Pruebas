@@ -1,9 +1,9 @@
-name: Pipeline
+name: Pipeline-Front
 
 on:
   push:
     branches:
-      - none
+      - SinLogin
 
 jobs:
   build-and-test-frontend:
