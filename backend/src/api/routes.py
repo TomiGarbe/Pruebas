@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.controllers import users, cuadrillas, sucursales, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, reportes, zonas
+from controllers import users, cuadrillas, sucursales, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, reportes, zonas
 from dotenv import load_dotenv
 import os
 
 app = FastAPI()
 
-load_dotenv(dotenv_path="src/env.config")
+load_dotenv(dotenv_path="./env.config")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 # Configuración de CORS

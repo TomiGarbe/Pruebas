@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.api.models import Cuadrilla
+from api.models import Cuadrilla
 from fastapi import HTTPException
 from passlib.context import CryptContext
 

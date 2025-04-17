@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from src.config.database import SessionLocal
-from src.services.zonas import get_zonas, create_zona, delete_zona
-from src.api.schemas import Zona
+from config.database import SessionLocal
+from services.zonas import get_zonas, create_zona, delete_zona
+from api.schemas import Zona
 from typing import List
 
 router = APIRouter(prefix="/zonas", tags=["zonas"])

@@ -9,7 +9,7 @@
 #    port = int(os.getenv('PORT', 8000))  # Usa PORT de Azure o 8000 por defecto
 #    uvicorn.run(app, host="0.0.0.0", port=port, reload=True)
 
-from src.api.routes import app
+from api.routes import app
 
 if __name__ == "__main__":
     import uvicorn
