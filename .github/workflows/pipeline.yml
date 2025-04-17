@@ -38,12 +38,6 @@ jobs:
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
           cat env.config || echo "Failed to create or read env.config file"
-      
-      # Verificar el contenido del directorio backend/src antes de crear el artefacto
-      - name: Debug - List Files in backend/src Before Artifact Creation
-        run: |
-          cd backend/src
-          ls -R -la
 
       # Guardar el directorio backend como artefacto para el despliegue
       - name: Upload Backend Artifact
@@ -106,22 +100,22 @@ jobs:
         with:
           name: backend-artifact
       
-      # Verificar el contenido del directorio raíz antes del despliegue
-      - name: Debug - List Files in Root Before Deployment
-        run: |
-          ls -R -la
-      
-      # Configurar Python para el backend FastAPI
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      # Instalar dependencias
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      ## Verificar el contenido del directorio raíz antes del despliegue
+      #- name: Debug - List Files in Root Before Deployment
+      #  run: |
+      #    ls -R -la
+      #
+      ## Configurar Python para el backend FastAPI
+      #- name: Set up Python
+      #  uses: actions/setup-python@v5
+      #  with:
+      #    python-version: '3.12'
+#
+      ## Instalar dependencias
+      #- name: Install Dependencies
+      #  run: |
+      #    python -m pip install --upgrade pip
+      #    pip install -r requirements.txt
 
       # Desplegar el backend en Azure App Service usando el perfil de publicación
       - name: Deploy to Azure App Service
@@ -129,6 +123,7 @@ jobs:
         with:
           app-name: 'Inversur-QA'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+          startup-command: 'gunicorn main:app -k uvicorn.workers.UvicornWorker --bind=0.0.0.0:$PORT'
 
   deploy-frontend:
     needs: build-and-test-frontend
