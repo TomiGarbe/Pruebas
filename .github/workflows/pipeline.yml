@@ -200,7 +200,8 @@ jobs:
           path: |
             backend/src/
             !backend/src/venv/
-          if-no-files-found: error  # Falla si no se encuentran archivos
+            !backend/src/output.tar.gz
+          if-no-files-found: error
 
   build-and-test-frontend:
     runs-on: ubuntu-latest
@@ -240,31 +241,79 @@ jobs:
           path: frontend/dist/
           if-no-files-found: error
 
+  #deploy-backend:
+  #  needs: build-and-test-backend
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    # Descargar el artefacto del backend
+  #    - name: Download Backend Artifact
+  #      uses: actions/download-artifact@v4
+  #      with:
+  #        name: backend-artifact
+  #        path: backend/src
+#
+  #    # Desplegar el backend en Azure App Service
+  #    - name: Deploy to Azure App Service
+  #      uses: azure/webapps-deploy@v3
+  #      with:
+  #        app-name: 'Inversur-QA'
+  #        publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+  #        package: backend/src
+  #      env:
+  #        POST_BUILD_COMMAND: |
+  #          curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py && \
+  #          /usr/bin/python3.9 get-pip.py && \
+  #          /usr/bin/python3.9 -m pip install -r requirements.txt
+
+
+
+
   deploy-backend:
     needs: build-and-test-backend
     runs-on: ubuntu-latest
     steps:
-      # Descargar el artefacto del backend
       - name: Download Backend Artifact
         uses: actions/download-artifact@v4
         with:
           name: backend-artifact
           path: backend/src
-
-      ## Debug: Listar archivos descargados
-      #- name: Debug - List Files in backend/src
-      #  run: |
-      #    cd backend/src
-      #    ls -R -la
-#
-      ## Detener Azure App Service
-      #- name: Stop Azure App Service
-      #  uses: azure/CLI@v1
-      #  with:
-      #    inlineScript: |
-      #      az webapp stop --name Inversur-QA --resource-group Inversur
-
-      # Desplegar el backend en Azure App Service
+      - name: Debug - List Files in backend/src
+        run: |
+          cd backend/src
+          ls -R -la
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Stop Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp stop --name Inversur-QA --resource-group Inversur
+      - name: Generate web.config
+        run: |
+          cd backend/src
+          cat <<EOF > web.config
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <handlers>
+                <add name="PythonHandler" path="*" verb="*" modules="httpPlatformHandler" resourceType="Unspecified"/>
+              </handlers>
+              <httpPlatform processPath="/usr/bin/python3.9"
+                            arguments="-m uvicorn main:app --host 0.0.0.0 --port %HTTP_PLATFORM_PORT% --log-level debug"
+                            stdoutLogEnabled="true"
+                            stdoutLogFile="/home/LogFiles/python.log"
+                            startupTimeLimit="60"
+                            processesPerApplication="1">
+                <environmentVariables>
+                  <environmentVariable name="PYTHONPATH" value="/home/site/wwwroot" />
+                </environmentVariables>
+              </httpPlatform>
+            </system.webServer>
+          </configuration>
+          EOF
+          ls -la
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
@@ -276,13 +325,14 @@ jobs:
             curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py && \
             /usr/bin/python3.9 get-pip.py && \
             /usr/bin/python3.9 -m pip install -r requirements.txt
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Inversur-QA --resource-group Inversur
 
-      ## Iniciar Azure App Service
-      #- name: Start Azure App Service
-      #  uses: azure/CLI@v1
-      #  with:
-      #    inlineScript: |
-      #      az webapp start --name Inversur-QA --resource-group Inversur
+
+
 
   deploy-frontend:
     needs: build-and-test-frontend

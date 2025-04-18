@@ -1,7 +1,7 @@
 fastapi==0.115.0
 uvicorn[standard]==0.32.0
 sqlalchemy==2.0.35
-psycopg==3.2.1
+psycopg2-binary==2.9.10
 google-auth==2.35.0
 google-api-python-client==2.149.0
 pytest==8.3.3
