@@ -1,3 +1,163 @@
+#name: Pipeline
+#
+#on:
+#  push:
+#    branches:
+#      - SinLogin
+#
+#jobs:
+#  build-and-test-backend:
+#    runs-on: ubuntu-latest
+#    steps:
+#      # Checkout del código
+#      - uses: actions/checkout@v4
+#
+#      # Configurar Python para el backend FastAPI
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.9'
+#      
+#      - name: Install Backend Dependencies
+#        run: |
+#          cd backend/src
+#          python -m pip install --upgrade pip
+#          pip install -r requirements.txt
+#
+#      ## Ejecutar pruebas del backend (ajusta según tu configuración de pruebas)
+#      #- name: Run Backend Tests
+#      #  run: |
+#      #    cd backend
+#      #    pytest  # Asegúrate de tener pytest configurado para tus pruebas
+#
+#      # Generar archivo env.config para el backend
+#      - name: Create Backend Environment File
+#        run: |
+#          cd backend/src
+#          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
+#          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
+#          cat env.config || echo "Failed to create or read env.config file"
+#
+#      #- name: Zip artifact for deployment
+#      #  run: zip release.zip ./backend/src/* -r
+#  #
+#      #- name: Upload artifact for deployment jobs
+#      #  uses: actions/upload-artifact@v4
+#      #  with:
+#      #    name: backend-artifact
+#      #    path: |
+#      #      release.zip
+#      #      !venv/
+#
+#      # Guardar el directorio backend como artefacto para el despliegue
+#      - name: Upload Backend Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: backend-artifact
+#          path: backend/src
+#
+#  build-and-test-frontend:
+#    runs-on: ubuntu-latest
+#    steps:
+#      # Checkout del código
+#      - uses: actions/checkout@v4
+#
+#      # Configurar Node.js para el frontend React
+#      - name: Set up Node.js
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: '20'
+#
+#      # Instalar dependencias
+#      - name: Install Frontend Dependencies
+#        run: |
+#          cd frontend
+#          npm install
+#
+#      ## Ejecutar pruebas del frontend (ajusta según tu configuración de pruebas)
+#      #- name: Run Frontend Tests
+#      #  run: |
+#      #    cd frontend
+#      #    npm test -- --watchAll=false  # Asegúrate de tener pruebas configuradas
+#
+#      # Generar archivo .env para el frontend
+#      - name: Create Frontend .env File
+#        run: |
+#          cd frontend
+#          echo "VITE_API_URL=${{ secrets.BACKEND_URL }}" > .env
+#
+#      # Construir el frontend
+#      - name: Build Frontend
+#        run: |
+#          cd frontend
+#          npm run build
+#
+#      # Guardar el directorio dist/ como artefacto para el despliegue
+#      - name: Upload Frontend Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: frontend-artifact
+#          path: frontend/dist/
+#          if-no-files-found: error  # Falla si no se encuentran archivos
+#
+#  deploy-backend:
+#    needs: build-and-test-backend
+#    runs-on: ubuntu-latest
+#    steps:
+#      # Descargar el artefacto del backend
+#      - name: Download Backend Artifact
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: backend-artifact
+#
+#      # Desplegar el backend en Azure App Service usando el perfil de publicación
+#      - name: Deploy to Azure App Service
+#        uses: azure/webapps-deploy@v3
+#        with:
+#          app-name: 'Inversur-QA'
+#          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+#        env:
+#          POST_BUILD_COMMAND: /usr/bin/python3.9 -m pip install -r requirements.txt
+#
+#  #deploy-backend:
+#  #  needs: build-and-test-backend
+#  #  runs-on: ubuntu-latest
+#  #  steps:
+#  #    # Descargar el artefacto del backend
+#  #    - name: Download Backend Artifact
+#  #      uses: actions/download-artifact@v4
+#  #      with:
+#  #        name: backend-artifact
+#  #        path: backend/src
+#  #    
+#  #    # Desplegar el backend en Azure App Service usando el perfil de publicación
+#  #    - name: Deploy to Azure App Service
+#  #      uses: azure/webapps-deploy@v2
+#  #      with:
+#  #        app-name: 'Inversur-QA'
+#  #        publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+#  #        package: backend/src
+#
+#  deploy-frontend:
+#    needs: build-and-test-frontend
+#    runs-on: ubuntu-latest
+#    steps:
+#      # Descargar el artefacto del frontend (solo el directorio dist/)
+#      - name: Download Frontend Artifact
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: frontend-artifact
+#          path: frontend/dist/
+#
+#      # Desplegar en Azure Static Web Apps, omitiendo la construcción
+#      - name: Deploy to Azure Static Web Apps
+#        uses: Azure/static-web-apps-deploy@v1
+#        with:
+#          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+#          action: "upload"
+#          app_location: "frontend/dist"  # Apunta al directorio pre-construido
+#          skip_app_build: true  # Omite la construcción en Azure
+
 name: Pipeline
 
 on:
@@ -24,12 +184,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      ## Ejecutar pruebas del backend (ajusta según tu configuración de pruebas)
-      #- name: Run Backend Tests
-      #  run: |
-      #    cd backend
-      #    pytest  # Asegúrate de tener pytest configurado para tus pruebas
-
       # Generar archivo env.config para el backend
       - name: Create Backend Environment File
         run: |
@@ -38,23 +192,15 @@ jobs:
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
           cat env.config || echo "Failed to create or read env.config file"
 
-      #- name: Zip artifact for deployment
-      #  run: zip release.zip ./backend/src/* -r
-  #
-      #- name: Upload artifact for deployment jobs
-      #  uses: actions/upload-artifact@v4
-      #  with:
-      #    name: backend-artifact
-      #    path: |
-      #      release.zip
-      #      !venv/
-
-      # Guardar el directorio backend como artefacto para el despliegue
+      # Guardar el directorio backend como artefacto, excluyendo venv
       - name: Upload Backend Artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-artifact
-          path: backend/src
+          path: |
+            backend/src/
+            !backend/src/venv/
+          if-no-files-found: error  # Falla si no se encuentran archivos
 
   build-and-test-frontend:
     runs-on: ubuntu-latest
@@ -74,12 +220,6 @@ jobs:
           cd frontend
           npm install
 
-      ## Ejecutar pruebas del frontend (ajusta según tu configuración de pruebas)
-      #- name: Run Frontend Tests
-      #  run: |
-      #    cd frontend
-      #    npm test -- --watchAll=false  # Asegúrate de tener pruebas configuradas
-
       # Generar archivo .env para el frontend
       - name: Create Frontend .env File
         run: |
@@ -98,7 +238,7 @@ jobs:
         with:
           name: frontend-artifact
           path: frontend/dist/
-          if-no-files-found: error  # Falla si no se encuentran archivos
+          if-no-files-found: error
 
   deploy-backend:
     needs: build-and-test-backend
@@ -109,51 +249,57 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-artifact
+          path: backend/src
 
-      # Desplegar el backend en Azure App Service usando el perfil de publicación
+      # Debug: Listar archivos descargados
+      - name: Debug - List Files in backend/src
+        run: |
+          cd backend/src
+          ls -R -la
+
+      # Detener Azure App Service
+      - name: Stop Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp stop --name Inversur-QA --resource-group Inversur
+
+      # Desplegar el backend en Azure App Service
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'Inversur-QA'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+          package: backend/src
         env:
-          POST_BUILD_COMMAND: /usr/bin/python3.9 -m pip install -r requirements.txt
+          POST_BUILD_COMMAND: |
+            curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py && \
+            /usr/bin/python3.9 get-pip.py && \
+            /usr/bin/python3.9 -m pip install -r requirements.txt
 
-  #deploy-backend:
-  #  needs: build-and-test-backend
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    # Descargar el artefacto del backend
-  #    - name: Download Backend Artifact
-  #      uses: actions/download-artifact@v4
-  #      with:
-  #        name: backend-artifact
-  #        path: backend/src
-  #    
-  #    # Desplegar el backend en Azure App Service usando el perfil de publicación
-  #    - name: Deploy to Azure App Service
-  #      uses: azure/webapps-deploy@v2
-  #      with:
-  #        app-name: 'Inversur-QA'
-  #        publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
-  #        package: backend/src
+      # Iniciar Azure App Service
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Inversur-QA --resource-group Inversur
 
   deploy-frontend:
     needs: build-and-test-frontend
     runs-on: ubuntu-latest
     steps:
-      # Descargar el artefacto del frontend (solo el directorio dist/)
+      # Descargar el artefacto del frontend
       - name: Download Frontend Artifact
         uses: actions/download-artifact@v4
         with:
           name: frontend-artifact
           path: frontend/dist/
 
-      # Desplegar en Azure Static Web Apps, omitiendo la construcción
+      # Desplegar en Azure Static Web Apps
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "frontend/dist"  # Apunta al directorio pre-construido
-          skip_app_build: true  # Omite la construcción en Azure
+          app_location: "frontend/dist"
+          skip_app_build: true
