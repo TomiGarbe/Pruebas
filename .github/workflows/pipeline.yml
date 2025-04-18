@@ -251,18 +251,18 @@ jobs:
           name: backend-artifact
           path: backend/src
 
-      # Debug: Listar archivos descargados
-      - name: Debug - List Files in backend/src
-        run: |
-          cd backend/src
-          ls -R -la
-
-      # Detener Azure App Service
-      - name: Stop Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp stop --name Inversur-QA --resource-group Inversur
+      ## Debug: Listar archivos descargados
+      #- name: Debug - List Files in backend/src
+      #  run: |
+      #    cd backend/src
+      #    ls -R -la
+#
+      ## Detener Azure App Service
+      #- name: Stop Azure App Service
+      #  uses: azure/CLI@v1
+      #  with:
+      #    inlineScript: |
+      #      az webapp stop --name Inversur-QA --resource-group Inversur
 
       # Desplegar el backend en Azure App Service
       - name: Deploy to Azure App Service
@@ -277,12 +277,12 @@ jobs:
             /usr/bin/python3.9 get-pip.py && \
             /usr/bin/python3.9 -m pip install -r requirements.txt
 
-      # Iniciar Azure App Service
-      - name: Start Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp start --name Inversur-QA --resource-group Inversur
+      ## Iniciar Azure App Service
+      #- name: Start Azure App Service
+      #  uses: azure/CLI@v1
+      #  with:
+      #    inlineScript: |
+      #      az webapp start --name Inversur-QA --resource-group Inversur
 
   deploy-frontend:
     needs: build-and-test-frontend
