@@ -16,23 +16,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.9'
       
-      - name: Create and start virtual environment
+      - name: Install Backend Dependencies
         run: |
           cd backend/src
-          python -m venv venv
-          source venv/bin/activate
-        
-      - name: Install dependencies
-        run: |
-          cd backend/src
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
-      - name: Check virtual environment size
-        run: |
-          cd backend/src
-          du -sh venv
 
       ## Ejecutar pruebas del backend (ajusta según tu configuración de pruebas)
       #- name: Run Backend Tests
@@ -48,23 +38,23 @@ jobs:
           echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
           cat env.config || echo "Failed to create or read env.config file"
 
-      - name: Zip artifact for deployment
-        run: zip release.zip ./backend/src/* -r
-  
-      - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-artifact
-          path: |
-            release.zip
-            !venv/
-
-      ## Guardar el directorio backend como artefacto para el despliegue
-      #- name: Upload Backend Artifact
+      #- name: Zip artifact for deployment
+      #  run: zip release.zip ./backend/src/* -r
+  #
+      #- name: Upload artifact for deployment jobs
       #  uses: actions/upload-artifact@v4
       #  with:
       #    name: backend-artifact
-      #    path: backend/src
+      #    path: |
+      #      release.zip
+      #      !venv/
+
+      # Guardar el directorio backend como artefacto para el despliegue
+      - name: Upload Backend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-artifact
+          path: backend/src
 
   build-and-test-frontend:
     runs-on: ubuntu-latest
@@ -129,6 +119,8 @@ jobs:
         with:
           app-name: 'Inversur-QA'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+        env:
+          POST_BUILD_COMMAND: /usr/bin/python3.9 -m pip install -r requirements.txt
 
   #deploy-backend:
   #  needs: build-and-test-backend
