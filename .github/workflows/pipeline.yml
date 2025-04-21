@@ -173,7 +173,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.12'
       - name: Install Backend Dependencies
         run: |
           cd backend/src
@@ -190,10 +190,7 @@ jobs:
         with:
           name: backend-artifact
           path: |
-            backend/src/
-            !backend/src/venv/
-            !backend/src/output.tar.gz
-          if-no-files-found: error
+            backend/src/*
 
   build-and-test-frontend:
     runs-on: ubuntu-latest
@@ -230,11 +227,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-artifact
-          path: backend/src
-      - name: Debug - List Files in backend/src
-        run: |
-          cd backend/src
-          ls -R -la
+          path: .
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -244,51 +237,11 @@ jobs:
         with:
           inlineScript: |
             az webapp stop --name Inversur-QA --resource-group Inversur
-      - name: Generate startup.sh and web.config
-        run: |
-          cd backend/src
-          # Generate startup.sh
-          cat <<EOF > startup.sh
-          #!/bin/bash
-          cd /home/site/wwwroot
-          echo "Current working directory: \$(pwd)"
-          ls -la
-          # Install dependencies in a persistent location
-          /usr/bin/python3.9 -m pip install --upgrade pip --target=/home/site/wwwroot/.python_packages/lib/site-packages
-          /usr/bin/python3.9 -m pip install -r requirements.txt --target=/home/site/wwwroot/.python_packages/lib/site-packages
-          # Set PYTHONPATH to include installed packages
-          export PYTHONPATH=/home/site/wwwroot:/home/site/wwwroot/.python_packages/lib/site-packages:\$PYTHONPATH
-          /usr/bin/python3.9 -m uvicorn main:app --host 0.0.0.0 --port \$PORT --log-level debug
-          EOF
-          chmod +x startup.sh
-          # Generate web.config
-          cat <<EOF > web.config
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <system.webServer>
-              <handlers>
-                <add name="PythonHandler" path="*" verb="*" modules="httpPlatformHandler" resourceType="Unspecified"/>
-              </handlers>
-              <httpPlatform processPath="/bin/bash"
-                            arguments="/home/site/wwwroot/startup.sh"
-                            stdoutLogEnabled="true"
-                            stdoutLogFile="/home/LogFiles/python.log"
-                            startupTimeLimit="60"
-                            processesPerApplication="1">
-                <environmentVariables>
-                  <environmentVariable name="PYTHONPATH" value="/home/site/wwwroot:/home/site/wwwroot/.python_packages/lib/site-packages" />
-                </environmentVariables>
-              </httpPlatform>
-            </system.webServer>
-          </configuration>
-          EOF
-          ls -la
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'Inversur-QA'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
-          package: backend/src
       - name: Start Azure App Service
         uses: azure/CLI@v1
         with:
