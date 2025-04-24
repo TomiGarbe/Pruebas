@@ -1,81 +1,139 @@
 import pytest
-from api.models import Sucursal
+from unittest.mock import AsyncMock, MagicMock
+from src.controllers.sucursales import router
+from src.api.schemas import SucursalCreate, SucursalUpdate
+from fastapi import HTTPException
+
+# Mock de las funciones de servicio
+@pytest.fixture
+def mock_services():
+    from src.services import sucursales
+    sucursales.get_sucursales = AsyncMock()
+    sucursales.get_sucursal = AsyncMock()
+    sucursales.create_sucursal = AsyncMock()
+    sucursales.update_sucursal = AsyncMock()
+    sucursales.delete_sucursal = AsyncMock()
+    return sucursales
 
 @pytest.mark.asyncio
-async def test_get_sucursales_empty(client):
-    response = client.get("/sucursales/")
-    assert response.status_code == 200
-    assert response.json() == []
+async def test_get_sucursales_empty(mock_services):
+    # Configurar el mock para devolver una lista vacía
+    mock_services.get_sucursales.return_value = []
+    
+    # Simular la dependencia get_db
+    db = MagicMock()
+    
+    # Llamar a la función del controlador
+    result = await router.routes[0].endpoint(db=db)
+    
+    assert result == []
+    mock_services.get_sucursales.assert_called_once_with(db)
 
 @pytest.mark.asyncio
-async def test_create_sucursal(client, db_session):
-    sucursal_data = {
-        "nombre": "Sucursal 1",
-        "zona": "Zona A",
-        "direccion": "Calle 123",
-        "superficie": "100 m²"
+async def test_create_sucursal(mock_services):
+    # Configurar el mock para devolver un objeto Sucursal
+    mock_sucursal = MagicMock(id=1, nombre="Sucursal Test", zona="Zona Norte", direccion="Calle Falsa 123", superficie="100 m2")
+    mock_services.create_sucursal.return_value = mock_sucursal
+    
+    # Datos de entrada
+    sucursal_data = SucursalCreate(
+        nombre="Sucursal Test",
+        zona="Zona Norte",
+        direccion="Calle Falsa 123",
+        superficie="100 m2"
+    )
+    
+    # Simular la dependencia get_db
+    db = MagicMock()
+    
+    # Llamar a la función del controlador
+    result = await router.routes[2].endpoint(sucursal_data, db=db)
+    
+    assert result == {
+        "id": 1,
+        "nombre": "Sucursal Test",
+        "zona": "Zona Norte",
+        "direccion": "Calle Falsa 123",
+        "superficie": "100 m2"
     }
-    response = client.post("/sucursales/", json=sucursal_data)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["nombre"] == "Sucursal 1"
-    assert data["zona"] == "Zona A"
-    assert data["direccion"] == "Calle 123"
-    assert data["superficie"] == "100 m²"
-    assert "id" in data
+    mock_services.create_sucursal.assert_called_once_with(db, "Sucursal Test", "Zona Norte", "Calle Falsa 123", "100 m2")
 
 @pytest.mark.asyncio
-async def test_get_sucursal(client, db_session):
-    # Crear una sucursal en la base de datos
-    db_sucursal = Sucursal(nombre="Sucursal 1", zona="Zona A", direccion="Calle 123", superficie="100 m²")
-    db_session.add(db_sucursal)
-    db_session.commit()
-    db_session.refresh(db_sucursal)
+async def test_get_sucursal(mock_services):
+    # Configurar el mock para devolver un objeto Sucursal
+    mock_sucursal = MagicMock(id=1, nombre="Sucursal Test", zona="Zona Norte", direccion="Calle Falsa 123", superficie="100 m2")
+    mock_services.get_sucursal.return_value = mock_sucursal
     
-    response = client.get(f"/sucursales/{db_sucursal.id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == db_sucursal.id
-    assert data["nombre"] == "Sucursal 1"
-
-@pytest.mark.asyncio
-async def test_get_sucursal_not_found(client):
-    response = client.get("/sucursales/999")
-    assert response.status_code == 404
-    assert response.json() == {"detail": "Sucursal no encontrada"}
-
-@pytest.mark.asyncio
-async def test_update_sucursal(client, db_session):
-    # Crear una sucursal
-    db_sucursal = Sucursal(nombre="Sucursal 1", zona="Zona A", direccion="Calle 123", superficie="100 m²")
-    db_session.add(db_sucursal)
-    db_session.commit()
-    db_session.refresh(db_sucursal)
+    # Simular la dependencia get_db
+    db = MagicMock()
     
-    update_data = {
+    # Llamar a la función del controlador
+    result = await router.routes[1].endpoint(1, db=db)
+    
+    assert result == {
+        "id": 1,
+        "nombre": "Sucursal Test",
+        "zona": "Zona Norte",
+        "direccion": "Calle Falsa 123",
+        "superficie": "100 m2"
+    }
+    mock_services.get_sucursal.assert_called_once_with(db, 1)
+
+@pytest.mark.asyncio
+async def test_get_sucursal_not_found(mock_services):
+    # Configurar el mock para devolver None
+    mock_services.get_sucursal.return_value = None
+    
+    # Simular la dependencia get_db
+    db = MagicMock()
+    
+    # Verificar que se lanza HTTPException
+    with pytest.raises(HTTPException) as exc:
+        await router.routes[1].endpoint(999, db=db)
+    
+    assert exc.value.status_code == 404
+    assert exc.value.detail == "Sucursal no encontrada"
+    mock_services.get_sucursal.assert_called_once_with(db, 999)
+
+@pytest.mark.asyncio
+async def test_update_sucursal(mock_services):
+    # Configurar el mock para devolver un objeto Sucursal actualizado
+    mock_sucursal = MagicMock(id=1, nombre="Sucursal Actualizada", zona="Zona Sur", direccion="Calle Verdadera 456", superficie="200 m2")
+    mock_services.update_sucursal.return_value = mock_sucursal
+    
+    # Datos de entrada
+    update_data = SucursalUpdate(
+        nombre="Sucursal Actualizada",
+        zona="Zona Sur",
+        direccion="Calle Verdadera 456",
+        superficie="200 m2"
+    )
+    
+    # Simular la dependencia get_db
+    db = MagicMock()
+    
+    # Llamar a la función del controlador
+    result = await router.routes[3].endpoint(1, update_data, db=db)
+    
+    assert result == {
+        "id": 1,
         "nombre": "Sucursal Actualizada",
-        "zona": "Zona B",
-        "direccion": "Calle 456",
-        "superficie": "200 m²"
+        "zona": "Zona Sur",
+        "direccion": "Calle Verdadera 456",
+        "superficie": "200 m2"
     }
-    response = client.put(f"/sucursales/{db_sucursal.id}", json=update_data)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["nombre"] == "Sucursal Actualizada"
-    assert data["zona"] == "Zona B"
+    mock_services.update_sucursal.assert_called_once_with(db, 1, "Sucursal Actualizada", "Zona Sur", "Calle Verdadera 456", "200 m2")
 
 @pytest.mark.asyncio
-async def test_delete_sucursal(client, db_session):
-    # Crear una sucursal
-    db_sucursal = Sucursal(nombre="Sucursal 1", zona="Zona A", direccion="Calle 123", superficie="100 m²")
-    db_session.add(db_sucursal)
-    db_session.commit()
-    db_session.refresh(db_sucursal)
+async def test_delete_sucursal(mock_services):
+    # Configurar el mock para devolver un diccionario
+    mock_services.delete_sucursal.return_value = {"message": "Sucursal con id 1 eliminada"}
     
-    response = client.delete(f"/sucursales/{db_sucursal.id}")
-    assert response.status_code == 200
-    assert response.json() == {"message": f"Sucursal con id {db_sucursal.id} eliminada"}
+    # Simular la dependencia get_db
+    db = MagicMock()
     
-    # Verificar que la sucursal fue eliminada
-    response = client.get(f"/sucursales/{db_sucursal.id}")
-    assert response.status_code == 404
+    # Llamar a la función del controlador
+    result = await router.routes[4].endpoint(1, db=db)
+    
+    assert result == {"message": "Sucursal con id 1 eliminada"}
+    mock_services.delete_sucursal.assert_called_once_with(db, 1)
