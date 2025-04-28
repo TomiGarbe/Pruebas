@@ -12,6 +12,6 @@ Sistema de gestión de cuadrillas para obras de mantenimiento.
 1. Clona el repositorio: git clone <url>
 2. Configura las variables de entorno en Backend/.env y Frontend/.env.
 3. Docker: docker-compose up -d
-4. Backend: cd backend/src && pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000
+4. Backend: cd backend/src && cd && uvicorn main:app --host 0.0.0.0 --port 8000
 5. Frontend: cd frontend && npm install && npm run dev
 

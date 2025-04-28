@@ -1,7 +1,26 @@
 import api from './api';
 
-export const getMantenimientosCorrectivos = () => api.get('/mantenimientos-correctivos/');
-export const getMantenimientoCorrectivo = (id) => api.get(`/mantenimientos-correctivos/${id}`);
-export const createMantenimientoCorrectivo = (mantenimiento) => api.post('/mantenimientos-correctivos/', mantenimiento);
-export const updateMantenimientoCorrectivo = (id, mantenimiento) => api.put(`/mantenimientos-correctivos/${id}`, mantenimiento);
-export const deleteMantenimientoCorrectivo = (id) => api.delete(`/mantenimientos-correctivos/${id}`);
+export const getMantenimientosCorrectivos = async () => {
+  const response = await api.get('/api/mantenimientos-correctivos/');
+  return response.data;
+};
+
+export const getMantenimientoCorrectivo = async (id) => {
+  const response = await api.get(`/api/mantenimientos-correctivos/${id}`);
+  return response.data;
+};
+
+export const createMantenimientoCorrectivo = async (mantenimiento) => {
+  const response = await api.post('/api/mantenimientos-correctivos/', mantenimiento);
+  return response.data;
+};
+
+export const updateMantenimientoCorrectivo = async (id, mantenimiento) => {
+  const response = await api.put(`/api/mantenimientos-correctivos/${id}`, mantenimiento);
+  return response.data;
+};
+
+export const deleteMantenimientoCorrectivo = async (id) => {
+  const response = await api.delete(`/api/mantenimientos-correctivos/${id}`);
+  return response.data;
+};

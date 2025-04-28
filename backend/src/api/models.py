@@ -78,8 +78,8 @@ class Usuario(Base):
     __tablename__ = "usuario"
     id = Column(Integer, primary_key=True)
     nombre = Column(String)
-    email = Column(String)
-    contrasena = Column(String)
+    email = Column(String, unique=True, nullable=False)  # Mantenemos unique=True para evitar emails duplicados
+    contrasena = Column(String, nullable=False)  # Mantenemos nullable=False para asegurar que siempre haya contraseña
     rol = Column(String)
 
     reportes = relationship("Reporte", back_populates="usuario")
@@ -87,7 +87,7 @@ class Usuario(Base):
 class Reporte(Base):
     __tablename__ = "reporte"
     id = Column(Integer, primary_key=True)
-    id_usuario = Column(Integer, ForeignKey("usuario.id"))
+    id_usuario = Column(Integer, ForeignKey("usuario.id"))  # Clave foránea apunta a "usuario.id"
     tipo = Column(String)
     contenido = Column(Text)
     fecha = Column(Date)
