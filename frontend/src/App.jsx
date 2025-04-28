@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AppNavbar from './components/Navbar';  // Cambiado de Navbar a AppNavbar
+import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Users from './pages/Users';
@@ -27,7 +27,7 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <AppNavbar />  // Cambiado de Navbar a AppNavbar
+                <Navbar />
                 <main className="flex-grow-1">
                   <Home />
                 </main>
@@ -39,7 +39,7 @@ function App() {
             path="/home"
             element={
               <ProtectedRoute>
-                <AppNavbar />  // Cambiado de Navbar a AppNavbar
+                <Navbar />
                 <main className="flex-grow-1">
                   <Home />
                 </main>
@@ -51,7 +51,7 @@ function App() {
             path="/users"
             element={
               <ProtectedRoute>
-                <AppNavbar />  // Cambiado de Navbar a AppNavbar
+                <Navbar />
                 <main className="flex-grow-1">
                   <Users />
                 </main>
@@ -63,7 +63,7 @@ function App() {
             path="/sucursales"
             element={
               <ProtectedRoute>
-                <AppNavbar />  // Cambiado de Navbar a AppNavbar
+                <Navbar />
                 <main className="flex-grow-1">
                   <Sucursales />
                 </main>
@@ -75,7 +75,7 @@ function App() {
             path="/cuadrillas"
             element={
               <ProtectedRoute>
-                <AppNavbar />  // Cambiado de Navbar a AppNavbar
+                <Navbar />
                 <main className="flex-grow-1">
                   <Cuadrillas />
                 </main>
@@ -87,7 +87,7 @@ function App() {
             path="/preventivos"
             element={
               <ProtectedRoute>
-                <AppNavbar />  // Cambiado de Navbar a AppNavbar
+                <Navbar />
                 <main className="flex-grow-1">
                   <Preventivos />
                 </main>
@@ -99,7 +99,7 @@ function App() {
             path="/mantenimientos-preventivos"
             element={
               <ProtectedRoute>
-                <AppNavbar />  // Cambiado de Navbar a AppNavbar
+                <Navbar />
                 <main className="flex-grow-1">
                   <MantenimientosPreventivos />
                 </main>
@@ -111,7 +111,7 @@ function App() {
             path="/mantenimientos-correctivos"
             element={
               <ProtectedRoute>
-                <AppNavbar />  // Cambiado de Navbar a AppNavbar
+                <Navbar />
                 <main className="flex-grow-1">
                   <MantenimientosCorrectivos />
                 </main>

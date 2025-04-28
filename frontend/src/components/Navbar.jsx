@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar as BootstrapNavbar, Nav, Container, NavDropdown, Image } from 'react-bootstrap';
+import logoInversur from '../assets/logo_inversur.png'; // Importamos el logo desde la carpeta assets
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const Navbar = () => {
       <Container fluid>
         <BootstrapNavbar.Brand as={Link} to="/" className="d-flex align-items-center" style={{ marginLeft: '10px' }}>
           <Image
-            src="https://inversur.com.ar/wp-content/uploads/2024/12/Logo-bco.png"
+            src={logoInversur} // Usamos el logo importado
             height="90"
             alt="Inversur Logo"
             style={{ objectFit: 'contain' }}

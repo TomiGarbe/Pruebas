@@ -1,74 +1,65 @@
 import { useState } from 'react';
-import { Form, Button, Alert, Container, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { Form, Button, Alert } from 'react-bootstrap';
 import { loginUser } from '../services/authService';
+import '../styles/login.css';
+import logoInversur from '../assets/logo_inversur.png'; // Nombre ajustado según la captura
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-
     try {
-      const data = await loginUser(formData.email, formData.password);
-      // Guardar el token o datos del usuario en localStorage (o en un estado global si usás Redux o Context)
-      localStorage.setItem('userToken', data.token); // Ajustá según lo que devuelva tu backend
-      navigate('/home'); // Redirigir a la página principal después del login
-    } catch (error) {
-      setError(error.message);
+      const response = await loginUser(email, password);
+      localStorage.setItem('userToken', response.access_token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      navigate('/home');
+    } catch (err) {
+      setError(err.message || 'Error al iniciar sesión');
     }
   };
 
   return (
-    <Container className="mt-5">
-      <Row className="justify-content-md-center">
-        <Col md={4}>
-          <h2>Iniciar Sesión</h2>
-          {error && (
-            <Alert variant="danger" role="alert">
-              {error}
-            </Alert>
-          )}
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
+    <div className="main-bg">
+      <div className="login-container text-c animated flipInX">
+        <div>
+          <img src={logoInversur} alt="Inversur Logo" className="logo" />
+        </div>
+        <div className="container-content">
+          {error && <Alert variant="danger">{error}</Alert>}
+          <Form className="margin-t" onSubmit={handleSubmit}>
+            <Form.Group className="form-group">
               <Form.Control
                 type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Contraseña</Form.Label>
+            <Form.Group className="form-group">
               <Form.Control
                 type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </Form.Group>
-
-            <Button variant="primary" type="submit">
+            <Button type="submit" className="form-button button-l margin-b">
               Iniciar Sesión
             </Button>
           </Form>
-        </Col>
-      </Row>
-    </Container>
+          <p className="margin-t text-whitesmoke">
+            <small>Inversur © 2025</small>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 
