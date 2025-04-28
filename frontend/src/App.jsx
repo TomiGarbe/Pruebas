@@ -10,7 +10,7 @@ import MantenimientosPreventivos from './pages/MantenimientosPreventivos';
 import MantenimientosCorrectivos from './pages/MantenimientosCorrectivos';
 import Login from './pages/Login';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './styles/index.css';
+import './styles/login.css';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('userToken');
