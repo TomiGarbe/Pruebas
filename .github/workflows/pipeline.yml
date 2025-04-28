@@ -19,6 +19,10 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Run Backend Tests with Coverage
+        run: |
+          cd backend
+          pytest --cov=src --cov-report=xml --cov-report=term
       - name: Create Backend Environment File
         run: |
           cd backend/src
