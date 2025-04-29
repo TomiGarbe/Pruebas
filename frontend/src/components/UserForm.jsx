@@ -47,7 +47,7 @@ const UserForm = ({ user, onClose }) => {
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="nombre">
             <Form.Label className="required required-asterisk">Nombre</Form.Label>
             <Form.Control
               type="text"
@@ -57,7 +57,7 @@ const UserForm = ({ user, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="email">
             <Form.Label className="required required-asterisk">Email</Form.Label>
             <Form.Control
               type="email"
@@ -67,7 +67,7 @@ const UserForm = ({ user, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="contrasena">
             <Form.Label className="required required-asterisk">Contraseña</Form.Label>
             <Form.Control
               type="password"
@@ -77,7 +77,7 @@ const UserForm = ({ user, onClose }) => {
               required={!user}
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="rol">
             <Form.Label className="required required-asterisk">Rol</Form.Label>
             <Form.Select
               name="rol"

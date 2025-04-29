@@ -103,7 +103,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
       <Modal.Body>
         {error && <div className="alert alert-danger">{error}</div>}
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="id_sucursal">
             <Form.Label className="required required-asterisk">Sucursal</Form.Label>
             <Form.Select
               name="id_sucursal"
@@ -119,7 +119,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               ))}
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="id_cuadrilla">
             <Form.Label>Cuadrilla</Form.Label>
             <Form.Select
               name="id_cuadrilla"
@@ -134,7 +134,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               ))}
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="fecha_apertura">
             <Form.Label className="required required-asterisk">Fecha Apertura</Form.Label>
             <Form.Control
               type="date"
@@ -144,7 +144,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="fecha_cierre">
             <Form.Label>Fecha Cierre</Form.Label>
             <Form.Control
               type="date"
@@ -153,7 +153,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               onChange={handleChange}
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="numero_caso">
             <Form.Label className="required required-asterisk">Número de Caso</Form.Label>
             <Form.Control
               type="text"
@@ -163,7 +163,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="incidente">
             <Form.Label className="required required-asterisk">Incidente</Form.Label>
             <Form.Control
               type="text"
@@ -173,7 +173,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="rubro">
             <Form.Label className="required required-asterisk">Rubro</Form.Label>
             <Form.Select
               name="rubro"
@@ -195,7 +195,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               <option value="Otros">Otros</option>
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="planilla">
             <Form.Label>Planilla</Form.Label>
             <Form.Control
               type="text"
@@ -204,7 +204,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               onChange={handleChange}
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="estado">
             <Form.Label className="required required-asterisk">Estado</Form.Label>
             <Form.Select
               name="estado"
@@ -224,7 +224,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               <option value="Solucionado">Solucionado</option>
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="prioridad">
             <Form.Label className="required required-asterisk">Prioridad</Form.Label>
             <Form.Select
               name="prioridad"
@@ -237,7 +237,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               <option value="Baja">Baja</option>
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="extendido">
             <Form.Label>Extendido</Form.Label>
             <Form.Control
               type="datetime-local"

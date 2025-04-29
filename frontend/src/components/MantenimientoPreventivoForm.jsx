@@ -89,7 +89,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
       <Modal.Body>
         {error && <div className="alert alert-danger">{error}</div>}
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="id_preventivo">
             <Form.Label className="required required-asterisk">Preventivo</Form.Label>
             <Form.Select
               name="id_preventivo"
@@ -105,7 +105,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
               ))}
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="id_cuadrilla">
             <Form.Label className="required required-asterisk">Cuadrilla</Form.Label>
             <Form.Select
               name="id_cuadrilla"
@@ -121,7 +121,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
               ))}
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="fecha_apertura">
             <Form.Label className="required required-asterisk">Fecha Apertura</Form.Label>
             <Form.Control
               type="date"
@@ -131,7 +131,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="fecha_cierre">
             <Form.Label>Fecha Cierre</Form.Label>
             <Form.Control
               type="date"
@@ -140,7 +140,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
               onChange={handleChange}
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="planilla_1">
             <Form.Label>Planilla 1</Form.Label>
             <Form.Control
               type="text"
@@ -149,7 +149,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
               onChange={handleChange}
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="planilla_2">
             <Form.Label>Planilla 2</Form.Label>
             <Form.Control
               type="text"
@@ -158,7 +158,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
               onChange={handleChange}
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="planilla_3">
             <Form.Label>Planilla 3</Form.Label>
             <Form.Control
               type="text"
@@ -167,7 +167,7 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
               onChange={handleChange}
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="extendido">
             <Form.Label>Extendido</Form.Label>
             <Form.Control
               type="datetime-local"

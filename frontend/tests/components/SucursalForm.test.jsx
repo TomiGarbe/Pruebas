@@ -37,7 +37,7 @@ describe('SucursalForm', () => {
 
     // Como la zona es solo lectura, no lo seteamos manualmente acá en el input (dependería del dropdown).
 
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
 
     await waitFor(() => {
       expect(sucursalService.createSucursal).toHaveBeenCalled();
@@ -53,7 +53,7 @@ describe('SucursalForm', () => {
     fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Sucursal Test' } });
     fireEvent.change(screen.getByLabelText(/Dirección/i), { target: { value: 'Calle Falsa 123' } });
 
-    fireEvent.submit(screen.getByRole('form'));
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
 
     expect(await screen.findByText(/Error al guardar la sucursal/i)).toBeInTheDocument();
   });

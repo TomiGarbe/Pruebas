@@ -124,7 +124,7 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
           </div>
         )}
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="nombre">
             <Form.Label className="required required-asterisk">Nombre</Form.Label>
             <Form.Control
               type="text"
@@ -134,10 +134,11 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="zona">
             <Form.Label className="required required-asterisk">Zona</Form.Label>
             <Dropdown show={dropdownOpen} onToggle={toggleDropdown} ref={dropdownRef}>
               <FormControl
+                name="zona"
                 value={formData.zona}
                 onChange={(e) => setFormData({ ...formData, zona: e.target.value })}
                 placeholder="Seleccione una zona"
@@ -185,7 +186,7 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
               </InputGroup>
             )}
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="email">
             <Form.Label className="required required-asterisk">Email</Form.Label>
             <Form.Control
               type="email"
@@ -195,7 +196,7 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="contrasena">
             <Form.Label className="required required-asterisk">Contraseña</Form.Label>
             <Form.Control
               type="password"

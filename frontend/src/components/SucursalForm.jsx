@@ -119,7 +119,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
           </div>
         )}
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="nombre">
             <Form.Label className="required required-asterisk">Nombre</Form.Label>
             <Form.Control
               type="text"
@@ -129,10 +129,11 @@ const SucursalForm = ({ sucursal, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="zona">
             <Form.Label className="required required-asterisk">Zona</Form.Label>
             <Dropdown show={dropdownOpen} onToggle={toggleDropdown} ref={dropdownRef}>
               <FormControl
+                name="nombre"
                 value={formData.zona}
                 onChange={(e) => setFormData({ ...formData, zona: e.target.value })}
                 placeholder="Seleccione una zona"
@@ -180,7 +181,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
               </InputGroup>
             )}
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="direccion">
             <Form.Label className="required required-asterisk">Dirección</Form.Label>
             <Form.Control
               type="text"
@@ -190,7 +191,7 @@ const SucursalForm = ({ sucursal, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="superficie">
             <Form.Label>Superficie</Form.Label>
             <Form.Control
               type="text"

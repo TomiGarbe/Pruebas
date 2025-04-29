@@ -67,7 +67,7 @@ const PreventivoForm = ({ preventivo, onClose }) => {
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="id_sucursal">
             <Form.Label className="required required-asterisk">Sucursal</Form.Label>
             <Form.Select
               name="id_sucursal"
@@ -83,7 +83,7 @@ const PreventivoForm = ({ preventivo, onClose }) => {
               ))}
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="frecuencia">
             <Form.Label className="required required-asterisk">Frecuencia</Form.Label>
             <Form.Select
               name="frecuencia"
