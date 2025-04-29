@@ -1,5 +1,6 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
-import AppNavbar from '../components/Navbar';
+import AppNavbar from '../../src/components/Navbar';
 import { BrowserRouter } from 'react-router-dom';
 
 describe('Navbar component', () => {

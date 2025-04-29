@@ -1,5 +1,6 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
-import Footer from '../components/Footer';
+import Footer from '../../src/components/Footer';
 import { BrowserRouter } from 'react-router-dom';
 
 describe('Footer component', () => {

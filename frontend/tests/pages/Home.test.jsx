@@ -1,5 +1,6 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
-import Home from '../src/pages/Home';
+import Home from '../../src/pages/Home';
 
 describe('Home', () => {
   it('debería renderizar el título y el párrafo correctamente', () => {

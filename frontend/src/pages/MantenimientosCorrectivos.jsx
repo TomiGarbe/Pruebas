@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Table, Button, Container, Row, Col } from 'react-bootstrap';
 import MantenimientoCorrectivoForm from '../components/MantenimientoCorrectivoForm';
