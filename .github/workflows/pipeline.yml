@@ -66,6 +66,10 @@ jobs:
           name: frontend-coverage-report
           path: frontend/coverage/
           if-no-files-found: warn
+      - name: Create Frontend .env File
+        run: |
+          echo "VITE_API_URL=${{ secrets.BACKEND_QA_URL }}" > .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
       - name: Build Frontend
         run: |
           cd frontend
