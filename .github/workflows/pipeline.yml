@@ -73,7 +73,7 @@ jobs:
       - name: Prepare Frontend Artifact
         run: |
           mkdir -p frontend-artifact
-          cp -r frontend/dist frontend-artifact/
+          cp -r frontend/dist/* frontend-artifact/
       - name: Upload Frontend Artifact
         uses: actions/upload-artifact@v4
         with:
