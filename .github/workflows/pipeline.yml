@@ -124,7 +124,7 @@ jobs:
           path: frontend/dist/
       - name: Create Frontend .env File
         run: |
-          cd frontend/dist
+          cd frontend
           echo "VITE_API_URL=${{ secrets.BACKEND_QA_URL }}" > .env
           echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
       - name: Deploy to Azure Static Web Apps
@@ -213,7 +213,7 @@ jobs:
           path: frontend/dist/
       - name: Create Frontend .env File
         run: |
-          cd frontend/dist
+          cd frontend
           echo "VITE_API_URL=${{ secrets.BACKEND_PROD_URL }}" > .env
           echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> .env
       - name: Deploy to Azure Static Web Apps
