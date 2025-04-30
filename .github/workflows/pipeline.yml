@@ -6,6 +6,9 @@ on:
       - none
 
 jobs:
+  #=======================
+  # STAGE: BUILD AND TEST
+  #=======================
   build-and-test-backend:
     runs-on: ubuntu-latest
     steps:
@@ -22,13 +25,13 @@ jobs:
       - name: Run Backend Tests with Coverage
         run: |
           cd backend
-          pytest --cov=src --cov-report=xml --cov-report=term
-      - name: Create Backend Environment File
-        run: |
-          cd backend/src
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> env.config
-          cat env.config || echo "Failed to create or read env.config file"
+          pytest -v --cov=src --cov-report=html --cov-report=xml
+      - name: Upload Backend Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: backend/htmlcov/
+          if-no-files-found: warn
       - name: Upload Backend Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -49,10 +52,16 @@ jobs:
         run: |
           cd frontend
           npm install
-      - name: Create Frontend .env File
+      - name: Run Frontend Tests with Coverage
         run: |
           cd frontend
-          echo "VITE_API_URL=${{ secrets.BACKEND_URL }}" > .env
+          npm test -- --coverage
+      - name: Upload Frontend Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: frontend/coverage/
+          if-no-files-found: warn
       - name: Build Frontend
         run: |
           cd frontend
@@ -64,7 +73,10 @@ jobs:
           path: frontend/dist/
           if-no-files-found: error
 
-  deploy-backend:
+  #==========================================
+  # STAGE: DEPLOY TO QA AND INTEGRATION TEST
+  #==========================================
+  deploy-backend-qa:
     needs: build-and-test-backend
     runs-on: ubuntu-latest
     steps:
@@ -73,6 +85,10 @@ jobs:
         with:
           name: backend-artifact
           path: .
+      - name: Create Backend Environment File
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -86,14 +102,14 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'Inversur-QA'
-          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_BACKEND }}
       - name: Start Azure App Service
         uses: azure/CLI@v1
         with:
           inlineScript: |
             az webapp start --name Inversur-QA --resource-group Inversur
 
-  deploy-frontend:
+  deploy-frontend-qa:
     needs: build-and-test-frontend
     runs-on: ubuntu-latest
     steps:
@@ -102,10 +118,126 @@ jobs:
         with:
           name: frontend-artifact
           path: frontend/dist/
-      - name: Deploy to Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Create Frontend .env File
+        run: |
+          echo "VITE_API_URL=${{ secrets.BACKEND_QA_URL }}" > .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+      - name: Login to Azure
+        uses: azure/login@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          action: "upload"
-          app_location: "frontend/dist"
-          skip_app_build: true
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Stop Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp stop --name Frontend-Inversur-QA --resource-group Inversur
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'Frontend-Inversur-QA'
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_FRONTEND }}
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Frontend-Inversur-QA --resource-group Inversur
+  
+  integration-tests:
+    needs: [deploy-backend-qa, deploy-frontend-qa]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
+      - name: Create Frontend .env File
+        run: |
+          cd frontend
+          echo "VITE_API_URL=${{ secrets.BACKEND_QA_URL }}" > .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+      - name: Run Cypress Tests with Coverage
+        run: |
+          cd frontend
+          npx cypress run
+      - name: Upload Cypress Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-coverage-report
+          path: frontend/coverage/
+          if-no-files-found: warn
+
+  #=======================
+  # STAGE: DEPLOY TO PROD
+  #=======================
+  deploy-backend-prod:
+    needs: integration-tests
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-artifact
+          path: .
+      - name: Create Backend Environment File
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Stop Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp stop --name Backend-Inversur --resource-group Inversur
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'Backend-Inversur'
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_BACKEND_PROD }}
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Backend-Inversur --resource-group Inversur
+
+  deploy-frontend-prod:
+    needs: integration-tests
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-artifact
+          path: frontend/dist/
+      - name: Create Frontend .env File
+        run: |
+          echo "VITE_API_URL=${{ secrets.BACKEND_PROD_URL }}" > .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> .env
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Stop Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp stop --name Inversur --resource-group Inversur
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'Inversur'
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_FRONTEND_PROD }}
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Inversur --resource-group Inversur

@@ -1,8 +1,9 @@
 const { defineConfig } = require("cypress");
+require('dotenv').config();
 
 module.exports = defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:5173',
+    baseUrl: process.env.VITE_FRONTEND_URL,
     setupNodeEvents(on, config) {
       require('@cypress/code-coverage/task')(on, config);
       return config;
