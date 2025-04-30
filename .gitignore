@@ -5,3 +5,6 @@ __pycache__/
 env.config
 test.db
 .pytest_cache
+*.env
+htmlcov
+.coverage

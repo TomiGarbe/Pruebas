@@ -11,5 +11,13 @@ export default {
   testPathIgnorePatterns: [
     "/node_modules/",
     "/cypress/"
+  ],
+  "collectCoverage": true,
+  "coverageDirectory": "coverage",
+  "coverageReporters": ["html", "text", "lcov"],
+  "collectCoverageFrom": [
+    "src/**/*.{js,jsx,ts,tsx}",
+    "!src/**/*.test.{js,jsx,ts,tsx}",
+    "!src/**/index.{js,jsx,ts,tsx}"
   ]
 };
