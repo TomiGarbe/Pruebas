@@ -70,15 +70,11 @@ jobs:
         run: |
           cd frontend
           npm run build
-      - name: Prepare Frontend Artifact
-        run: |
-          mkdir -p frontend-artifact
-          cp -r frontend/dist/* frontend-artifact/
       - name: Upload Frontend Artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-artifact
-          path: frontend-artifact/
+          path: frontend/dist/
           if-no-files-found: error
 
   #==========================================
@@ -110,7 +106,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'Inversur-QA'
-          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_BACKEND }}
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_QA }}
       - name: Start Azure App Service
         uses: azure/CLI@v1
         with:
@@ -125,30 +121,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-artifact
-          path: .
+          path: frontend/dist/
       - name: Create Frontend .env File
         run: |
+          cd frontend/dist
           echo "VITE_API_URL=${{ secrets.BACKEND_QA_URL }}" > .env
           echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
-      - name: Login to Azure
-        uses: azure/login@v1
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Stop Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp stop --name Frontend-Inversur-QA --resource-group Inversur
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'Frontend-Inversur-QA'
-          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_FRONTEND }}
-      - name: Start Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp start --name Frontend-Inversur-QA --resource-group Inversur
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_QA }}
+          action: "upload"
+          app_location: "frontend/dist"
+          skip_app_build: true
   
   integration-tests:
     needs: [deploy-backend-qa, deploy-frontend-qa]
@@ -209,7 +194,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'Backend-Inversur'
-          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_BACKEND_PROD }}
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_PROD }}
       - name: Start Azure App Service
         uses: azure/CLI@v1
         with:
@@ -225,27 +210,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-artifact
-          path: .
+          path: frontend/dist/
       - name: Create Frontend .env File
         run: |
+          cd frontend/dist
           echo "VITE_API_URL=${{ secrets.BACKEND_PROD_URL }}" > .env
           echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> .env
-      - name: Login to Azure
-        uses: azure/login@v1
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Stop Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp stop --name Inversur --resource-group Inversur
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'Inversur'
-          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_FRONTEND_PROD }}
-      - name: Start Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp start --name Inversur --resource-group Inversur
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROD }}
+          action: "upload"
+          app_location: "frontend/dist"
+          skip_app_build: true
