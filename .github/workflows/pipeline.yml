@@ -66,18 +66,10 @@ jobs:
           name: frontend-coverage-report
           path: frontend/coverage/
           if-no-files-found: warn
-      - name: Create Frontend .env File
-        run: |
-          echo "VITE_API_URL=${{ secrets.BACKEND_QA_URL }}" > .env
-          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
       - name: Build Frontend
         run: |
           cd frontend
           npm run build
-      - name: Debug Frontend Build Output
-        run: |
-          cd frontend
-          ls -la dist/
       - name: Prepare Frontend Artifact
         run: |
           mkdir -p frontend-artifact
@@ -134,9 +126,6 @@ jobs:
         with:
           name: frontend-artifact
           path: .
-      - name: Debug Downloaded Artifact
-        run: |
-          ls -la .
       - name: Create Frontend .env File
         run: |
           echo "VITE_API_URL=${{ secrets.BACKEND_QA_URL }}" > .env
