@@ -32,13 +32,17 @@ jobs:
           name: backend-coverage-report
           path: backend/htmlcov/
           if-no-files-found: warn
+      - name: Prepare Backend Artifact
+        run: |
+          mkdir -p backend-artifact
+          cp -r backend/src/* backend-artifact/
+          cp backend/requirements.txt backend-artifact/
       - name: Upload Backend Artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-artifact
-          path: |
-            backend/src/*
-            backend/requirements.txt
+          path: backend-artifact/
+          if-no-files-found: error
 
   build-and-test-frontend:
     runs-on: ubuntu-latest
@@ -66,11 +70,19 @@ jobs:
         run: |
           cd frontend
           npm run build
+      - name: Debug Frontend Build Output
+        run: |
+          cd frontend
+          ls -la dist/
+      - name: Prepare Frontend Artifact
+        run: |
+          mkdir -p frontend-artifact
+          cp -r frontend/dist/* frontend-artifact/
       - name: Upload Frontend Artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-artifact
-          path: frontend/dist/
+          path: frontend-artifact/
           if-no-files-found: error
 
   #==========================================
@@ -118,6 +130,9 @@ jobs:
         with:
           name: frontend-artifact
           path: .
+      - name: Debug Downloaded Artifact
+        run: |
+          ls -la .
       - name: Create Frontend .env File
         run: |
           echo "VITE_API_URL=${{ secrets.BACKEND_QA_URL }}" > .env
