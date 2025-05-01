@@ -153,6 +153,19 @@ jobs:
           echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
           echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
           echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+      - name: Wait for Backend to be Ready
+        run: |
+          echo "Waiting for backend to be ready at ${{ secrets.BACKEND_QA_URL }}/health..."
+          for i in {1..12}; do
+            if curl -s -o /dev/null -w "%{http_code}" "${{ secrets.BACKEND_QA_URL }}/health" | grep -q "200"; then
+              echo "Backend is ready!"
+              exit 0
+            fi
+            echo "Backend not ready yet. Retrying in 5 seconds..."
+            sleep 5
+          done
+          echo "Timeout: Backend did not respond after 60 seconds."
+          exit 1
       - name: Run Cypress Tests with Coverage
         run: |
           cd frontend
@@ -188,13 +201,13 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'Backend-Inversur'
+          app-name: 'Inversur'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_PROD }}
       - name: Start Azure App Service
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az webapp start --name Backend-Inversur --resource-group Inversur
+            az webapp start --name Inversur --resource-group Inversur
 
   deploy-frontend-prod:
     needs: integration-tests
