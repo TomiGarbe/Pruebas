@@ -9,6 +9,7 @@ export default {
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   moduleFileExtensions: ["js", "jsx"],
+  coveragePathIgnorePatterns: ["/src/config.js"],
   testPathIgnorePatterns: [
     "/node_modules/",
     "/cypress/"

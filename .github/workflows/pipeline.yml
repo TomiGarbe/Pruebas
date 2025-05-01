@@ -102,8 +102,7 @@ jobs:
       - name: Jest Coverage Report
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
-          working-directory: frontend
-          coverage-file: coverage/coverage-final.json
+          coverage-file: ./frontend/coverage/coverage-final.json
           output: report-markdown
       - name: Write Coverage to Summary
         run: |
