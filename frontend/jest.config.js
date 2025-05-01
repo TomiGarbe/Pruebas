@@ -5,6 +5,7 @@ export default {
   moduleNameMapper: {
     '\\.css$': 'identity-obj-proxy'
   },
+  testResultsProcessor: 'jest-junit',
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   moduleFileExtensions: ["js", "jsx"],
