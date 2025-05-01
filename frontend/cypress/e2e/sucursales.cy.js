@@ -4,21 +4,21 @@ describe('Gestión de Sucursales', () => {
   });
 
   it('Carga correctamente una zona', () => {
-    cy.wait(5000);
     cy.contains('button', 'Crear Sucursal').click();
     cy.get('#zona').click();
     cy.get('.dropdown-item').click();
     cy.get('.mt-2 > #zona').type('Zona 1');
     cy.get('.mt-2 > .btn').click();
+    cy.wait(3000);
     cy.get('.btn-close').click();
   });
 
-  it('Carga, edita y elimina correctamente una sucursal', () => {
-    cy.wait(10000);
+  it('Carga correctamente una sucursal', () => {
     cy.contains('button', 'Crear Sucursal').click();
     cy.get('#nombre').type('Sucursal 1');
     cy.get('#zona').click();
-    cy.get('.custom-option > span').click();
+    cy.wait(3000);
+    cy.get('.custom-option').contains('Zona 1').click();
     cy.get('#direccion').type('Dirección 1');
     cy.get('#superficie').type('100');
     cy.get('form > .btn-primary').click();
@@ -27,6 +27,9 @@ describe('Gestión de Sucursales', () => {
     cy.get('tr:last-child > :nth-child(3)').should('have.text', 'ZonaZona 1');
     cy.get('tr:last-child > :nth-child(4)').should('have.text', 'DirecciónDirección 1');
     cy.get('tr:last-child > :nth-child(5)').should('have.text', 'Superficie100');
+  });
+
+  it('Edita correctamente una sucursal', () => {
     cy.get('tr:last-child > :nth-child(6) > .btn-warning').click();
     cy.get('#nombre').clear('Sucursal 1');
     cy.get('#nombre').type('Sucursal 2');
@@ -39,14 +42,19 @@ describe('Gestión de Sucursales', () => {
     cy.get('tr:last-child > :nth-child(2)').should('have.text', 'NombreSucursal 2');
     cy.get('tr:last-child > :nth-child(4)').should('have.text', 'DirecciónDirección 2');
     cy.get('tr:last-child > :nth-child(5)').should('have.text', 'Superficie200');
+  });
+
+  it('Elimina correctamente una sucursal', () => {
     cy.get('tr:last-child > :nth-child(6) > .btn-danger').click();
+    cy.get('table').find('tbody tr').should('not.exist');
   });
 
   it('Elimina correctamente una zona', () => {
-    cy.wait(10000);
     cy.contains('button', 'Crear Sucursal').click();
     cy.get('#zona').click();
-    cy.get('.custom-option > .btn').click();
+    cy.wait(3000);
+    cy.get('.custom-option').contains('Zona 1').click();
+    cy.wait(3000);
     cy.get('.btn-close').click();
   });
 });
