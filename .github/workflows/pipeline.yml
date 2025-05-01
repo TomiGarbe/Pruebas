@@ -5,6 +5,11 @@ on:
     branches:
       - SinLogin
 
+permissions:
+  checks: write # Permite escribir check runs para mostrar resultados de tests
+  actions: read # Permite leer acciones
+  contents: read # Permite leer el contenido del repositorio
+
 jobs:
   #=======================
   # STAGE: BUILD AND TEST
