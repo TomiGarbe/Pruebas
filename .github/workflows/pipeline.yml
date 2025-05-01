@@ -93,15 +93,6 @@ jobs:
     needs: build-and-test-backend
     runs-on: ubuntu-latest
     steps:
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Stop Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp stop --name Inversur-QA --resource-group Inversur
       - name: Download Backend Artifact
         uses: actions/download-artifact@v4
         with:
@@ -111,16 +102,15 @@ jobs:
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'Inversur-QA'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_QA }}
-      - name: Start Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp start --name Inversur-QA --resource-group Inversur
 
   deploy-frontend-qa:
     needs: build-and-test-frontend
@@ -177,15 +167,6 @@ jobs:
     environment: production
     runs-on: ubuntu-latest
     steps:
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Stop Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp stop --name Backend-Inversur --resource-group Inversur
       - name: Download Backend Artifact
         uses: actions/download-artifact@v4
         with:
@@ -195,16 +176,15 @@ jobs:
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'Backend-Inversur'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_PROD }}
-      - name: Start Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp start --name Backend-Inversur --resource-group Inversur
 
   deploy-frontend-prod:
     needs: integration-tests
