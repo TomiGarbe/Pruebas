@@ -60,7 +60,7 @@ jobs:
         run: |
           cd frontend
           echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
-          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" > .env
+          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
           echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
       - name: Run Frontend Tests with Coverage
         run: |
@@ -152,8 +152,9 @@ jobs:
       - name: Create Frontend .env File
         run: |
           cd frontend
-          echo "VITE_API_URL=${{ secrets.BACKEND_QA_URL }}" > .env
-          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
+          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
       - name: Run Cypress Tests with Coverage
         run: |
           cd frontend
