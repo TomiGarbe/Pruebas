@@ -76,6 +76,9 @@ jobs:
         run: |
           cd frontend
           npm run build
+      - name: Copy staticwebapp.config.json to dist
+        run: |
+          cp frontend/staticwebapp.config.json frontend/dist/
       - name: Upload Frontend Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -90,15 +93,6 @@ jobs:
     needs: build-and-test-backend
     runs-on: ubuntu-latest
     steps:
-      - name: Download Backend Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-artifact
-          path: .
-      - name: Create Backend Environment File
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -108,6 +102,15 @@ jobs:
         with:
           inlineScript: |
             az webapp stop --name Inversur-QA --resource-group Inversur
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-artifact
+          path: .
+      - name: Create Backend Environment File
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
@@ -174,15 +177,6 @@ jobs:
     environment: production
     runs-on: ubuntu-latest
     steps:
-      - name: Download Backend Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-artifact
-          path: .
-      - name: Create Backend Environment File
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -192,6 +186,15 @@ jobs:
         with:
           inlineScript: |
             az webapp stop --name Backend-Inversur --resource-group Inversur
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-artifact
+          path: .
+      - name: Create Backend Environment File
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
