@@ -111,6 +111,11 @@ jobs:
         with:
           app-name: 'Inversur-QA'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_QA }}
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Inversur-QA --resource-group Inversur
 
   deploy-frontend-qa:
     needs: build-and-test-frontend
@@ -185,6 +190,11 @@ jobs:
         with:
           app-name: 'Backend-Inversur'
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_PROD }}
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Backend-Inversur --resource-group Inversur
 
   deploy-frontend-prod:
     needs: integration-tests
