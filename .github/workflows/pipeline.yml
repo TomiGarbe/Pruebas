@@ -88,6 +88,10 @@ jobs:
         run: |
           cd frontend
           npm test -- --coverage --ci
+      - name: Debug Coverage Files
+        run: |
+          ls -la frontend/coverage/
+          cat frontend/coverage/coverage-final.json || echo "coverage-final.json not found"
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
@@ -99,10 +103,15 @@ jobs:
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
           working-directory: frontend
+          coverage-file: coverage/coverage-final.json
           output: report-markdown
       - name: Write Coverage to Summary
         run: |
-          cat frontend/report-markdown >> $GITHUB_STEP_SUMMARY
+          if [ -f frontend/report-markdown ]; then
+            cat frontend/report-markdown >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Coverage report not generated" >> $GITHUB_STEP_SUMMARY
+          fi
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
         with:
