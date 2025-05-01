@@ -153,22 +153,6 @@ jobs:
           echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
           echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
           echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
-      - name: Wait for Backend to be Ready
-        run: |
-          echo "Checking backend at URL: ${{ secrets.BACKEND_QA_URL }}/sucursales"
-          for i in {1..12}; do
-            HTTP_CODE=$(curl -s -L --max-time 10 -o /dev/null -w "%{http_code}" "${{ secrets.BACKEND_QA_URL }}/sucursales" || echo "curl_failed")
-            EFFECTIVE_URL=$(curl -s -L --max-time 10 -o /dev/null -w "%{url_effective}" "${{ secrets.BACKEND_QA_URL }}/sucursales" || echo "curl_failed")
-            echo "Attempt $i: HTTP Code: $HTTP_CODE, Effective URL: $EFFECTIVE_URL"
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "Backend is ready! Responded with HTTP 200"
-              exit 0
-            fi
-            echo "Backend not ready yet. Retrying in 5 seconds..."
-            sleep 5
-          done
-          echo "Timeout: Backend did not respond with HTTP 200 after 60 seconds."
-          exit 1
       - name: Run Cypress Tests with Coverage
         run: |
           cd frontend

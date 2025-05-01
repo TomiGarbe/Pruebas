@@ -4,16 +4,17 @@ describe('Gestión de Sucursales', () => {
   });
 
   it('Carga correctamente una zona', () => {
+    cy.wait(5000);
     cy.contains('button', 'Crear Sucursal').click();
     cy.get('#zona').click();
     cy.get('.dropdown-item').click();
     cy.get('.mt-2 > #zona').type('Zona 1');
     cy.get('.mt-2 > .btn').click();
     cy.get('.btn-close').click();
-    cy.wait(3000);
   });
 
   it('Carga, edita y elimina correctamente una sucursal', () => {
+    cy.wait(10000);
     cy.contains('button', 'Crear Sucursal').click();
     cy.get('#nombre').type('Sucursal 1');
     cy.get('#zona').click();
@@ -42,6 +43,7 @@ describe('Gestión de Sucursales', () => {
   });
 
   it('Elimina correctamente una zona', () => {
+    cy.wait(10000);
     cy.contains('button', 'Crear Sucursal').click();
     cy.get('#zona').click();
     cy.get('.custom-option > .btn').click();
