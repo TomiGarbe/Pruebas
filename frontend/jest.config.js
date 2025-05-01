@@ -9,14 +9,14 @@ export default {
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   moduleFileExtensions: ["js", "jsx"],
-  coveragePathIgnorePatterns: ["/src/config.js"],
   testPathIgnorePatterns: [
     "/node_modules/",
     "/cypress/"
   ],
   "collectCoverage": true,
   "coverageDirectory": "coverage",
-  "coverageReporters": ["html", "text", "lcov", "json"],
+  "coverageReporters": ["json", "lcov", "text", "html"],
+  "coveragePathIgnorePatterns": ["/src/config.js"],
   "collectCoverageFrom": [
     "src/**/*.{js,jsx,ts,tsx}",
     "!src/**/*.test.{js,jsx,ts,tsx}",

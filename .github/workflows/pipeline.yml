@@ -73,7 +73,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
       - name: Install Frontend Dependencies
         run: |
           cd frontend
@@ -88,10 +88,6 @@ jobs:
         run: |
           cd frontend
           npm test -- --coverage --ci
-      - name: Debug Coverage Files
-        run: |
-          ls -la frontend/coverage/
-          cat frontend/coverage/coverage-final.json || echo "coverage-final.json not found"
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
@@ -100,10 +96,20 @@ jobs:
           path: frontend/junit.xml
           reporter: jest-junit
       - name: Jest Coverage Report
-        uses: ArtiomTr/jest-coverage-report-action@v2
+        uses: ArtiomTr/jest-coverage-report-action@v2.0.1
+        env:
+          DEBUG: jest-coverage-report-action
         with:
-          coverage-file: ./frontend/coverage/coverage-final.json
-          output: report-markdown
+          working-directory: frontend
+          coverage-file: coverage/coverage-final.json
+      - name: Check Report File
+        run: |
+          ls -la frontend/
+          if [ -f frontend/report-markdown ]; then
+            echo "Report file exists"
+          else
+            echo "Report file missing"
+          fi
       - name: Write Coverage to Summary
         run: |
           if [ -f frontend/report-markdown ]; then
@@ -187,7 +193,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
       - name: Install Frontend Dependencies
         run: |
           cd frontend
