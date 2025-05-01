@@ -10,9 +10,11 @@ describe('Gestión de Sucursales', () => {
     cy.get('.dropdown-item').click();
     cy.get('.mt-2 > #zona').type('Zona 1');
     cy.get('.mt-2 > .btn').click();
+    cy.wait(1000);
     cy.get('#direccion').type('Dirección 1');
     cy.get('#superficie').type('100');
     cy.get('form > .btn-primary').click();
+    cy.wait(3000);
     cy.get('tr:last-child > :nth-child(2)').should('have.text', 'NombreSucursal 1');
     cy.get('tr:last-child > :nth-child(3)').should('have.text', 'ZonaZona 1');
     cy.get('tr:last-child > :nth-child(4)').should('have.text', 'DirecciónDirección 1');
@@ -25,6 +27,7 @@ describe('Gestión de Sucursales', () => {
     cy.get('#superficie').clear('100');
     cy.get('#superficie').type('200');
     cy.get('form > .btn').click();
+    cy.wait(3000);
     cy.get('tr:last-child > :nth-child(2)').should('have.text', 'NombreSucursal 2');
     cy.get('tr:last-child > :nth-child(4)').should('have.text', 'DirecciónDirección 2');
     cy.get('tr:last-child > :nth-child(5)').should('have.text', 'Superficie200');
