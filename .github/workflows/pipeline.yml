@@ -43,8 +43,11 @@ jobs:
         with:
           filename: backend/coverage.xml
           format: markdown
-          output: summary
+          output: file
           fail_below_min: false
+      - name: Write Coverage to Summary
+        run: |
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
       - name: Upload Backend Coverage Report
         uses: actions/upload-artifact@v4
         with:
@@ -84,7 +87,7 @@ jobs:
       - name: Run Frontend Tests with Coverage
         run: |
           cd frontend
-          npm test -- --coverage
+          npm test -- --coverage --ci
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
@@ -95,7 +98,11 @@ jobs:
       - name: Jest Coverage Report
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
+          working-directory: frontend
           output: report-markdown
+      - name: Write Coverage to Summary
+        run: |
+          cat frontend/report-markdown >> $GITHUB_STEP_SUMMARY
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
         with:
@@ -186,18 +193,22 @@ jobs:
       - name: Run Cypress Tests with Coverage
         run: |
           cd frontend
-          npx cypress run
+          npx cypress run --reporter mocha-junit-reporter --reporter-options "mochaFile=cypress/results.xml"
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Cypress Results
-          path: frontend/cypress/results-*.xml
+          path: frontend/cypress/results.xml
           reporter: mocha-junit
       - name: Jest Coverage Report
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
+          working-directory: frontend
           output: report-markdown
+      - name: Write Coverage to Summary
+        run: |
+          cat frontend/report-markdown >> $GITHUB_STEP_SUMMARY
       - name: Upload Cypress Coverage Report
         uses: actions/upload-artifact@v4
         with:

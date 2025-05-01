@@ -15,7 +15,7 @@ export default {
   ],
   "collectCoverage": true,
   "coverageDirectory": "coverage",
-  "coverageReporters": ["html", "text", "lcov"],
+  "coverageReporters": ["html", "text", "lcov", "json"],
   "collectCoverageFrom": [
     "src/**/*.{js,jsx,ts,tsx}",
     "!src/**/*.test.{js,jsx,ts,tsx}",
