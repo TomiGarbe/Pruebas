@@ -9,3 +9,13 @@ test.db
 htmlcov
 .coverage
 dist
+logs
+*.log
+.firebase/
+pids
+*.pid
+*.seed
+*.pid.lock
+lib-cov
+coverage
+.nyc_output

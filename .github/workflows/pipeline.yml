@@ -3,7 +3,7 @@ name: Pipeline
 on:
   push:
     branches:
-      - SinLogin
+      - none
 
 permissions:
   checks: write # Permite escribir check runs para mostrar resultados de tests
