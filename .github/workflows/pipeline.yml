@@ -89,6 +89,10 @@ jobs:
           cd frontend
           echo "## Coverage Report" > coverage-summary.md
           npm test -- --coverage --ci >> coverage-summary.md
+      - name: Check if coverage file exists
+        run: |
+          ls -l frontend/coverage/
+          cat frontend/coverage/coverage-final.json || echo "coverage-final.json not found"
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
