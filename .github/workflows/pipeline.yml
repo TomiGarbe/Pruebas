@@ -87,7 +87,8 @@ jobs:
       - name: Run Frontend Tests with Coverage
         run: |
           cd frontend
-          npm test -- --coverage --ci
+          echo "## Coverage Report" > coverage-summary.md
+          npm test -- --coverage --ci >> coverage-summary.md
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
@@ -102,18 +103,12 @@ jobs:
         with:
           working-directory: frontend
           coverage-file: coverage/coverage-final.json
-      - name: Check Report File
-        run: |
-          ls -la frontend/
-          if [ -f frontend/report-markdown ]; then
-            echo "Report file exists"
-          else
-            echo "Report file missing"
-          fi
+          base-coverage-file: coverage/coverage-final.json
+          annotations: coverage
       - name: Write Coverage to Summary
         run: |
-          if [ -f frontend/report-markdown ]; then
-            cat frontend/report-markdown >> $GITHUB_STEP_SUMMARY
+          if [ -f frontend/coverage-summary.md ]; then
+            cat frontend/coverage-summary.md >> $GITHUB_STEP_SUMMARY
           else
             echo "Coverage report not generated" >> $GITHUB_STEP_SUMMARY
           fi
