@@ -89,10 +89,6 @@ jobs:
           cd frontend
           echo "## Coverage Report" > coverage-summary.md
           npm test -- --coverage --ci >> coverage-summary.md
-      - name: Check if coverage file exists
-        run: |
-          ls -l frontend/coverage/
-          cat frontend/coverage/coverage-final.json || echo "coverage-final.json not found"
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
@@ -101,21 +97,15 @@ jobs:
           path: frontend/junit.xml
           reporter: jest-junit
       - name: Jest Coverage Report
-        uses: ArtiomTr/jest-coverage-report-action@v2.0.1
-        env:
-          DEBUG: jest-coverage-report-action
+        id: coverage
+        uses: ArtiomTr/jest-coverage-report-action@v2
         with:
           working-directory: frontend
           coverage-file: coverage/coverage-final.json
           base-coverage-file: coverage/coverage-final.json
-          annotations: coverage
+          output: report-markdown
       - name: Write Coverage to Summary
-        run: |
-          if [ -f frontend/coverage-summary.md ]; then
-            cat frontend/coverage-summary.md >> $GITHUB_STEP_SUMMARY
-          else
-            echo "Coverage report not generated" >> $GITHUB_STEP_SUMMARY
-          fi
+        run: echo "${{ steps.coverage.outputs.report }}" >> $GITHUB_STEP_SUMMARY
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
         with:
