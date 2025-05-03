@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from config.database import get_db
 from services.reportes import get_reportes, get_reporte, create_reporte, update_reporte, delete_reporte
@@ -8,8 +8,9 @@ from typing import List
 router = APIRouter(prefix="/reportes", tags=["reportes"])
 
 @router.get("/", response_model=List[dict])
-def reportes_get(db: Session = Depends(get_db)):
-    reportes = get_reportes(db)
+def reportes_get(request: Request, db: Session = Depends(get_db)):
+    current_entity = request.state.current_entity
+    reportes = get_reportes(db, current_entity)
     return [
         {
             "id": r.id,
@@ -22,8 +23,9 @@ def reportes_get(db: Session = Depends(get_db)):
     ]
 
 @router.get("/{reporte_id}", response_model=dict)
-def reporte_get(reporte_id: int, db: Session = Depends(get_db)):
-    reporte = get_reporte(db, reporte_id)
+def reporte_get(reporte_id: int, request: Request, db: Session = Depends(get_db)):
+    current_entity = request.state.current_entity
+    reporte = get_reporte(db, reporte_id, current_entity)
     return {
         "id": reporte.id,
         "id_usuario": reporte.id_usuario,
@@ -33,8 +35,9 @@ def reporte_get(reporte_id: int, db: Session = Depends(get_db)):
     }
 
 @router.post("/", response_model=dict)
-def reporte_create(reporte: ReporteCreate, db: Session = Depends(get_db)):
-    new_reporte = create_reporte(db, reporte.id_usuario, reporte.tipo, reporte.contenido, reporte.fecha)
+def reporte_create(reporte: ReporteCreate, request: Request, db: Session = Depends(get_db)):
+    current_entity = request.state.current_entity
+    new_reporte = create_reporte(db, reporte.id_usuario, reporte.tipo, reporte.contenido, reporte.fecha, current_entity)
     return {
         "id": new_reporte.id,
         "id_usuario": new_reporte.id_usuario,
@@ -44,8 +47,9 @@ def reporte_create(reporte: ReporteCreate, db: Session = Depends(get_db)):
     }
 
 @router.put("/{reporte_id}", response_model=dict)
-def reporte_update(reporte_id: int, reporte: ReporteUpdate, db: Session = Depends(get_db)):
-    updated_reporte = update_reporte(db, reporte_id, reporte.id_usuario, reporte.tipo, reporte.contenido, reporte.fecha)
+def reporte_update(reporte_id: int, reporte: ReporteUpdate, request: Request, db: Session = Depends(get_db)):
+    current_entity = request.state.current_entity
+    updated_reporte = update_reporte(db, reporte_id, reporte.id_usuario, reporte.tipo, reporte.contenido, reporte.fecha, current_entity)
     return {
         "id": updated_reporte.id,
         "id_usuario": updated_reporte.id_usuario,
@@ -55,5 +59,6 @@ def reporte_update(reporte_id: int, reporte: ReporteUpdate, db: Session = Depend
     }
 
 @router.delete("/{reporte_id}", response_model=dict)
-def reporte_delete(reporte_id: int, db: Session = Depends(get_db)):
-    return delete_reporte(db, reporte_id)
+def reporte_delete(reporte_id: int, request: Request, db: Session = Depends(get_db)):
+    current_entity = request.state.current_entity
+    return delete_reporte(db, reporte_id, current_entity)

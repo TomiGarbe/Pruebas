@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from config.database import get_db
 from services.mantenimientos_correctivos import get_mantenimientos_correctivos, get_mantenimiento_correctivo, create_mantenimiento_correctivo, update_mantenimiento_correctivo, delete_mantenimiento_correctivo
@@ -47,7 +47,8 @@ def mantenimiento_correctivo_get(mantenimiento_id: int, db: Session = Depends(ge
     }
 
 @router.post("/", response_model=dict)
-def mantenimiento_correctivo_create(mantenimiento: MantenimientoCorrectivoCreate, db: Session = Depends(get_db)):
+def mantenimiento_correctivo_create(mantenimiento: MantenimientoCorrectivoCreate, request: Request, db: Session = Depends(get_db)):
+    current_entity = request.state.current_entity
     new_mantenimiento = create_mantenimiento_correctivo(
         db,
         mantenimiento.id_sucursal,
@@ -60,7 +61,8 @@ def mantenimiento_correctivo_create(mantenimiento: MantenimientoCorrectivoCreate
         mantenimiento.planilla,
         mantenimiento.estado,
         mantenimiento.prioridad,
-        mantenimiento.extendido
+        mantenimiento.extendido,
+        current_entity
     )
     return {
         "id": new_mantenimiento.id,
@@ -110,5 +112,6 @@ def mantenimiento_correctivo_update(mantenimiento_id: int, mantenimiento: Manten
     }
 
 @router.delete("/{mantenimiento_id}", response_model=dict)
-def mantenimiento_correctivo_delete(mantenimiento_id: int, db: Session = Depends(get_db)):
-    return delete_mantenimiento_correctivo(db, mantenimiento_id)
+def mantenimiento_correctivo_delete(mantenimiento_id: int, request: Request, db: Session = Depends(get_db)):
+    current_entity = request.state.current_entity
+    return delete_mantenimiento_correctivo(db, mantenimiento_id, current_entity)

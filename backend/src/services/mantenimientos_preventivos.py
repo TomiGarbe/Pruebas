@@ -70,7 +70,11 @@ def update_mantenimiento_preventivo(db: Session, mantenimiento_id: int, id_preve
     db.refresh(db_mantenimiento)
     return db_mantenimiento
 
-def delete_mantenimiento_preventivo(db: Session, mantenimiento_id: int):
+def delete_mantenimiento_preventivo(db: Session, mantenimiento_id: int, current_entity: dict):
+    if not current_entity:
+        raise HTTPException(status_code=401, detail="Autenticación requerida")
+    if current_entity["type"] != "usuario":
+        raise HTTPException(status_code=403, detail="No tienes permisos")
     db_mantenimiento = db.query(MantenimientoPreventivo).filter(MantenimientoPreventivo.id == mantenimiento_id).first()
     if not db_mantenimiento:
         raise HTTPException(status_code=404, detail="Mantenimiento preventivo no encontrado")

@@ -11,7 +11,12 @@ def get_preventivo(db: Session, preventivo_id: int):
         raise HTTPException(status_code=404, detail="Preventivo no encontrado")
     return preventivo
 
-def create_preventivo(db: Session, id_sucursal: int, nombre_sucursal: str, frecuencia: str):
+def create_preventivo(db: Session, id_sucursal: int, nombre_sucursal: str, frecuencia: str, current_entity: dict):
+    if not current_entity:
+        raise HTTPException(status_code=401, detail="Autenticación requerida")
+    if current_entity["type"] != "usuario":
+        raise HTTPException(status_code=403, detail="No tienes permisos")
+    
     # Verifica si la sucursal existe
     sucursal = db.query(Sucursal).filter(Sucursal.id == id_sucursal).first()
     if not sucursal:
@@ -23,7 +28,12 @@ def create_preventivo(db: Session, id_sucursal: int, nombre_sucursal: str, frecu
     db.refresh(db_preventivo)
     return db_preventivo
 
-def update_preventivo(db: Session, preventivo_id: int, id_sucursal: int = None, nombre_sucursal: str = None, frecuencia: str = None):
+def update_preventivo(db: Session, preventivo_id: int, id_sucursal: int = None, nombre_sucursal: str = None, frecuencia: str = None, current_entity: dict = None):
+    if not current_entity:
+        raise HTTPException(status_code=401, detail="Autenticación requerida")
+    if current_entity["type"] != "usuario":
+        raise HTTPException(status_code=403, detail="No tienes permisos")
+    
     db_preventivo = db.query(Preventivo).filter(Preventivo.id == preventivo_id).first()
     if not db_preventivo:
         raise HTTPException(status_code=404, detail="Preventivo no encontrado")
@@ -40,7 +50,12 @@ def update_preventivo(db: Session, preventivo_id: int, id_sucursal: int = None, 
     db.refresh(db_preventivo)
     return db_preventivo
 
-def delete_preventivo(db: Session, preventivo_id: int):
+def delete_preventivo(db: Session, preventivo_id: int, current_entity: dict):
+    if not current_entity:
+        raise HTTPException(status_code=401, detail="Autenticación requerida")
+    if current_entity["type"] != "usuario":
+        raise HTTPException(status_code=403, detail="No tienes permisos")
+    
     db_preventivo = db.query(Preventivo).filter(Preventivo.id == preventivo_id).first()
     if not db_preventivo:
         raise HTTPException(status_code=404, detail="Preventivo no encontrado")

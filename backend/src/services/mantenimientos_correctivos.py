@@ -13,7 +13,12 @@ def get_mantenimiento_correctivo(db: Session, mantenimiento_id: int):
         raise HTTPException(status_code=404, detail="Mantenimiento correctivo no encontrado")
     return mantenimiento
 
-def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla: int, fecha_apertura: date, fecha_cierre: Optional[date] = None, numero_caso: str = None, incidente: str = None, rubro: str = None, planilla: Optional[str] = None, estado: str = None, prioridad: str = None, extendido: Optional[datetime] = None):
+def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla: int, fecha_apertura: date, fecha_cierre: Optional[date] = None, numero_caso: str = None, incidente: str = None, rubro: str = None, planilla: Optional[str] = None, estado: str = None, prioridad: str = None, extendido: Optional[datetime] = None, current_entity: dict = None):
+    if not current_entity:
+        raise HTTPException(status_code=401, detail="Autenticación requerida")
+    if current_entity["type"] != "usuario":
+        raise HTTPException(status_code=403, detail="No tienes permisos")
+    
     # Verifica si la sucursal existe
     sucursal = db.query(Sucursal).filter(Sucursal.id == id_sucursal).first()
     if not sucursal:
@@ -80,7 +85,11 @@ def update_mantenimiento_correctivo(db: Session, mantenimiento_id: int, id_sucur
     db.refresh(db_mantenimiento)
     return db_mantenimiento
 
-def delete_mantenimiento_correctivo(db: Session, mantenimiento_id: int):
+def delete_mantenimiento_correctivo(db: Session, mantenimiento_id: int, current_entity: dict):
+    if not current_entity:
+        raise HTTPException(status_code=401, detail="Autenticación requerida")
+    if current_entity["type"] != "usuario":
+        raise HTTPException(status_code=403, detail="No tienes permisos")
     db_mantenimiento = db.query(MantenimientoCorrectivo).filter(MantenimientoCorrectivo.id == mantenimiento_id).first()
     if not db_mantenimiento:
         raise HTTPException(status_code=404, detail="Mantenimiento correctivo no encontrado")

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from config.database import get_db
 from services.mantenimientos_preventivos import get_mantenimientos_preventivos, get_mantenimiento_preventivo, create_mantenimiento_preventivo, update_mantenimiento_preventivo, delete_mantenimiento_preventivo
@@ -92,5 +92,6 @@ def mantenimiento_preventivo_update(mantenimiento_id: int, mantenimiento: Manten
     }
 
 @router.delete("/{mantenimiento_id}", response_model=dict)
-def mantenimiento_preventivo_delete(mantenimiento_id: int, db: Session = Depends(get_db)):
-    return delete_mantenimiento_preventivo(db, mantenimiento_id)
+def mantenimiento_preventivo_delete(mantenimiento_id: int, request: Request, db: Session = Depends(get_db)):
+    current_entity = request.state.current_entity
+    return delete_mantenimiento_preventivo(db, mantenimiento_id, current_entity)
