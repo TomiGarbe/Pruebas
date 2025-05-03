@@ -1,18 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
+from config.database import get_db
 from services.mantenimientos_correctivos import get_mantenimientos_correctivos, get_mantenimiento_correctivo, create_mantenimiento_correctivo, update_mantenimiento_correctivo, delete_mantenimiento_correctivo
 from api.schemas import MantenimientoCorrectivoCreate, MantenimientoCorrectivoUpdate
 from typing import List
 
 router = APIRouter(prefix="/mantenimientos-correctivos", tags=["mantenimientos-correctivos"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/", response_model=List[dict])
 def mantenimientos_correctivos_get(db: Session = Depends(get_db)):

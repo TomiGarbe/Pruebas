@@ -1,18 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
+from config.database import get_db
 from services.reportes import get_reportes, get_reporte, create_reporte, update_reporte, delete_reporte
 from api.schemas import ReporteCreate, ReporteUpdate
 from typing import List
 
 router = APIRouter(prefix="/reportes", tags=["reportes"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/", response_model=List[dict])
 def reportes_get(db: Session = Depends(get_db)):

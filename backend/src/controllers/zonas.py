@@ -1,18 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
+from config.database import get_db
 from services.zonas import get_zonas, create_zona, delete_zona
 from api.schemas import Zona
 from typing import List
 
 router = APIRouter(prefix="/zonas", tags=["zonas"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # Endpoints
 @router.get("/", response_model=List[dict])

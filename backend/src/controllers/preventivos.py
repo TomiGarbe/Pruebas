@@ -1,18 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
+from config.database import get_db
 from services.preventivos import get_preventivos, get_preventivo, create_preventivo, update_preventivo, delete_preventivo
 from api.schemas import PreventivoCreate, PreventivoUpdate
 from typing import List
 
 router = APIRouter(prefix="/preventivos", tags=["preventivos"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/", response_model=List[dict])
 def preventivos_get(db: Session = Depends(get_db)):

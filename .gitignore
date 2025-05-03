@@ -19,3 +19,4 @@ pids
 lib-cov
 coverage
 .nyc_output
+firebase-adminsdk.json

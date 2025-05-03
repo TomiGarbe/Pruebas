@@ -1,18 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
+from config.database import get_db
 from services.sucursales import get_sucursales, get_sucursal, create_sucursal, update_sucursal, delete_sucursal
 from api.schemas import SucursalCreate, SucursalUpdate
 from typing import List
 
 router = APIRouter(prefix="/sucursales", tags=["sucursales"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/", response_model=List[dict])
 def sucursales_get(db: Session = Depends(get_db)):

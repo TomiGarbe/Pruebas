@@ -1,18 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from config.database import SessionLocal
+from config.database import get_db
 from services.mantenimientos_preventivos import get_mantenimientos_preventivos, get_mantenimiento_preventivo, create_mantenimiento_preventivo, update_mantenimiento_preventivo, delete_mantenimiento_preventivo
 from api.schemas import MantenimientoPreventivoCreate, MantenimientoPreventivoUpdate
 from typing import List
 
 router = APIRouter(prefix="/mantenimientos-preventivos", tags=["mantenimientos-preventivos"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/", response_model=List[dict])
 def mantenimientos_preventivos_get(db: Session = Depends(get_db)):

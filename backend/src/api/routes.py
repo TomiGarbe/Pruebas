@@ -1,10 +1,26 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from controllers import users, cuadrillas, sucursales, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, reportes, zonas
+from contextlib import asynccontextmanager
+from controllers import users, cuadrillas, sucursales, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, reportes, zonas, auth
+from config.database import get_db
+from services.auth import verify_user_token
+from auth.firebase import initialize_firebase
+from init_admin import init_admin
 from dotenv import load_dotenv
 import os
 
-app = FastAPI()
+# Definir el manejador de ciclo de vida
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_admin(
+        email="2105905@ucc.edu.ar",
+        nombre="Tomas",
+        password="Jimbo132"
+    )
+    yield
+    pass
+
+app = FastAPI(lifespan=lifespan)
 
 load_dotenv(dotenv_path="./env.config")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
@@ -22,6 +38,25 @@ app.add_middleware(
     allow_headers=["*"],  # Permitir todos los encabezados
 )
 
+# Middleware de autenticación
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    token = request.headers.get("Authorization")
+    if token and token.startswith("Bearer "):
+        token = token.replace("Bearer ", "")
+        try:
+            db = next(get_db())
+            current_entity = verify_user_token(token, db)
+            request.state.current_entity = current_entity
+        except HTTPException as e:
+            return {"status_code": e.status_code, "detail": e.detail}
+        finally:
+            db.close()
+    else:
+        request.state.current_entity = None
+    response = await call_next(request)
+    return response
+
 app.include_router(users.router)
 app.include_router(cuadrillas.router)
 app.include_router(sucursales.router)
@@ -30,3 +65,4 @@ app.include_router(mantenimientos_preventivos.router)
 app.include_router(mantenimientos_correctivos.router)
 app.include_router(reportes.router)
 app.include_router(zonas.router)
+app.include_router(auth.router)
