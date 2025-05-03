@@ -41,6 +41,11 @@ app.add_middleware(
 # Middleware de autenticación
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
+    # Excluir /auth/verify del middleware
+    if request.url.path == "/auth/verify":
+        response = await call_next(request)
+        return response
+    
     token = request.headers.get("Authorization")
     if token and token.startswith("Bearer "):
         token = token.replace("Bearer ", "")

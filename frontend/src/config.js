@@ -1,6 +1,6 @@
 const getApiUrl = () => {
     const host = window.location.host;
-    const isProd = host.includes('nice-rock'); // Ajusta según tus URLs
+    const isProd = host.includes('nice-rock');
   
     const apiUrlQa = import.meta.env.VITE_API_URL_QA;
     const apiUrlProd = import.meta.env.VITE_API_URL_PROD;

@@ -1,33 +1,39 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
-import { Table, Button, Container, Row, Col } from 'react-bootstrap';
+import React, { useState, useEffect, useContext } from 'react';
+import { Table, Button, Container, Row, Col, Alert } from 'react-bootstrap';
 import UserForm from '../components/UserForm';
 import { getUsers, deleteUser } from '../services/userService';
+import { AuthContext } from '../context/AuthContext';
 
 const Users = () => {
+  const { currentEntity } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchUsers = async () => {
     try {
       const response = await getUsers();
       setUsers(response.data);
+      setError(null);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      setError(error.response?.data?.detail || 'Error al cargar los usuarios');
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (currentEntity) {
+      fetchUsers();
+    }
+  }, [currentEntity]);
 
   const handleDelete = async (id) => {
     try {
       await deleteUser(id);
       fetchUsers();
+      setError(null);
     } catch (error) {
-      console.error('Error deleting user:', error);
+      setError(error.response?.data?.detail || 'Error al eliminar el usuario');
     }
   };
 
@@ -54,6 +60,8 @@ const Users = () => {
           </Button>
         </Col>
       </Row>
+
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {showForm && (
         <UserForm
