@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -36,54 +36,63 @@ const ProtectedRoute = ({ children, adminOnly, usersOnly }) => {
   return children;
 };
 
+const AppContent = () => {
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+
+  return (
+    <div className="d-flex flex-column min-vh-100">
+      {!isLoginPage && <Navbar />}
+      <main className="flex-grow-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute adminOnly>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sucursales"
+            element={
+              <ProtectedRoute usersOnly>
+                <Sucursales />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cuadrillas"
+            element={
+              <ProtectedRoute usersOnly>
+                <Cuadrillas />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/preventivos"
+            element={
+              <ProtectedRoute usersOnly>
+                <Preventivos />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/mantenimientos-preventivos" element={<MantenimientosPreventivos />} />
+          <Route path="/mantenimientos-correctivos" element={<MantenimientosCorrectivos />} />
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </main>
+      {!isLoginPage && <Footer />}
+    </div>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="d-flex flex-column min-vh-100">
-          <Navbar />
-          <main className="flex-grow-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route
-                path="/users"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <Users />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/sucursales"
-                element={
-                  <ProtectedRoute usersOnly>
-                    <Sucursales />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/cuadrillas"
-                element={
-                  <ProtectedRoute usersOnly>
-                    <Cuadrillas />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/preventivos"
-                element={
-                  <ProtectedRoute usersOnly>
-                    <Preventivos />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/mantenimientos-preventivos" element={<MantenimientosPreventivos />} />
-              <Route path="/mantenimientos-correctivos" element={<MantenimientosCorrectivos />} />
-              <Route path="/login" element={<Login />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <AppContent />
       </Router>
     </AuthProvider>
   );

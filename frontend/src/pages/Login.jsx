@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Alert } from 'react-bootstrap';
-import { auth, signInWithEmailAndPassword } from '../services/firebase';
+import { auth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from '../services/firebase';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
 
@@ -10,6 +10,7 @@ const Login = () => {
   const [contrasena, setContrasena] = useState('');
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const googleProvider = new GoogleAuthProvider();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +24,20 @@ const Login = () => {
       }, 5000);
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión');
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      const idToken = await userCredential.user.getIdToken();
+      localStorage.setItem('authToken', idToken);
+      setError(null);
+      setTimeout(() => {
+        navigate('/');
+      }, 5000);
+    } catch (err) {
+      setError(err.message || 'Error al iniciar sesión con Google');
     }
   };
 
@@ -57,6 +72,13 @@ const Login = () => {
               Iniciar Sesión
             </Button>
           </Form>
+          <Button
+            variant="outline-primary"
+            className="form-button button-l margin-b"
+            onClick={handleGoogleSignIn}
+          >
+            Iniciar Sesión con Google
+          </Button>
           <p className="margin-t text-whitesmoke">
             <small>Inversur © 2025</small>
           </p>
