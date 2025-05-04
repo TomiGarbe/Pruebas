@@ -22,7 +22,7 @@ const Cuadrillas = () => {
   };
 
   useEffect(() => {
-    if (currentEntity) {
+    if (currentEntity.type === 'usuario') {
       fetchCuadrillas();
     }
   }, [currentEntity]);

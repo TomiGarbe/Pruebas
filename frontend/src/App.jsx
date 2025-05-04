@@ -14,7 +14,7 @@ import Login from './pages/Login';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/login.css';
 
-const ProtectedRoute = ({ children, adminOnly }) => {
+const ProtectedRoute = ({ children, adminOnly, usersOnly }) => {
   const { currentEntity, loading } = React.useContext(AuthContext);
 
   if (loading) {
@@ -26,6 +26,10 @@ const ProtectedRoute = ({ children, adminOnly }) => {
   }
 
   if (adminOnly && (currentEntity.type !== 'usuario' || currentEntity.data.rol !== 'Administrador')) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (usersOnly && (currentEntity.type !== 'usuario')) {
     return <Navigate to="/" replace />;
   }
 
@@ -49,16 +53,30 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/sucursales" element={<Sucursales />} />
+              <Route
+                path="/sucursales"
+                element={
+                  <ProtectedRoute usersOnly>
+                    <Sucursales />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/cuadrillas"
                 element={
-                  <ProtectedRoute adminOnly>
+                  <ProtectedRoute usersOnly>
                     <Cuadrillas />
                   </ProtectedRoute>
                 }
               />
-              <Route path="/preventivos" element={<Preventivos />} />
+              <Route
+                path="/preventivos"
+                element={
+                  <ProtectedRoute usersOnly>
+                    <Preventivos />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/mantenimientos-preventivos" element={<MantenimientosPreventivos />} />
               <Route path="/mantenimientos-correctivos" element={<MantenimientosCorrectivos />} />
               <Route path="/login" element={<Login />} />

@@ -1,12 +1,14 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Table, Button, Container, Row, Col } from 'react-bootstrap';
 import MantenimientoPreventivoForm from '../components/MantenimientoPreventivoForm';
 import { getMantenimientosPreventivos, deleteMantenimientoPreventivo } from '../services/mantenimientoPreventivoService';
 import { getPreventivos } from '../services/preventivoService';
 import { getCuadrillas } from '../services/cuadrillaService';
+import { AuthContext } from '../context/AuthContext';
 
 const MantenimientosPreventivos = () => {
+  const { currentEntity } = useContext(AuthContext);
   const [mantenimientos, setMantenimientos] = useState([]);
   const [preventivos, setPreventivos] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
@@ -41,11 +43,13 @@ const MantenimientosPreventivos = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    try {
-      await deleteMantenimientoPreventivo(id);
-      fetchMantenimientos();
-    } catch (error) {
-      console.error('Error deleting mantenimiento:', error);
+    if (currentEntity.type === 'usuario') {
+      try {
+        await deleteMantenimientoPreventivo(id);
+        fetchMantenimientos();
+      } catch (error) {
+        console.error('Error deleting mantenimiento:', error);
+      }
     }
   };
 
@@ -117,12 +121,14 @@ const MantenimientosPreventivos = () => {
                 >
                   Editar
                 </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => handleDelete(mantenimiento.id)}
-                >
-                  Eliminar
-                </Button>
+                {currentEntity.type === 'usuario' && (
+                  <Button
+                    variant="danger"
+                    onClick={() => handleDelete(mantenimiento.id)}
+                  >
+                    Eliminar
+                  </Button>
+                )}
               </td>
             </tr>
           ))}

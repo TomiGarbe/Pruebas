@@ -1,11 +1,13 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Table, Button, Container, Row, Col } from 'react-bootstrap';
 import PreventivoForm from '../components/PreventivoForm';
 import { getPreventivos, deletePreventivo } from '../services/preventivoService';
 import { getSucursales } from '../services/sucursalService';
+import { AuthContext } from '../context/AuthContext';
 
 const Preventivos = () => {
+  const { currentEntity } = useContext(AuthContext);
   const [preventivos, setPreventivos] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -30,9 +32,11 @@ const Preventivos = () => {
   };
 
   useEffect(() => {
-    fetchPreventivos();
-    fetchSucursales();
-  }, []);
+    if (currentEntity.data.rol === 'Administrador') {
+      fetchPreventivos();
+      fetchSucursales();
+    }
+  }, [currentEntity]);
 
   const handleDelete = async (id) => {
     try {

@@ -22,7 +22,7 @@ const Users = () => {
   };
 
   useEffect(() => {
-    if (currentEntity) {
+    if (currentEntity.data.rol === 'Administrador') {
       fetchUsers();
     }
   }, [currentEntity]);

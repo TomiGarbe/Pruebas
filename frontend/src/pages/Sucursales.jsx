@@ -1,11 +1,13 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Table, Button, Container, Row, Col } from 'react-bootstrap';
 import SucursalForm from '../components/SucursalForm';
 import { getSucursales, deleteSucursal } from '../services/sucursalService';
 import { getZonas } from '../services/zonaService';
+import { AuthContext } from '../context/AuthContext';
 
 const Sucursales = () => {
+  const { currentEntity } = useContext(AuthContext);
   const [sucursales, setSucursales] = useState([]);
   const [zonas, setZonas] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -30,9 +32,11 @@ const Sucursales = () => {
   };
 
   useEffect(() => {
-    fetchSucursales();
-    fetchZonas();
-  }, []);
+    if (currentEntity.type === 'usuario') {
+      fetchSucursales();
+      fetchZonas();
+    }
+  }, [currentEntity]);
 
   const handleDelete = async (id) => {
     try {

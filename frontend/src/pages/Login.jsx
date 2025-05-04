@@ -18,7 +18,9 @@ const Login = () => {
       const idToken = await userCredential.user.getIdToken();
       localStorage.setItem('authToken', idToken);
       setError(null);
-      navigate('/');
+      setTimeout(() => {
+        navigate('/');
+      }, 5000);
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión');
     }

@@ -1,12 +1,14 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Table, Button, Container, Row, Col } from 'react-bootstrap';
 import MantenimientoCorrectivoForm from '../components/MantenimientoCorrectivoForm';
 import { getMantenimientosCorrectivos, deleteMantenimientoCorrectivo } from '../services/mantenimientoCorrectivoService';
 import { getSucursales } from '../services/sucursalService';
 import { getCuadrillas } from '../services/cuadrillaService';
+import { AuthContext } from '../context/AuthContext';
 
 const MantenimientosCorrectivos = () => {
+  const { currentEntity } = useContext(AuthContext);
   const [mantenimientos, setMantenimientos] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
@@ -41,11 +43,13 @@ const MantenimientosCorrectivos = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    try {
-      await deleteMantenimientoCorrectivo(id);
-      fetchMantenimientos();
-    } catch (error) {
-      console.error('Error deleting mantenimiento correctivo:', error);
+    if (currentEntity.type === 'usuario') {
+      try {
+        await deleteMantenimientoCorrectivo(id);
+        fetchMantenimientos();
+      } catch (error) {
+        console.error('Error deleting mantenimiento correctivo:', error);
+      }
     }
   };
 
@@ -77,9 +81,11 @@ const MantenimientosCorrectivos = () => {
           <h2>Gestión de Mantenimientos Correctivos</h2>
         </Col>
         <Col className="text-end">
-          <Button variant="primary" onClick={() => setShowForm(true)}>
+          {currentEntity.type === 'usuario' && (
+            <Button variant="primary" onClick={() => setShowForm(true)}>
             Crear Mantenimiento
-          </Button>
+            </Button>
+          )}
         </Col>
       </Row>
 
@@ -121,12 +127,14 @@ const MantenimientosCorrectivos = () => {
                 >
                   Editar
                 </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => handleDelete(mantenimiento.id)}
-                >
-                  Eliminar
-                </Button>
+                {currentEntity.type === 'usuario' && (
+                  <Button
+                    variant="danger"
+                    onClick={() => handleDelete(mantenimiento.id)}
+                  >
+                    Eliminar
+                  </Button>
+                )}
               </td>
             </tr>
           ))}

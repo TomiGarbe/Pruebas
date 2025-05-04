@@ -29,11 +29,15 @@ const AppNavbar = () => {
             {currentEntity && currentEntity.type === 'usuario' && currentEntity.data.rol === 'Administrador' && (
               <>
                 <Nav.Link as={Link} to="/users">Usuarios</Nav.Link>
-                <Nav.Link as={Link} to="/cuadrillas">Cuadrillas</Nav.Link>
               </>
             )}
-            <Nav.Link as={Link} to="/sucursales">Sucursales</Nav.Link>
-            <Nav.Link as={Link} to="/preventivos">Preventivos</Nav.Link>
+            {currentEntity && currentEntity.type === 'usuario' && (
+              <>
+                <Nav.Link as={Link} to="/cuadrillas">Cuadrillas</Nav.Link>
+                <Nav.Link as={Link} to="/sucursales">Sucursales</Nav.Link>
+                <Nav.Link as={Link} to="/preventivos">Preventivos</Nav.Link>
+              </>
+            )}
             <Nav.Link as={Link} to="/mantenimientos-preventivos">Mantenimientos Preventivos</Nav.Link>
             <Nav.Link as={Link} to="/mantenimientos-correctivos">Mantenimientos Correctivos</Nav.Link>
           </Nav>

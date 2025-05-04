@@ -82,8 +82,8 @@ def create_firebase_user(user_data: UserCreate, db: Session, current_entity: dic
 def create_firebase_cuadrilla(cuadrilla_data: CuadrillaCreate, db: Session, current_entity: dict):
     if not current_entity:
         raise HTTPException(status_code=401, detail="Autenticación requerida")
-    if current_entity["type"] != "usuario" or current_entity["data"]["rol"] != Role.ADMIN:
-        raise HTTPException(status_code=403, detail="No tienes permisos de administrador")
+    if current_entity["type"] != "usuario":
+        raise HTTPException(status_code=403, detail="No tienes permisos")
     
     try:
         if cuadrilla_data.contrasena:
