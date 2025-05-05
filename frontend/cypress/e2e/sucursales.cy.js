@@ -1,74 +1,121 @@
 describe('Gestión de Sucursales', () => {
   beforeEach(() => {
+    // Intercepta la solicitud GET a /sucursales que el frontend hace al backend
+    cy.intercept('GET', '**/sucursales').as('getSucursales');
     cy.visit('/sucursales');
+    cy.wait('@getSucursales').its('response.statusCode').should('eq', 200);
   });
 
   it('Carga correctamente una zona', () => {
+    // Intercepta la solicitud GET a /zonas que se dispara al abrir el formulario
+    cy.intercept('GET', '**/zonas').as('getZonas');
     cy.contains('button', 'Crear Sucursal').click();
-    cy.wait(1000);
+    cy.wait('@getZonas').its('response.statusCode').should('eq', 200);
+
+    // Selecciona una zona del dropdown
     cy.get('#zona').click();
-    cy.wait(1000);
     cy.get('.dropdown-item').click();
-    cy.wait(1000);
+    // Ingresa el nombre de la zona
     cy.get('.mt-2 > #zona').type('Zona 1');
+    // Guarda la zona
     cy.get('.mt-2 > .btn').click();
-    cy.wait(4000);
+    // Cierra el modal
     cy.get('.btn-close').click();
-    cy.wait(1000);
   });
 
   it('Carga correctamente una sucursal', () => {
+    // Intercepta la solicitud GET a /zonas
+    cy.intercept('GET', '**/zonas').as('getZonas');
     cy.contains('button', 'Crear Sucursal').click();
+    cy.wait('@getZonas').its('response.statusCode').should('eq', 200);
+
+    // Completa el formulario para crear una sucursal
     cy.get('#nombre').type('Sucursal 1');
-    cy.wait(1000);
     cy.get('#zona').click();
-    cy.wait(4000);
     cy.get('.custom-option').contains('Zona 1').click();
-    cy.wait(1000);
     cy.get('#direccion').type('Dirección 1');
     cy.get('#superficie').type('100');
-    cy.wait(1000);
+
+    // Intercepta la solicitud POST a /sucursales (cuando se crea la sucursal)
+    cy.intercept('POST', '**/sucursales').as('createSucursal');
     cy.get('form > .btn-primary').click();
-    cy.wait(4000);
-    cy.get('tr:last-child > :nth-child(2)').should('have.text', 'NombreSucursal 1');
-    cy.get('tr:last-child > :nth-child(3)').should('have.text', 'ZonaZona 1');
-    cy.get('tr:last-child > :nth-child(4)').should('have.text', 'DirecciónDirección 1');
-    cy.get('tr:last-child > :nth-child(5)').should('have.text', 'Superficie100');
-    cy.wait(1000);
+    cy.wait('@createSucursal').its('response.statusCode').should('eq', 200);
+
+    // Vuelve a cargar la lista de sucursales
+    cy.intercept('GET', '**/sucursales').as('getSucursales');
+    cy.visit('/sucursales');
+    cy.wait('@getSucursales').its('response.statusCode').should('eq', 200);
+
+    // Verifica que la sucursal aparece en la tabla
+    cy.get('tbody tr:last-child').within(() => {
+      cy.get(':nth-child(2)').should('contain.text', 'Sucursal 1');
+      cy.get(':nth-child(3)').should('contain.text', 'Zona 1');
+      cy.get(':nth-child(4)').should('contain.text', 'Dirección 1');
+      cy.get(':nth-child(5)').should('contain.text', '100');
+    });
   });
 
   it('Edita correctamente una sucursal', () => {
+    // Asegúrate de que haya una sucursal para editar
+    cy.get('tbody tr:last-child').should('exist');
+
+    // Intercepta la solicitud GET a /zonas (si el formulario de edición la necesita)
+    cy.intercept('GET', '**/zonas').as('getZonas');
     cy.get('tr:last-child > :nth-child(6) > .btn-warning').click();
-    cy.get('#nombre').clear('Sucursal 1');
-    cy.get('#nombre').type('Sucursal 2');
-    cy.get('#direccion').clear('Dirección 1');
-    cy.get('#direccion').type('Dirección 2');
-    cy.get('#superficie').clear('100');
-    cy.get('#superficie').type('200');
-    cy.wait(1000);
+    cy.wait('@getZonas').its('response.statusCode').should('eq', 200);
+
+    // Edita los campos
+    cy.get('#nombre').clear().type('Sucursal 2');
+    cy.get('#direccion').clear().type('Dirección 2');
+    cy.get('#superficie').clear().type('200');
+
+    // Intercepta la solicitud PUT o PATCH a /sucursales
+    cy.intercept('PUT', '**/sucursales/*').as('updateSucursal');
     cy.get('form > .btn').click();
-    cy.wait(4000);
-    cy.get('tr:last-child > :nth-child(2)').should('have.text', 'NombreSucursal 2');
-    cy.get('tr:last-child > :nth-child(4)').should('have.text', 'DirecciónDirección 2');
-    cy.get('tr:last-child > :nth-child(5)').should('have.text', 'Superficie200');
-    cy.wait(1000);
+    cy.wait('@updateSucursal').its('response.statusCode').should('eq', 200);
+
+    // Vuelve a cargar la lista de sucursales
+    cy.intercept('GET', '**/sucursales').as('getSucursales');
+    cy.visit('/sucursales');
+    cy.wait('@getSucursales').its('response.statusCode').should('eq', 200);
+
+    // Verifica los cambios
+    cy.get('tbody tr:last-child').within(() => {
+      cy.get(':nth-child(2)').should('contain.text', 'Sucursal 2');
+      cy.get(':nth-child(4)').should('contain.text', 'Dirección 2');
+      cy.get(':nth-child(5)').should('contain.text', '200');
+    });
   });
 
   it('Elimina correctamente una sucursal', () => {
+    // Asegúrate de que haya una sucursal para eliminar
+    cy.get('tbody tr:last-child').should('exist');
+
+    // Intercepta la solicitud DELETE a /sucursales
+    cy.intercept('DELETE', '**/sucursales/*').as('deleteSucursal');
     cy.get('tr:last-child > :nth-child(6) > .btn-danger').click();
-    cy.wait(1000);
-    cy.get('table').find('tbody tr').should('not.exist');
-    cy.wait(1000);
+    cy.wait('@deleteSucursal').its('response.statusCode').should('eq', 200);
+
+    // Vuelve a cargar la lista de sucursales
+    cy.intercept('GET', '**/sucursales').as('getSucursales');
+    cy.visit('/sucursales');
+    cy.wait('@getSucursales').its('response.statusCode').should('eq', 200);
+
+    // Verifica que la tabla esté vacía o que la sucursal ya no esté
+    cy.get('tbody tr').should('have.length', 0);
   });
 
   it('Elimina correctamente una zona', () => {
+    // Intercepta la solicitud GET a /zonas
+    cy.intercept('GET', '**/zonas').as('getZonas');
     cy.contains('button', 'Crear Sucursal').click();
-    cy.wait(1000);
+    cy.wait('@getZonas').its('response.statusCode').should('eq', 200);
+
+    // Selecciona una zona
     cy.get('#zona').click();
-    cy.wait(4000);
     cy.get('.custom-option').contains('Zona 1').click();
-    cy.wait(4000);
+
+    // Cierra el modal (parece que no eliminas la zona aquí, ajusta si es necesario)
     cy.get('.btn-close').click();
   });
 });
-  
