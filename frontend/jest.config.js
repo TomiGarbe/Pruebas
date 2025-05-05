@@ -15,7 +15,7 @@ module.exports = {
   ],
   "collectCoverage": true,
   "coverageDirectory": "coverage",
-  "coverageReporters": ["json", "lcov", "text", "html"],
+  "coverageReporters": ["clover"],
   "coveragePathIgnorePatterns": ["/src/config.js"],
   "collectCoverageFrom": [
     "src/**/*.{js,jsx,ts,tsx}",

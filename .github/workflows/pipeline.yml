@@ -87,8 +87,7 @@ jobs:
       - name: Run Frontend Tests with Coverage
         run: |
           cd frontend
-          echo "## Coverage Report" > coverage-summary.md
-          npm test -- --coverage --ci >> coverage-summary.md
+          npm test -- --coverage --ci
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
@@ -96,16 +95,16 @@ jobs:
           name: Jest Results
           path: frontend/junit.xml
           reporter: jest-junit
-      - name: Jest Coverage Report
-        id: coverage
-        uses: ArtiomTr/jest-coverage-report-action@v2
+      - name: Code Coverage Summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          working-directory: frontend
-          coverage-file: coverage/coverage-final.json
-          base-coverage-file: coverage/coverage-final.json
-          output: report-markdown
+          filename: frontend/coverage/clover.xml
+          format: markdown
+          output: file
+          fail_below_min: false
       - name: Write Coverage to Summary
-        run: echo "${{ steps.coverage.outputs.report }}" >> $GITHUB_STEP_SUMMARY
+        run: |
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
         with:
