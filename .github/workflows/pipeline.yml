@@ -95,44 +95,86 @@ jobs:
           name: Jest Results
           path: frontend/junit.xml
           reporter: jest-junit
-      - name: Check JSON Coverage File
-        run: |
-          echo "Checking coverage-final.json file..."
-          ls -l frontend/coverage/coverage-final.json || echo "Error: coverage-final.json not found"
-          if [ -f frontend/coverage/coverage-final.json ]; then
-            head -n 20 frontend/coverage/coverage-final.json || echo "Error: coverage-final.json is empty or unreadable"
-            echo "Full JSON structure (summary):"
-            jq 'keys' frontend/coverage/coverage-final.json
-          else
-            echo "Error: coverage-final.json does not exist"
-            exit 1
-          fi
       - name: Write Coverage to Summary
         run: |
           echo "## Frontend Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          echo "Extracting coverage from coverage-final.json..." >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Line Rate | Complexity | Health |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----------|------------|--------|" >> $GITHUB_STEP_SUMMARY
+        
           if [ ! -f frontend/coverage/coverage-final.json ]; then
             echo "Error: coverage-final.json not found" >> $GITHUB_STEP_SUMMARY
-            echo "| File | Line Coverage |" >> $GITHUB_STEP_SUMMARY
-            echo "|------|---------------|" >> $GITHUB_STEP_SUMMARY
-            echo "| All files | N/A |" >> $GITHUB_STEP_SUMMARY
+            echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-          # Contar statements totales (claves en statementMap)
-          TOTAL_STATEMENTS=$(jq '[.[] | .statementMap | length] | add // 0' frontend/coverage/coverage-final.json)
-          # Contar statements cubiertos (claves en s con valor > 0)
-          COVERED_STATEMENTS=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | .key] | length // 0' frontend/coverage/coverage-final.json)
-          echo "Total statements: $TOTAL_STATEMENTS" >> $GITHUB_STEP_SUMMARY
-          echo "Covered statements: $COVERED_STATEMENTS" >> $GITHUB_STEP_SUMMARY
-          if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
-            COVERAGE="0.00%"
+        
+          # Obtener la lista de paquetes (directorios únicos)
+          PACKAGES=$(jq -r 'keys[] | split("/") | .[:-1] | join("/") | select(length > 0) | . + "/" | unique[]' frontend/coverage/coverage-final.json)
+          PACKAGES=".\n$PACKAGES" # Añadir el paquete raíz (.)
+        
+          TOTAL_STATEMENTS_ALL=0
+          COVERED_STATEMENTS_ALL=0
+        
+          # Procesar cada paquete
+          for PACKAGE in $PACKAGES; do
+            # Convertir paquete a formato para jq (escapar barras y puntos)
+            PACKAGE_PATH=$(echo "$PACKAGE" | sed 's/\./\\./g')
+            if [ "$PACKAGE" = "." ]; then
+              # Para el paquete raíz, incluir todos los archivos
+              TOTAL_STATEMENTS=$(jq '[.[] | .statementMap | length] | add // 0' frontend/coverage/coverage-final.json)
+              COVERED_STATEMENTS=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | .key] | length // 0' frontend/coverage/coverage-final.json)
+            else
+              # Para otros paquetes, filtrar archivos que comienzan con el directorio
+              TOTAL_STATEMENTS=$(jq "[.[] | select(.path | test(\"^.*$PACKAGE_PATH\")) | .statementMap | length] | add // 0" frontend/coverage/coverage-final.json)
+              COVERED_STATEMENTS=$(jq "[.[] | select(.path | test(\"^.*$PACKAGE_PATH\")) | .s | to_entries[] | select(.value > 0) | .key] | length // 0" frontend/coverage/coverage-final.json)
+            fi
+        
+            # Acumular totales para el resumen
+            TOTAL_STATEMENTS_ALL=$((TOTAL_STATEMENTS_ALL + TOTAL_STATEMENTS))
+            COVERED_STATEMENTS_ALL=$((COVERED_STATEMENTS_ALL + COVERED_STATEMENTS))
+        
+            # Calcular porcentaje de cobertura
+            if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
+              LINE_RATE="0%"
+            else
+              LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
+              LINE_RATE="$LINE_RATE%"
+            fi
+        
+            # Determinar indicador de salud
+            if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
+              HEALTH="❌"
+            else
+              LINE_RATE_INT=$(echo "$LINE_RATE" | sed 's/%//')
+              if [ $(echo "$LINE_RATE_INT >= 80" | bc) -eq 1 ]; then
+                HEALTH="✔"
+              elif [ $(echo "$LINE_RATE_INT >= 50" | bc) -eq 1 ]; then
+                HEALTH="➖"
+              else
+                HEALTH="❌"
+              fi
+            fi
+        
+            # Añadir fila a la tabla
+            echo "| $PACKAGE | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+          done
+        
+          # Calcular resumen general
+          if [ "$TOTAL_STATEMENTS_ALL" -eq 0 ]; then
+            SUMMARY_RATE="0%"
+            SUMMARY_HEALTH="❌"
           else
-            COVERAGE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
-            COVERAGE="$COVERAGE%"
+            SUMMARY_RATE=$(echo "scale=2; ($COVERED_STATEMENTS_ALL * 100) / $TOTAL_STATEMENTS_ALL" | bc)
+            SUMMARY_RATE="$SUMMARY_RATE%"
+            if [ $(echo "$SUMMARY_RATE >= 80" | bc) -eq 1 ]; then
+              SUMMARY_HEALTH="✔"
+            elif [ $(echo "$SUMMARY_RATE >= 50" | bc) -eq 1 ]; then
+              SUMMARY_HEALTH="➖"
+            else
+              SUMMARY_HEALTH="❌"
+            fi
           fi
-          echo "| File | Line Coverage |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|---------------|" >> $GITHUB_STEP_SUMMARY
-          echo "| All files | $COVERAGE |" >> $GITHUB_STEP_SUMMARY
+        
+          echo "| **Summary** | **$SUMMARY_RATE ($COVERED_STATEMENTS_ALL / $TOTAL_STATEMENTS_ALL)** | **0** | **$SUMMARY_HEALTH** |" >> $GITHUB_STEP_SUMMARY
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
         with:
