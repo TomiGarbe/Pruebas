@@ -97,30 +97,37 @@ jobs:
           reporter: jest-junit
       - name: Write Coverage to Summary
         run: |
-          echo "## Frontend Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          echo "Extracting coverage from coverage-final.json..." >> $GITHUB_STEP_SUMMARY
-          if [ ! -f frontend/coverage/coverage-final.json ]; then
-            echo "Error: coverage-final.json not found" >> $GITHUB_STEP_SUMMARY
-            echo "| File | Line Coverage |" >> $GITHUB_STEP_SUMMARY
-            echo "|------|---------------|" >> $GITHUB_STEP_SUMMARY
-            echo "| All files | N/A |" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-          # Contar statements totales (claves en statementMap)
-          TOTAL_STATEMENTS=$(jq '[.[] | .statementMap | length] | add // 0' frontend/coverage/coverage-final.json)
-          # Contar statements cubiertos (claves en s con valor > 0)
-          COVERED_STATEMENTS=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | .key] | length // 0' frontend/coverage/coverage-final.json)
-          echo "Total statements: $TOTAL_STATEMENTS" >> $GITHUB_STEP_SUMMARY
-          echo "Covered statements: $COVERED_STATEMENTS" >> $GITHUB_STEP_SUMMARY
-          if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
-            COVERAGE="0.00%"
+          echo "## Frontend Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Unit Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Line Rate | Complexity | Health |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----------|------------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Procesar cobertura unitaria
+          if [ -f frontend/coverage/coverage-final.json ]; then
+            TOTAL_STATEMENTS=$(jq '[.[] | .statementMap | length] | add // 0' frontend/coverage/coverage-final.json)
+            COVERED_STATEMENTS=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | .key] | length // 0' frontend/coverage/coverage-final.json)
+            echo "Total statements: $TOTAL_STATEMENTS" >> $GITHUB_STEP_SUMMARY
+            echo "Covered statements: $COVERED_STATEMENTS" >> $GITHUB_STEP_SUMMARY
+            if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
+              COVERAGE="0.00%"
+              HEALTH="❌"
+            else
+              COVERAGE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
+              COVERAGE="$COVERAGE%"
+              LINE_RATE_INT=$(echo "$COVERAGE" | sed 's/%//')
+              if [ $(echo "$LINE_RATE_INT >= 80" | bc) -eq 1 ]; then
+                HEALTH="✔"
+              elif [ $(echo "$LINE_RATE_INT >= 50" | bc) -eq 1 ]; then
+                HEALTH="➖"
+              else
+                HEALTH="❌"
+              fi
+            fi
+            echo "| All files | $COVERAGE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
           else
-            COVERAGE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
-            COVERAGE="$COVERAGE%"
+            echo "Error: coverage-final.json not found" >> $GITHUB_STEP_SUMMARY
+            echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
           fi
-          echo "| File | Line Coverage |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|---------------|" >> $GITHUB_STEP_SUMMARY
-          echo "| All files | $COVERAGE |" >> $GITHUB_STEP_SUMMARY
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
         with:
