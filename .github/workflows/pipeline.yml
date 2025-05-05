@@ -219,6 +219,33 @@ jobs:
           name: Cypress Results
           path: frontend/cypress/results.xml
           reporter: java-junit
+      - name: Summarize Integration Test Results
+        if: always()
+        run: |
+          echo "## Integration Tests Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Tests Passed | Tests Failed | Health |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------------|--------------|--------|" >> $GITHUB_STEP_SUMMARY
+          if [ -f frontend/cypress/results.xml ]; then
+            PASSED=$(grep -c "<testcase " frontend/cypress/results.xml | awk '{s+=$1} END {print s}' || echo "0")
+            FAILED=$(grep -c "<failure>" frontend/cypress/results.xml || echo "0")
+            TOTAL=$((PASSED + FAILED))
+            if [ "$TOTAL" -eq 0 ]; then
+              HEALTH="❌"
+              RATE="N/A"
+            else
+              RATE=$(echo "scale=2; ($PASSED * 100) / $TOTAL" | bc)%
+              if [ $(echo "$RATE >= 80" | bc) -eq 1 ]; then
+                HEALTH="✔"
+              elif [ $(echo "$RATE >= 50" | bc) -eq 1 ]; then
+                HEALTH="➖"
+              else
+                HEALTH="❌"
+              fi
+            fi
+            echo "| Integration Tests | $PASSED / $TOTAL | $FAILED | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Integration Tests | N/A | N/A | ❌ |" >> $GITHUB_STEP_SUMMARY
+          fi
       - name: Jest Coverage Report
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
@@ -226,6 +253,7 @@ jobs:
           output: report-markdown
       - name: Write Coverage to Summary
         run: |
+          echo "## Jest Coverage Summary" >> $GITHUB_STEP_SUMMARY
           cat frontend/report-markdown >> $GITHUB_STEP_SUMMARY
       - name: Upload Cypress Coverage Report
         uses: actions/upload-artifact@v4
