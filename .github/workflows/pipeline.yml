@@ -101,6 +101,7 @@ jobs:
           files: ./frontend/coverage/lcov.info
           fail_ci_if_error: true
           verbose: true
+          token: ""
       - name: Write Coverage to Summary
         run: |
           echo "## Frontend Coverage Summary" >> $GITHUB_STEP_SUMMARY
