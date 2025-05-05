@@ -95,36 +95,20 @@ jobs:
           name: Jest Results
           path: frontend/junit.xml
           reporter: jest-junit
-      - name: Install XML Parser
-        run: sudo apt-get install -y xmlstarlet
-      - name: Add line-rate to Clover XML
-        run: |
-          set -e
-          echo "Modifying clover.xml to add line-rate..."
-          STATEMENTS=$(xmlstarlet sel -t -v "//coverage/project/metrics/@statements" frontend/coverage/clover.xml)
-          COVERED=$(xmlstarlet sel -t -v "//coverage/project/metrics/@coveredstatements" frontend/coverage/clover.xml)
-          if [ -z "$STATEMENTS" ] || [ -z "$COVERED" ] || [ "$STATEMENTS" -eq 0 ]; then
-            echo "Error: Could not extract statements or coveredstatements, or statements is zero"
-            exit 1
-          fi
-          LINE_RATE=$(echo "scale=4; $COVERED / $STATEMENTS" | bc)
-          xmlstarlet ed -L -a "//coverage/project/metrics/@statements" -t attr -n "line-rate" -v "$LINE_RATE" frontend/coverage/clover.xml
-          echo "line-rate=$LINE_RATE added to clover.xml"
-      - name: Verify Modified Clover XML
-        run: |
-          echo "Verifying modified clover.xml..."
-          head -n 20 frontend/coverage/clover.xml || echo "Error: modified clover.xml is empty or unreadable"
-          xmlstarlet sel -t -v "//coverage/project/metrics/@line-rate" frontend/coverage/clover.xml || echo "Error: line-rate not found in modified clover.xml"
-      - name: Code Coverage Summary
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: frontend/coverage/clover.xml
-          format: markdown
-          output: file
-          fail_below_min: false
       - name: Write Coverage to Summary
         run: |
-          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+          echo "## Frontend Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          TOTAL_LINES=$(jq '[.[] | .lines.total] | add' frontend/coverage/coverage-final.json)
+          COVERED_LINES=$(jq '[.[] | .lines.covered] | add' frontend/coverage/coverage-final.json)
+          if [ "$TOTAL_LINES" -eq 0 ]; then
+            COVERAGE="0.00%"
+          else
+            COVERAGE=$(echo "scale=2; ($COVERED_LINES * 100) / $TOTAL_LINES" | bc)
+            COVERAGE="$COVERAGE%"
+          fi
+          echo "| File | Line Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| All files | $COVERAGE |" >> $GITHUB_STEP_SUMMARY
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
         with:
