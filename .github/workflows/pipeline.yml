@@ -95,6 +95,11 @@ jobs:
           name: Jest Results
           path: frontend/junit.xml
           reporter: jest-junit
+      - name: Check Clover XML File
+        run: |
+          echo "Checking clover.xml file..."
+          ls -l frontend/coverage/clover.xml || echo "Error: clover.xml not found"
+          cat frontend/coverage/clover.xml || echo "Error: clover.xml is empty or unreadable"
       - name: Code Coverage Summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
