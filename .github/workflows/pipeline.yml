@@ -95,11 +95,14 @@ jobs:
           name: Jest Results
           path: frontend/junit.xml
           reporter: jest-junit
-      - name: Check Clover XML File
+      - name: Install XML Parser
+        run: sudo apt-get install -y xmlstarlet
+      - name: Add line-rate to Clover XML
         run: |
-          echo "Checking clover.xml file..."
-          ls -l frontend/coverage/clover.xml || echo "Error: clover.xml not found"
-          cat frontend/coverage/clover.xml || echo "Error: clover.xml is empty or unreadable"
+          STATEMENTS=$(xmlstarlet sel -t -v "//coverage/project/metrics/@statements" frontend/coverage/clover.xml)
+          COVERED=$(xmlstarlet sel -t -v "//coverage/project/metrics/@coveredstatements" frontend/coverage/clover.xml)
+          LINE_RATE=$(echo "scale=4; $COVERED / $STATEMENTS" | bc)
+          xmlstarlet ed -L -s "//coverage/project/metrics" -t attr -n "line-rate" -v "$LINE_RATE" frontend/coverage/clover.xml
       - name: Code Coverage Summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
