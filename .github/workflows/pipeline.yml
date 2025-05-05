@@ -108,8 +108,7 @@ jobs:
             exit 1
           fi
           LINE_RATE=$(echo "scale=4; $COVERED / $STATEMENTS" | bc)
-          xmlstarlet ed -L -u "//coverage/project/metrics/@line-rate" -v "$LINE_RATE" frontend/coverage/clover.xml || \
-          xmlstarlet ed -L -s "//coverage/project/metrics" -t attr -n "line-rate" -v "$LINE_RATE" frontend/coverage/clover.xml
+          xmlstarlet ed -L -a "//coverage/project/metrics/@statements" -t attr -n "line-rate" -v "$LINE_RATE" frontend/coverage/clover.xml
           echo "line-rate=$LINE_RATE added to clover.xml"
       - name: Verify Modified Clover XML
         run: |
