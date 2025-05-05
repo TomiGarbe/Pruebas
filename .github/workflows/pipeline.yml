@@ -95,17 +95,17 @@ jobs:
           name: Jest Results
           path: frontend/junit.xml
           reporter: jest-junit
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./frontend/coverage/lcov.info
+          fail_ci_if_error: true
+          verbose: true
       - name: Write Coverage to Summary
         run: |
           echo "## Frontend Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          TOTAL_LINES=$(jq '[.[] | .lines.total] | add' frontend/coverage/coverage-final.json)
-          COVERED_LINES=$(jq '[.[] | .lines.covered] | add' frontend/coverage/coverage-final.json)
-          if [ "$TOTAL_LINES" -eq 0 ]; then
-            COVERAGE="0.00%"
-          else
-            COVERAGE=$(echo "scale=2; ($COVERED_LINES * 100) / $TOTAL_LINES" | bc)
-            COVERAGE="$COVERAGE%"
-          fi
+          # Extraer el porcentaje de cobertura de líneas del reporte de texto
+          COVERAGE=$(grep "Lines" frontend/coverage/lcov-report/index.html | grep -o "[0-9.]\+%" | head -n 1 || echo "N/A")
           echo "| File | Line Coverage |" >> $GITHUB_STEP_SUMMARY
           echo "|------|---------------|" >> $GITHUB_STEP_SUMMARY
           echo "| All files | $COVERAGE |" >> $GITHUB_STEP_SUMMARY
