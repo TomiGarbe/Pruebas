@@ -95,43 +95,74 @@ jobs:
           name: Jest Results
           path: frontend/junit.xml
           reporter: jest-junit
+      #- name: Write Coverage to Summary
+      #  run: |
+      #    echo "## Frontend Coverage Summary" >> $GITHUB_STEP_SUMMARY
+      #    echo "Extracting coverage from coverage-final.json..." >> $GITHUB_STEP_SUMMARY
+      #    if [ ! -f frontend/coverage/coverage-final.json ]; then
+      #      echo "Error: coverage-final.json not found" >> $GITHUB_STEP_SUMMARY
+      #      echo "| File | Line Coverage |" >> $GITHUB_STEP_SUMMARY
+      #      echo "|------|---------------|" >> $GITHUB_STEP_SUMMARY
+      #      echo "| All files | N/A |" >> $GITHUB_STEP_SUMMARY
+      #      exit 1
+      #    fi
+      #    # Contar statements totales (claves en statementMap)
+      #    TOTAL_STATEMENTS=$(jq '[.[] | .statementMap | length] | add // 0' frontend/coverage/coverage-final.json)
+      #    # Contar statements cubiertos (claves en s con valor > 0)
+      #    COVERED_STATEMENTS=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | .key] | length // 0' frontend/coverage/coverage-final.json)
+      #    echo "Total statements: $TOTAL_STATEMENTS" >> $GITHUB_STEP_SUMMARY
+      #    echo "Covered statements: $COVERED_STATEMENTS" >> $GITHUB_STEP_SUMMARY
+      #    if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
+      #      COVERAGE="0.00%"
+      #    else
+      #      COVERAGE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
+      #      COVERAGE="$COVERAGE%"
+      #    fi
+      #    echo "| File | Line Coverage |" >> $GITHUB_STEP_SUMMARY
+      #    echo "|------|---------------|" >> $GITHUB_STEP_SUMMARY
+      #    echo "| All files | $COVERAGE |" >> $GITHUB_STEP_SUMMARY
       - name: Write Coverage to Summary
         run: |
           echo "## Frontend Coverage Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Package | Line Rate | Complexity | Health |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|-----------|------------|--------|" >> $GITHUB_STEP_SUMMARY
-        
+              
           if [ ! -f frontend/coverage/coverage-final.json ]; then
             echo "Error: coverage-final.json not found" >> $GITHUB_STEP_SUMMARY
             echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-        
-          # Obtener la lista de paquetes (directorios únicos)
-          PACKAGES=$(jq -r 'keys[] | split("/") | .[:-1] | join("/") | select(length > 0) | . + "/" | unique[]' frontend/coverage/coverage-final.json)
-          PACKAGES=".\n$PACKAGES" # Añadir el paquete raíz (.)
-        
+              
+          # Verificar si el JSON es un objeto
+          JSON_TYPE=$(jq 'type' frontend/coverage/coverage-final.json || echo "invalid")
+          if [ "$JSON_TYPE" != "object" ]; then
+            echo "Error: coverage-final.json is not a valid object (type: $JSON_TYPE)" >> $GITHUB_STEP_SUMMARY
+            echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+              
+          # Obtener la lista de paquetes (directorios únicos) de forma más robusta
+          PACKAGES=$(jq -r 'keys[] | split("/") | if length > 3 then .[0:-1] | join("/") else "." end | unique[]' frontend/coverage/coverage-final.json 2>/dev/null || echo ".")
+              
           TOTAL_STATEMENTS_ALL=0
           COVERED_STATEMENTS_ALL=0
-        
+              
           # Procesar cada paquete
           for PACKAGE in $PACKAGES; do
-            # Convertir paquete a formato para jq (escapar barras y puntos)
-            PACKAGE_PATH=$(echo "$PACKAGE" | sed 's/\./\\./g')
+            # Convertir paquete a formato para jq
             if [ "$PACKAGE" = "." ]; then
-              # Para el paquete raíz, incluir todos los archivos
               TOTAL_STATEMENTS=$(jq '[.[] | .statementMap | length] | add // 0' frontend/coverage/coverage-final.json)
               COVERED_STATEMENTS=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | .key] | length // 0' frontend/coverage/coverage-final.json)
             else
-              # Para otros paquetes, filtrar archivos que comienzan con el directorio
+              PACKAGE_PATH=$(echo "$PACKAGE" | sed 's/\./\\./g')
               TOTAL_STATEMENTS=$(jq "[.[] | select(.path | test(\"^.*$PACKAGE_PATH\")) | .statementMap | length] | add // 0" frontend/coverage/coverage-final.json)
               COVERED_STATEMENTS=$(jq "[.[] | select(.path | test(\"^.*$PACKAGE_PATH\")) | .s | to_entries[] | select(.value > 0) | .key] | length // 0" frontend/coverage/coverage-final.json)
             fi
-        
+              
             # Acumular totales para el resumen
             TOTAL_STATEMENTS_ALL=$((TOTAL_STATEMENTS_ALL + TOTAL_STATEMENTS))
             COVERED_STATEMENTS_ALL=$((COVERED_STATEMENTS_ALL + COVERED_STATEMENTS))
-        
+              
             # Calcular porcentaje de cobertura
             if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
               LINE_RATE="0%"
@@ -139,7 +170,7 @@ jobs:
               LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
               LINE_RATE="$LINE_RATE%"
             fi
-        
+              
             # Determinar indicador de salud
             if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
               HEALTH="❌"
@@ -153,11 +184,11 @@ jobs:
                 HEALTH="❌"
               fi
             fi
-        
+              
             # Añadir fila a la tabla
             echo "| $PACKAGE | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
           done
-        
+              
           # Calcular resumen general
           if [ "$TOTAL_STATEMENTS_ALL" -eq 0 ]; then
             SUMMARY_RATE="0%"
@@ -173,27 +204,27 @@ jobs:
               SUMMARY_HEALTH="❌"
             fi
           fi
-        
+              
           echo "| **Summary** | **$SUMMARY_RATE ($COVERED_STATEMENTS_ALL / $TOTAL_STATEMENTS_ALL)** | **0** | **$SUMMARY_HEALTH** |" >> $GITHUB_STEP_SUMMARY
-      - name: Upload Frontend Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage-report
-          path: frontend/coverage/
-          if-no-files-found: warn
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm run build
-      - name: Copy staticwebapp.config.json to dist
-        run: |
-          cp frontend/staticwebapp.config.json frontend/dist/
-      - name: Upload Frontend Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-artifact
-          path: frontend/dist/
-          if-no-files-found: error
+            - name: Upload Frontend Coverage Report
+              uses: actions/upload-artifact@v4
+              with:
+                name: frontend-coverage-report
+                path: frontend/coverage/
+                if-no-files-found: warn
+            - name: Build Frontend
+              run: |
+                cd frontend
+                npm run build
+            - name: Copy staticwebapp.config.json to dist
+              run: |
+                cp frontend/staticwebapp.config.json frontend/dist/
+            - name: Upload Frontend Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: frontend-artifact
+                path: frontend/dist/
+                if-no-files-found: error
 
   #==========================================
   # STAGE: DEPLOY TO QA AND INTEGRATION TEST
