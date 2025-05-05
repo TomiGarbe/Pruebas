@@ -218,7 +218,7 @@ jobs:
         with:
           name: Cypress Results
           path: frontend/cypress/results.xml
-          reporter: mocha-junit
+          reporter: java-junit
       - name: Jest Coverage Report
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
