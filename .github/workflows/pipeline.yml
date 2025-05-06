@@ -95,6 +95,10 @@ jobs:
           name: Jest Results
           path: frontend/junit.xml
           reporter: jest-junit
+      - name: Install xmlstarlet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xmlstarlet
       - name: Write Frontend Coverage to Summary
         run: |
           echo "## Frontend Unit Test Coverage" >> $GITHUB_STEP_SUMMARY
