@@ -101,27 +101,52 @@ jobs:
           echo "| Package | Line Rate | Complexity | Health |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|-----------|------------|--------|" >> $GITHUB_STEP_SUMMARY
 
-          if [ -f frontend/coverage/coverage-summary.json ]; then
-            TOTAL_STATEMENTS=$(jq '.total.lines.total // 0' frontend/coverage/coverage-summary.json)
-            COVERED_STATEMENTS=$(jq '.total.lines.covered // 0' frontend/coverage/coverage-summary.json)
+          if [ -f frontend/coverage/clover.xml ]; then
+            # Extraer métricas por paquete
+            xmlstarlet sel -t -m "//package" -v "concat(@name, '|', (metrics/@coveredstatements * 100) div metrics/@statements, '%|0|')" -n frontend/coverage/clover.xml | while IFS='|' read -r PACKAGE LINE_RATE _ HEALTH; do
+              LINE_RATE_INT=$(echo "$LINE_RATE" | sed 's/%//' | cut -d. -f1)
+              if [ -z "$LINE_RATE_INT" ] || [ "$LINE_RATE_INT" = "0" ]; then
+                LINE_RATE="0%"
+                HEALTH="❌"
+              else
+                LINE_RATE=$(printf "%.0f%%" "$LINE_RATE")
+                if [ "$LINE_RATE_INT" -ge 80 ]; then
+                  HEALTH="✔"
+                elif [ "$LINE_RATE_INT" -ge 50 ]; then
+                  HEALTH="➖"
+                else
+                  HEALTH="❌"
+                fi
+              fi
+              echo "| $PACKAGE | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+            done
+
+            # Extraer métricas totales
+            TOTAL_STATEMENTS=$(xmlstarlet sel -t -v "//project/metrics/@statements" frontend/coverage/clover.xml)
+            COVERED_STATEMENTS=$(xmlstarlet sel -t -v "//project/metrics/@coveredstatements" frontend/coverage/clover.xml)
             if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
-              LINE_RATE="0.00%"
+              LINE_RATE="0%"
               HEALTH="❌"
+              SUMMARY="0% (0 / 0)"
             else
-              LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)%
-              LINE_RATE_INT=$(echo "$LINE_RATE" | sed 's/%//')
-              if [ $(echo "$LINE_RATE_INT >= 80" | bc) -eq 1 ]; then
+              LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
+              LINE_RATE_INT=$(echo "$LINE_RATE" | cut -d. -f1)
+              LINE_RATE=$(printf "%.0f%%" "$LINE_RATE")
+              SUMMARY="$LINE_RATE ($COVERED_STATEMENTS / $TOTAL_STATEMENTS)"
+              if [ "$LINE_RATE_INT" -ge 80 ]; then
                 HEALTH="✔"
-              elif [ $(echo "$LINE_RATE_INT >= 50" | bc) -eq 1 ]; then
+              elif [ "$LINE_RATE_INT" -ge 50 ]; then
                 HEALTH="➖"
               else
                 HEALTH="❌"
               fi
             fi
             echo "| All files | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Summary | $SUMMARY | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️ No se encontró coverage-summary.json para Jest" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ No se encontró clover.xml para Jest" >> $GITHUB_STEP_SUMMARY
             echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
+            echo "| Summary | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
