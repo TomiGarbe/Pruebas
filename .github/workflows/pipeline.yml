@@ -243,19 +243,33 @@ jobs:
           echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
           echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
           echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+      - name: Configure NYC for Coverage
+        run: |
+          cd frontend
+          echo '{
+            "extends": "@istanbuljs/nyc-config-typescript",
+            "all": true,
+            "include": ["src/**/*.{js,jsx,ts,tsx}"],
+            "exclude": ["tests/", "cypress/", "node_modules/"],
+            "reporter": ["json", "json-summary", "lcov"],
+            "report-dir": ".nyc_output"
+          }' > .nycrc.json
+          cat .nycrc.json
       - name: Run Cypress Tests with Coverage
         run: |
           cd frontend
-          npx cypress run --reporter mocha-junit-reporter --reporter-options "mochaFile=cypress/results.xml"
+          npx cypress run --reporter mocha-junit-reporter --reporter-options "mochaFile=cypress/results.xml" --env coverage=true
       - name: Check Cypress Coverage File
         run: |
           echo "Checking Cypress coverage files..."
           ls -l frontend/.nyc_output/ || echo "Error: .nyc_output directory not found"
           if [ -f frontend/.nyc_output/out.json ]; then
-            echo "out.json found. First 50 lines:"
-            head -n 50 frontend/.nyc_output/out.json
+            echo "out.json found. First 100 lines:"
+            head -n 100 frontend/.nyc_output/out.json
             echo "out.json keys:"
             jq 'keys' frontend/.nyc_output/out.json
+            echo "out.json file count:"
+            jq 'length' frontend/.nyc_output/out.json
           else
             echo "Error: out.json not found"
           fi
