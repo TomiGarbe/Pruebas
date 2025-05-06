@@ -254,6 +254,10 @@ jobs:
           name: Cypress Results
           path: frontend/cypress/results.xml
           reporter: java-junit
+      - name: Install xmlstarlet and jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xmlstarlet jq
       - name: Write Integration Test Coverage to Summary
         run: |
           echo "## Integration Test Coverage" >> $GITHUB_STEP_SUMMARY
@@ -261,26 +265,39 @@ jobs:
           echo "|---------|-----------|------------|--------|" >> $GITHUB_STEP_SUMMARY
 
           if [ -f frontend/.nyc_output/out.json ]; then
-            TOTAL_STATEMENTS=$(jq '.total.lines.total // 0' frontend/.nyc_output/out.json)
-            COVERED_STATEMENTS=$(jq '.total.lines.covered // 0' frontend/.nyc_output/out.json)
-            if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
-              LINE_RATE="0.00%"
+            # Extraer métricas por archivo
+            jq -r 'to_entries[] | .key as $file | .value.s | to_entries | {file: $file, total: (length), covered: ([.[] | select(.value > 0)] | length)} | select(.total > 0) | [.file | sub(".*src/"; "")] + [((.covered * 100) / .total | floor | tostring + "%"), "0", (if ((.covered * 100) / .total) >= 80 then "✔" elif ((.covered * 100) / .total) >= 50 then "➖" else "❌" end)] | join("|")' frontend/.nyc_output/out.json | while IFS='|' read -r FILE LINE_RATE COMPLEXITY HEALTH; do
+              echo "Processing file: $FILE, Line Rate: $LINE_RATE, Health: $HEALTH" >&2
+              echo "| $FILE | $LINE_RATE | $COMPLEXITY | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+            done
+
+            # Extraer métricas totales
+            TOTAL_STATEMENTS=$(jq '[.[] | .s | to_entries | length] | add' frontend/.nyc_output/out.json)
+            COVERED_STATEMENTS=$(jq '[.[] | .s | to_entries | select(.value > 0) | length] | add' frontend/.nyc_output/out.json)
+            echo "Total statements: $TOTAL_STATEMENTS, Covered statements: $COVERED_STATEMENTS" >&2
+            if [ -z "$TOTAL_STATEMENTS" ] || [ "$TOTAL_STATEMENTS" -eq 0 ]; then
+              LINE_RATE="0%"
               HEALTH="❌"
+              SUMMARY="0% (0 / 0)"
             else
-              LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)%
-              LINE_RATE_INT=$(echo "$LINE_RATE" | sed 's/%//')
-              if [ $(echo "$LINE_RATE_INT >= 80" | bc) -eq 1 ]; then
+              LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
+              LINE_RATE_INT=$(echo "$LINE_RATE" | cut -d. -f1)
+              LINE_RATE=$(printf "%.0f%%" "$LINE_RATE_INT")
+              SUMMARY="$LINE_RATE ($COVERED_STATEMENTS / $TOTAL_STATEMENTS)"
+              if [ "$LINE_RATE_INT" -ge 80 ]; then
                 HEALTH="✔"
-              elif [ $(echo "$LINE_RATE_INT >= 50" | bc) -eq 1 ]; then
+              elif [ "$LINE_RATE_INT" -ge 50 ]; then
                 HEALTH="➖"
               else
                 HEALTH="❌"
               fi
             fi
             echo "| All files | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Summary | $SUMMARY | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ No se encontró out.json para Cypress" >> $GITHUB_STEP_SUMMARY
             echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
+            echo "| Summary | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Upload Cypress Coverage Report
         uses: actions/upload-artifact@v4
