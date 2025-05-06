@@ -111,11 +111,12 @@ describe('Gestión de Sucursales', () => {
     cy.contains('button', 'Crear Sucursal').click();
     cy.wait('@getZonas').its('response.statusCode').should('eq', 200);
 
-    // Selecciona una zona
     cy.get('#zona').click();
-    cy.get('.custom-option').contains('Zona 1').click();
+    
+    cy.intercept('DELETE', '**/zonas/*').as('deleteZona');
+    cy.get('.custom-option > .btn').click();
+    cy.wait('@deleteZona').its('response.statusCode').should('eq', 200);
 
-    // Cierra el modal (parece que no eliminas la zona aquí, ajusta si es necesario)
     cy.get('.btn-close').click();
   });
 });

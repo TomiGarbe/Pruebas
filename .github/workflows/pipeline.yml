@@ -97,27 +97,31 @@ jobs:
           reporter: jest-junit
       - name: Write Frontend Coverage to Summary
         run: |
-          echo "## Frontend Test Coverage by File" >> $GITHUB_STEP_SUMMARY
-          echo "| File | % Statements | % Branches | % Functions | % Lines |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------------|------------|-------------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "## Frontend Unit Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Line Rate | Complexity | Health |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----------|------------|--------|" >> $GITHUB_STEP_SUMMARY
 
           if [ -f frontend/coverage/coverage-summary.json ]; then
-            jq -r '
-              to_entries[] 
-              | select(.key != "total") 
-              | [
-                  .key,
-                  (.value.statements.pct | tostring + "%"),
-                  (.value.branches.pct | tostring + "%"),
-                  (.value.functions.pct | tostring + "%"),
-                  (.value.lines.pct | tostring + "%")
-                ]
-              | @tsv
-            ' frontend/coverage/coverage-summary.json | while IFS=$'\t' read -r file stmt brnch func line; do
-              echo "| $file | $stmt | $brnch | $func | $line |" >> $GITHUB_STEP_SUMMARY
-            done
+            TOTAL_STATEMENTS=$(jq '.total.lines.total // 0' frontend/coverage/coverage-summary.json)
+            COVERED_STATEMENTS=$(jq '.total.lines.covered // 0' frontend/coverage/coverage-summary.json)
+            if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
+              LINE_RATE="0.00%"
+              HEALTH="❌"
+            else
+              LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)%
+              LINE_RATE_INT=$(echo "$LINE_RATE" | sed 's/%//')
+              if [ $(echo "$LINE_RATE_INT >= 80" | bc) -eq 1 ]; then
+                HEALTH="✔"
+              elif [ $(echo "$LINE_RATE_INT >= 50" | bc) -eq 1 ]; then
+                HEALTH="➖"
+              else
+                HEALTH="❌"
+              fi
+            fi
+            echo "| All files | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️ No se encontró coverage-summary.json" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ No se encontró coverage-summary.json para Jest" >> $GITHUB_STEP_SUMMARY
+            echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Upload Frontend Coverage Report
         uses: actions/upload-artifact@v4
@@ -219,27 +223,31 @@ jobs:
           reporter: java-junit
       - name: Write Integration Test Coverage to Summary
         run: |
-          echo "## Integration Test Coverage by File" >> $GITHUB_STEP_SUMMARY
-          echo "| File | % Statements | % Branches | % Functions | % Lines |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------------|------------|-------------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "## Integration Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Line Rate | Complexity | Health |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----------|------------|--------|" >> $GITHUB_STEP_SUMMARY
 
-          if [ -f frontend/coverage/coverage-summary.json ]; then
-            jq -r '
-              to_entries[] 
-              | select(.key != "total") 
-              | [
-                  .key,
-                  (.value.statements.pct | tostring + "%"),
-                  (.value.branches.pct | tostring + "%"),
-                  (.value.functions.pct | tostring + "%"),
-                  (.value.lines.pct | tostring + "%")
-                ]
-              | @tsv
-            ' frontend/coverage/coverage-summary.json | while IFS=$'\t' read -r file stmt brnch func line; do
-              echo "| $file | $stmt | $brnch | $func | $line |" >> $GITHUB_STEP_SUMMARY
-            done
+          if [ -f frontend/.nyc_output/out.json ]; then
+            TOTAL_STATEMENTS=$(jq '.total.lines.total // 0' frontend/.nyc_output/out.json)
+            COVERED_STATEMENTS=$(jq '.total.lines.covered // 0' frontend/.nyc_output/out.json)
+            if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
+              LINE_RATE="0.00%"
+              HEALTH="❌"
+            else
+              LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)%
+              LINE_RATE_INT=$(echo "$LINE_RATE" | sed 's/%//')
+              if [ $(echo "$LINE_RATE_INT >= 80" | bc) -eq 1 ]; then
+                HEALTH="✔"
+              elif [ $(echo "$LINE_RATE_INT >= 50" | bc) -eq 1 ]; then
+                HEALTH="➖"
+              else
+                HEALTH="❌"
+              fi
+            fi
+            echo "| All files | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️ No se encontró coverage-summary.json para integración" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ No se encontró out.json para Cypress" >> $GITHUB_STEP_SUMMARY
+            echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Upload Cypress Coverage Report
         uses: actions/upload-artifact@v4

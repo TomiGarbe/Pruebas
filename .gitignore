@@ -19,3 +19,4 @@ lib-cov
 coverage
 .nyc_output
 *.xml
+screenshots
