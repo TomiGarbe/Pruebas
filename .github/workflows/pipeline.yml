@@ -107,13 +107,15 @@ jobs:
 
           if [ -f frontend/coverage/clover.xml ]; then
             # Extraer métricas por paquete
-            xmlstarlet sel -t -m "//package" -v "concat(@name, '|', (metrics/@coveredstatements * 100) div metrics/@statements, '%|0|')" -n frontend/coverage/clover.xml | while IFS='|' read -r PACKAGE LINE_RATE _ HEALTH; do
-              LINE_RATE_INT=$(echo "$LINE_RATE" | sed 's/%//' | cut -d. -f1)
-              if [ -z "$LINE_RATE_INT" ] || [ "$LINE_RATE_INT" = "0" ]; then
+            xmlstarlet sel -t -m "//package" -v "concat(@name, '|', if (metrics/@statements = 0) then 0 else (metrics/@coveredstatements * 100) div metrics/@statements, '|0|')" -n frontend/coverage/clover.xml | while IFS='|' read -r PACKAGE LINE_RATE _ HEALTH; do
+              echo "Processing package: $PACKAGE, LINE_RATE: $LINE_RATE" >&2
+              if [ -z "$LINE_RATE" ] || [ "$LINE_RATE" = "0" ]; then
+                LINE_RATE_INT=0
                 LINE_RATE="0%"
                 HEALTH="❌"
               else
-                LINE_RATE=$(printf "%.0f%%" "$LINE_RATE")
+                LINE_RATE_INT=$(echo "$LINE_RATE" | cut -d. -f1)
+                LINE_RATE=$(printf "%.0f%%" "$LINE_RATE_INT")
                 if [ "$LINE_RATE_INT" -ge 80 ]; then
                   HEALTH="✔"
                 elif [ "$LINE_RATE_INT" -ge 50 ]; then
@@ -128,7 +130,8 @@ jobs:
             # Extraer métricas totales
             TOTAL_STATEMENTS=$(xmlstarlet sel -t -v "//project/metrics/@statements" frontend/coverage/clover.xml)
             COVERED_STATEMENTS=$(xmlstarlet sel -t -v "//project/metrics/@coveredstatements" frontend/coverage/clover.xml)
-            if [ "$TOTAL_STATEMENTS" -eq 0 ]; then
+            echo "Total statements: $TOTAL_STATEMENTS, Covered statements: $COVERED_STATEMENTS" >&2
+            if [ -z "$TOTAL_STATEMENTS" ] || [ "$TOTAL_STATEMENTS" -eq 0 ]; then
               LINE_RATE="0%"
               HEALTH="❌"
               SUMMARY="0% (0 / 0)"
