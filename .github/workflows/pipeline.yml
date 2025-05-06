@@ -247,6 +247,24 @@ jobs:
         run: |
           cd frontend
           npx cypress run --reporter mocha-junit-reporter --reporter-options "mochaFile=cypress/results.xml"
+      - name: Check Cypress Coverage File
+        run: |
+          echo "Checking Cypress coverage files..."
+          ls -l frontend/.nyc_output/ || echo "Error: .nyc_output directory not found"
+          if [ -f frontend/.nyc_output/out.json ]; then
+            echo "out.json found. First 50 lines:"
+            head -n 50 frontend/.nyc_output/out.json
+            echo "out.json keys:"
+            jq 'keys' frontend/.nyc_output/out.json
+          else
+            echo "Error: out.json not found"
+          fi
+          if [ -f frontend/.nyc_output/coverage-summary.json ]; then
+            echo "coverage-summary.json found. Contents:"
+            cat frontend/.nyc_output/coverage-summary.json
+          else
+            echo "coverage-summary.json not found"
+          fi
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
