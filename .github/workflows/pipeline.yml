@@ -107,13 +107,14 @@ jobs:
 
           if [ -f frontend/coverage/clover.xml ]; then
             # Extraer métricas por archivo
-            xmlstarlet sel -t -m "//file" -v "concat(@name, '|', if (metrics/@statements = 0) then 0 else (metrics/@coveredstatements * 100) div metrics/@statements, '|0|')" -n frontend/coverage/clover.xml | while IFS='|' read -r FILE LINE_RATE _ HEALTH; do
-              echo "Processing file: $FILE, LINE_RATE: $LINE_RATE" >&2
-              if [ -z "$LINE_RATE" ] || [ "$LINE_RATE" = "0" ]; then
+            xmlstarlet sel -t -m "//file" -v "concat(@name, '|', metrics/@statements, '|', metrics/@coveredstatements, '|0|')" -n frontend/coverage/clover.xml | while IFS='|' read -r FILE STATEMENTS COVERED_STATEMENTS _ HEALTH; do
+              echo "Processing file: $FILE, Statements: $STATEMENTS, Covered: $COVERED_STATEMENTS" >&2
+              if [ -z "$STATEMENTS" ] || [ "$STATEMENTS" = "0" ]; then
                 LINE_RATE_INT=0
                 LINE_RATE="0%"
                 HEALTH="❌"
               else
+                LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $STATEMENTS" | bc)
                 LINE_RATE_INT=$(echo "$LINE_RATE" | cut -d. -f1)
                 LINE_RATE=$(printf "%.0f%%" "$LINE_RATE_INT")
                 if [ "$LINE_RATE_INT" -ge 80 ]; then
@@ -138,7 +139,7 @@ jobs:
             else
               LINE_RATE=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
               LINE_RATE_INT=$(echo "$LINE_RATE" | cut -d. -f1)
-              LINE_RATE=$(printf "%.0f%%" "$LINE_RATE")
+              LINE_RATE=$(printf "%.0f%%" "$LINE_RATE_INT")
               SUMMARY="$LINE_RATE ($COVERED_STATEMENTS / $TOTAL_STATEMENTS)"
               if [ "$LINE_RATE_INT" -ge 80 ]; then
                 HEALTH="✔"
