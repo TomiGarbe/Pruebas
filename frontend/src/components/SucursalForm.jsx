@@ -74,17 +74,20 @@ const SucursalForm = ({ sucursal, onClose }) => {
 
   const handleDeleteZona = async (id, e) => {
     e.stopPropagation();
-    try {
-      await deleteZona(id);
-      setZonas(zonas.filter((zona) => zona.id !== id));
-      if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
-        setFormData({ ...formData, zona: null });
+    const confirmDelete = window.confirm(`¿Estás seguro de que quieres eliminar esta zona?`);
+    if (confirmDelete) {
+      try {
+        await deleteZona(id);
+        setZonas(zonas.filter((zona) => zona.id !== id));
+        if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
+          setFormData({ ...formData, zona: null });
+        }
+        setError(null);
+      } catch (error) {
+        console.error('Error deleting zona:', error);
+        const errorMessage = error.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.';
+        setError(errorMessage);
       }
-      setError(null);
-    } catch (error) {
-      console.error('Error deleting zona:', error);
-      const errorMessage = error.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.';
-      setError(errorMessage);
     }
   };
 
@@ -119,47 +122,56 @@ const SucursalForm = ({ sucursal, onClose }) => {
           </div>
         )}
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3" controlId="nombre">
+          <Form.Group className="mb-3">
             <Form.Label className="required required-asterisk">Nombre</Form.Label>
             <Form.Control
               type="text"
               name="nombre"
-              value={formData.nombre}
+              value={formData.nombre || ''}
               onChange={handleChange}
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="zona">
+          <Form.Group className="mb-3">
             <Form.Label className="required required-asterisk">Zona</Form.Label>
             <Dropdown show={dropdownOpen} onToggle={toggleDropdown} ref={dropdownRef}>
-              <FormControl
-                name="nombre"
-                value={formData.zona}
-                onChange={(e) => setFormData({ ...formData, zona: e.target.value })}
-                placeholder="Seleccione una zona"
-                readOnly
-                onClick={toggleDropdown}
-                required
-              />
-              <Dropdown.Menu style={{ width: '100%' }}>
+              <Dropdown.Toggle
+                variant="outline-secondary"
+                id="dropdown-zona"
+                className="w-100 text-start"
+                style={{ backgroundColor: '#e9ecef', borderColor: '#ced4da' }}
+              >
+                {formData.zona || 'Seleccione una zona'}
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="w-100">
                 {zonas.map((zona) => (
                   <Dropdown.Item
                     key={zona.id}
-                    onClick={() => handleZonaSelect(zona.nombre)}
-                    className="custom-option"
+                    as="div"
+                    className="d-flex justify-content-between align-items-center"
                   >
-                    <span>{zona.nombre}</span>
+                    <span
+                      onClick={() => handleZonaSelect(zona.nombre)}
+                      style={{ flex: 1 }}
+                    >
+                      {zona.nombre}
+                    </span>
                     <Button
-                      variant="outline-danger"
+                      variant="danger"
                       size="sm"
+                      className="text-white"
+                      style={{ padding: '0.1rem 0.3rem', fontSize: '0.8rem' }}
                       onClick={(e) => handleDeleteZona(zona.id, e)}
                     >
                       ×
                     </Button>
                   </Dropdown.Item>
                 ))}
-                <Dropdown.Item onClick={() => handleZonaSelect('new')}>
-                  Agregar nueva zona...
+                <Dropdown.Item
+                  onClick={() => handleZonaSelect('new')}
+                  className="d-flex align-items-center"
+                >
+                  <span style={{ marginRight: '0.5rem' }}>➕</span> Agregar nueva zona...
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
@@ -181,22 +193,22 @@ const SucursalForm = ({ sucursal, onClose }) => {
               </InputGroup>
             )}
           </Form.Group>
-          <Form.Group className="mb-3" controlId="direccion">
+          <Form.Group className="mb-3">
             <Form.Label className="required required-asterisk">Dirección</Form.Label>
             <Form.Control
               type="text"
               name="direccion"
-              value={formData.direccion}
+              value={formData.direccion || ''}
               onChange={handleChange}
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="superficie">
+          <Form.Group className="mb-3">
             <Form.Label>Superficie</Form.Label>
             <Form.Control
               type="text"
               name="superficie"
-              value={formData.superficie}
+              value={formData.superficie || ''}
               onChange={handleChange}
             />
           </Form.Group>

@@ -9,6 +9,7 @@ import Cuadrillas from './pages/Cuadrillas';
 import Preventivos from './pages/Preventivos';
 import MantenimientosPreventivos from './pages/MantenimientosPreventivos';
 import MantenimientosCorrectivos from './pages/MantenimientosCorrectivos';
+import Obras from './pages/Obras';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
             <Route path="/preventivos" element={<Preventivos />} />
             <Route path="/mantenimientos-preventivos" element={<MantenimientosPreventivos />} />
             <Route path="/mantenimientos-correctivos" element={<MantenimientosCorrectivos />} />
+            <Route path="/obras" element={<Obras />} /> 
           </Routes>
         </main>
         <Footer />

@@ -1,6 +1,6 @@
 import React from 'react';
-import { useState, useEffect, useRef } from 'react';
-import { Modal, Button, Form, InputGroup, Dropdown, FormControl } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { Modal, Button, Form, InputGroup, Dropdown } from 'react-bootstrap';
 import { createCuadrilla, updateCuadrilla } from '../services/cuadrillaService';
 import { getZonas, createZona, deleteZona } from '../services/zonaService';
 
@@ -14,15 +14,12 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
   const [zonas, setZonas] = useState([]);
   const [newZona, setNewZona] = useState('');
   const [showNewZonaInput, setShowNewZonaInput] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [error, setError] = useState(null);
-  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const fetchZonas = async () => {
       try {
         const response = await getZonas();
-        console.log('Zonas cargadas:', response.data); // Debug: inspeccionar datos
         setZonas(response.data);
       } catch (error) {
         console.error('Error fetching zonas:', error);
@@ -53,7 +50,6 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
       setShowNewZonaInput(false);
       setFormData({ ...formData, zona: zonaNombre });
     }
-    setDropdownOpen(false);
   };
 
   const handleNewZonaSubmit = async () => {
@@ -74,22 +70,20 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
 
   const handleDeleteZona = async (id, e) => {
     e.stopPropagation();
-    console.log('Intentando eliminar zona con ID:', id); // Debug: verificar ID
-    if (!id) {
-      setError('ID de zona no válido.');
-      return;
-    }
-    try {
-      await deleteZona(id);
-      setZonas(zonas.filter((zona) => zona.id !== id));
-      if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
-        setFormData({ ...formData, zona: '' });
+    const confirmDelete = window.confirm(`¿Estás seguro de que quieres eliminar esta zona?`);
+    if (confirmDelete) {
+      try {
+        await deleteZona(id);
+        setZonas(zonas.filter((zona) => zona.id !== id));
+        if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
+          setFormData({ ...formData, zona: '' });
+        }
+        setError(null);
+      } catch (error) {
+        console.error('Error deleting zona:', error);
+        const errorMessage = error.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.';
+        setError(errorMessage);
       }
-      setError(null);
-    } catch (error) {
-      console.error('Error deleting zona:', error);
-      const errorMessage = error.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.';
-      setError(errorMessage);
     }
   };
 
@@ -108,10 +102,6 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
     }
   };
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
-
   return (
     <Modal show onHide={onClose}>
       <Modal.Header closeButton>
@@ -124,50 +114,62 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
           </div>
         )}
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3" controlId="nombre">
+          <Form.Group className="mb-3">
             <Form.Label className="required required-asterisk">Nombre</Form.Label>
             <Form.Control
               type="text"
               name="nombre"
-              value={formData.nombre}
+              value={formData.nombre || ''}
               onChange={handleChange}
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="zona">
+
+          <Form.Group className="mb-3">
             <Form.Label className="required required-asterisk">Zona</Form.Label>
-            <Dropdown show={dropdownOpen} onToggle={toggleDropdown} ref={dropdownRef}>
-              <FormControl
-                name="zona"
-                value={formData.zona}
-                onChange={(e) => setFormData({ ...formData, zona: e.target.value })}
-                placeholder="Seleccione una zona"
-                readOnly
-                onClick={toggleDropdown}
-                required
-              />
-              <Dropdown.Menu style={{ width: '100%' }}>
+            <Dropdown>
+              <Dropdown.Toggle
+                variant="outline-secondary"
+                id="dropdown-zona"
+                className="w-100 text-start"
+                style={{ backgroundColor: '#e9ecef', borderColor: '#ced4da' }}
+              >
+                {formData.zona || 'Seleccione una zona'}
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu className="w-100">
                 {zonas.map((zona) => (
                   <Dropdown.Item
                     key={zona.id}
-                    onClick={() => handleZonaSelect(zona.nombre)}
-                    className="custom-option"
+                    as="div"
+                    className="d-flex justify-content-between align-items-center"
                   >
-                    <span>{zona.nombre}</span>
+                    <span
+                      onClick={() => handleZonaSelect(zona.nombre)}
+                      style={{ flex: 1 }}
+                    >
+                      {zona.nombre}
+                    </span>
                     <Button
-                      variant="outline-danger"
+                      variant="danger"
                       size="sm"
+                      className="text-white"
+                      style={{ padding: '0.1rem 0.3rem', fontSize: '0.8rem' }}
                       onClick={(e) => handleDeleteZona(zona.id, e)}
                     >
                       ×
                     </Button>
                   </Dropdown.Item>
                 ))}
-                <Dropdown.Item onClick={() => handleZonaSelect('new')}>
-                  Agregar nueva zona...
+                <Dropdown.Item
+                  onClick={() => handleZonaSelect('new')}
+                  className="d-flex align-items-center"
+                >
+                  <span style={{ marginRight: '0.5rem' }}>➕</span> Agregar nueva zona...
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
+
             {showNewZonaInput && (
               <InputGroup className="mt-2">
                 <Form.Control
@@ -186,26 +188,29 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
               </InputGroup>
             )}
           </Form.Group>
-          <Form.Group className="mb-3" controlId="email">
+
+          <Form.Group className="mb-3">
             <Form.Label className="required required-asterisk">Email</Form.Label>
             <Form.Control
               type="email"
               name="email"
-              value={formData.email}
+              value={formData.email || ''}
               onChange={handleChange}
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="contrasena">
+
+          <Form.Group className="mb-3">
             <Form.Label className="required required-asterisk">Contraseña</Form.Label>
             <Form.Control
               type="password"
               name="contrasena"
-              value={formData.contrasena}
+              value={formData.contrasena || ''}
               onChange={handleChange}
               required={!cuadrilla}
             />
           </Form.Group>
+
           <Button variant="primary" type="submit">
             Guardar
           </Button>
