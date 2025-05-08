@@ -74,22 +74,18 @@ const SucursalForm = ({ sucursal, onClose }) => {
     }
   };
 
-  const handleDeleteZona = async (id, e) => {
-    e.stopPropagation();
-    const confirmDelete = window.confirm(`¿Estás seguro de que quieres eliminar esta zona?`);
-    if (confirmDelete) {
-      try {
-        await deleteZona(id);
-        setZonas(zonas.filter((zona) => zona.id !== id));
-        if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
-          setFormData({ ...formData, zona: null });
-        }
-        setError(null);
-      } catch (error) {
-        console.error('Error deleting zona:', error);
-        const errorMessage = error.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.';
-        setError(errorMessage);
+  const handleDeleteZona = async (id) => {
+    try {
+      await deleteZona(id);
+      setZonas(zonas.filter((zona) => zona.id !== id));
+      if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
+        setFormData({ ...formData, zona: null });
       }
+      setError(null);
+    } catch (error) {
+      console.error('Error deleting zona:', error);
+      const errorMessage = error.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.';
+      setError(errorMessage);
     }
   };
 
