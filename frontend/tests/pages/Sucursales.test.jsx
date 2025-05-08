@@ -1,47 +1,52 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import Sucursales from '../../src/pages/Sucursales';
 import * as sucursalService from '../../src/services/sucursalService';
 import * as zonaService from '../../src/services/zonaService';
 
+// Mocks
 jest.mock('../../src/services/sucursalService');
 jest.mock('../../src/services/zonaService');
-jest.mock('../../src/services/api'); 
+jest.mock('../../src/services/api');
 
-describe('Sucursales', () => {
+describe('Sucursales component', () => {
+  const mockSucursales = [
+    { id: 1, nombre: 'Sucursal 1', zona: 'Zona A', direccion: 'Calle 123', superficie: '100' },
+    { id: 2, nombre: 'Sucursal 2', zona: 'Zona B', direccion: 'Avenida 456', superficie: '200' },
+  ];
+
+  const mockZonas = [{ id: 1, nombre: 'Zona A' }, { id: 2, nombre: 'Zona B' }];
+
   beforeEach(() => {
     jest.clearAllMocks();
-    zonaService.getZonas.mockResolvedValue({ data: [] });
+    sucursalService.getSucursales.mockResolvedValue({ data: mockSucursales });
+    zonaService.getZonas.mockResolvedValue({ data: mockZonas });
   });
 
-  it('debería renderizar la tabla de sucursales', async () => {
-    sucursalService.getSucursales.mockResolvedValue({
-      data: [
-        { id: 1, nombre: 'Sucursal 1', zona: 'Norte', direccion: 'Av 1', superficie: '100' },
-      ],
+  test('muestra sucursales en la tabla', async () => {
+    render(<Sucursales />);
+
+    expect(screen.getByText('Gestión de Sucursales')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Sucursal 1')).toBeInTheDocument();
+      expect(screen.getByText('Sucursal 2')).toBeInTheDocument();
     });
-
-    render(<Sucursales />);
-
-    expect(await screen.findByText('Sucursal 1')).toBeInTheDocument();
-    expect(screen.getByText('Norte')).toBeInTheDocument();
   });
 
-  it('debería abrir el formulario de creación', async () => {
-    sucursalService.getSucursales.mockResolvedValue({ data: [] });
-
+  test('al hacer click en Agregar muestra el formulario', async () => {
     render(<Sucursales />);
 
-    const crearButton = screen.getByRole('button', { name: 'Crear Sucursal' });
-    fireEvent.click(crearButton);
+    fireEvent.click(screen.getByText(/Agregar/i));
 
-    const elements = await screen.findAllByText('Crear Sucursal');
-    expect(elements.length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(screen.getByText(/Crear Sucursal/i)).toBeInTheDocument();
+    });
   });
 
-  it('debería eliminar una sucursal', async () => {
+  test('debería eliminar una sucursal', async () => {
     sucursalService.getSucursales.mockResolvedValue({
-      data: [{ id: 1, nombre: 'Sucursal 1', zona: 'Norte', direccion: 'Av 1', superficie: '100' }],
+      data: [{ id: 1, nombre: 'Sucursal 1', zona: 'Zona A', direccion: 'Calle 123', superficie: '100' }],
     });
     sucursalService.deleteSucursal.mockResolvedValue({});
 
@@ -54,10 +59,10 @@ describe('Sucursales', () => {
       expect(sucursalService.deleteSucursal).toHaveBeenCalledWith(1);
     });
   });
-
-  it('debería editar una sucursal', async () => {
+  
+  test('debería editar una sucursal', async () => {
     sucursalService.getSucursales.mockResolvedValue({
-      data: [{ id: 1, nombre: 'Sucursal Edit', zona: 'Sur', direccion: 'Av 2', superficie: '200' }],
+      data: [{ id: 1, nombre: 'Sucursal 2', zona: 'Zona B', direccion: 'Avenida 456', superficie: '200' }],
     });
 
     render(<Sucursales />);
@@ -65,6 +70,6 @@ describe('Sucursales', () => {
     const editarButton = await screen.findByRole('button', { name: /Editar/i });
     fireEvent.click(editarButton);
 
-    expect(await screen.findByDisplayValue('Sucursal Edit')).toBeInTheDocument();
-  });
+    expect(await screen.findByDisplayValue('Sucursal 2')).toBeInTheDocument();
+  });  
 });

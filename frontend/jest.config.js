@@ -3,6 +3,7 @@ module.exports = {
     "^.+\\.jsx?$": "babel-jest",
   },
   moduleNameMapper: {
+    '\\.(png|jpg|jpeg|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
     '\\.css$': 'identity-obj-proxy'
   },
   testResultsProcessor: 'jest-junit',
@@ -16,7 +17,7 @@ module.exports = {
   "collectCoverage": true,
   "coverageDirectory": "coverage",
   "coverageReporters": ["clover"],
-  "coveragePathIgnorePatterns": ["/src/config.js"],
+  "coveragePathIgnorePatterns": ["/src/config.js", "/src/main.jsx"],
   "collectCoverageFrom": [
     "src/**/*.{js,jsx,ts,tsx}",
     "!src/**/*.test.{js,jsx,ts,tsx}",

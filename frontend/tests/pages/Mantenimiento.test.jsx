@@ -1,21 +1,22 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import Home from '../../src/pages/Home';
+import Mantenimiento from '../../src/pages/Mantenimiento';
 import { BrowserRouter } from 'react-router-dom';
 
-describe('Home component', () => {
+describe('Mantenimiento component', () => {
   test('renderiza los botones de navegación', () => {
     render(
       <BrowserRouter>
-        <Home />
+        <Mantenimiento />
       </BrowserRouter>
     );
 
     const buttons = [
-      'Usuarios',
-      'Mantenimiento',
-      'Mapa',
-      'Reportes',
+      'Cuadrillas',
+      'Sucursales',
+      'Preventivos',
+      'Mantenimiento Correctivo',
+      'Mantenimiento Preventivo',
     ];
 
     buttons.forEach((buttonText) => {

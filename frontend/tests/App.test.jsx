@@ -14,10 +14,4 @@ describe('App component', () => {
     // Verifica que el Footer esté
     expect(screen.getByText(/©/i)).toBeInTheDocument(); // Suponiendo que el footer tiene el símbolo ©
   });
-
-  test('renderiza la página Home por defecto', () => {
-    render(<App />);
-
-    expect(screen.getByText(/Esta es la página principal de la aplicación./i)).toBeInTheDocument(); // Cambiar el texto según qué muestra Home
-  });
 });

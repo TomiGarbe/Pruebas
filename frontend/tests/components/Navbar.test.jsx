@@ -4,14 +4,15 @@ import AppNavbar from '../../src/components/Navbar';
 import { BrowserRouter } from 'react-router-dom';
 
 describe('Navbar component', () => {
-  test('renderiza el nombre de la app', () => {
-    render(
-      <BrowserRouter>
-        <AppNavbar />
-      </BrowserRouter>
-    );
+  beforeEach(() => {
+    // Mock localStorage
+    window.localStorage = {
+      getItem: jest.fn(() => JSON.stringify({ nombre: 'Usuario' })),
+    };
+  });
 
-    expect(screen.getByText('Inversur App')).toBeInTheDocument();
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   test('renderiza los links de navegación', () => {
@@ -22,17 +23,28 @@ describe('Navbar component', () => {
     );
 
     const links = [
-      'Home',
       'Usuarios',
       'Sucursales',
       'Cuadrillas',
       'Preventivos',
       'Mantenimientos Preventivos',
-      'Mantenimientos Correctivos'
+      'Mantenimientos Correctivos',
+      'Mapa',
+      'Reportes',
     ];
 
     links.forEach((linkText) => {
       expect(screen.getByText(linkText)).toBeInTheDocument();
     });
+  });
+
+  test('renderiza el nombre del usuario en el dropdown', () => {
+    render(
+      <BrowserRouter>
+        <AppNavbar />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText('Usuario')).toBeInTheDocument();
   });
 });

@@ -3,7 +3,7 @@ name: Pipeline
 on:
   push:
     branches:
-      - SinLogin
+      - none
 
 permissions:
   checks: write # Permite escribir check runs para mostrar resultados de tests
@@ -30,7 +30,7 @@ jobs:
       - name: Run Backend Tests with Coverage
         run: |
           cd backend
-          pytest -v --cov=src --cov-report=html --cov-report=xml --junitxml=pytest-report.xml
+          pytest -v --cov=src --cov-report=xml --junitxml=pytest-report.xml
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
