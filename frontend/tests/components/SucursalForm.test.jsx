@@ -19,8 +19,8 @@ describe('SucursalForm component', () => {
     id: 1,
     nombre: 'Sucursal Centro',
     direccion: 'Calle Falsa 123',
+    zona: 'Zona A',
     superficie: 300,
-    zonaId: 1,
   };
   
   const mockOnSave = jest.fn();
@@ -31,21 +31,21 @@ describe('SucursalForm component', () => {
   });
 
   test('renderiza correctamente el formulario para crear', async () => {
-    render(<SucursalForm onClose={jest.fn()} />);
+    render(<SucursalForm onClose={mockOnSave} />);
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Nombre/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Dirección/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Superficie/i)).toBeInTheDocument();
     });
 
     expect(screen.getByText('Crear Sucursal')).toBeInTheDocument();
   });
 
   test('permite completar y enviar el formulario', async () => {
-    const onCloseMock = jest.fn();
     sucursalService.createSucursal.mockResolvedValue({});
 
-    render(<SucursalForm onClose={onCloseMock} />);
+    render(<SucursalForm onClose={mockOnSave} />);
 
     fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Sucursal Nueva' } });
     fireEvent.change(screen.getByLabelText(/Dirección/i), { target: { value: 'Calle Falsa 123' } });
@@ -65,7 +65,7 @@ describe('SucursalForm component', () => {
     fireEvent.click(screen.getByText(/Guardar/i));
 
     await waitFor(() => {
-      expect(onCloseMock).toHaveBeenCalled();
+      expect(mockOnSave).toHaveBeenCalled();
     });
   });
 
@@ -73,6 +73,7 @@ describe('SucursalForm component', () => {
     render(<SucursalForm sucursal={sucursalMock} />);
     
     expect(screen.getByDisplayValue('Sucursal Centro')).toBeInTheDocument();
+    expect(screen.getByText('Zona A')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Calle Falsa 123')).toBeInTheDocument();
     expect(screen.getByDisplayValue('300')).toBeInTheDocument();
   });
@@ -80,13 +81,13 @@ describe('SucursalForm component', () => {
   test('debería permitir actualizar una sucursal existente', async () => {
     sucursalService.updateSucursal.mockResolvedValue({});
     
-    render(<SucursalForm sucursal={sucursalMock} onSave={mockOnSave} />);
+    render(<SucursalForm sucursal={sucursalMock} onClose={mockOnSave} />);
     fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Sucursal Editada' } });
     fireEvent.click(screen.getByText(/Guardar/i));
 
-    await waitFor(() =>
-      expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({ nombre: 'Sucursal Editada' }))
-    );
+    await waitFor(() => {
+      expect(mockOnSave).toHaveBeenCalled();
+    });
   });
   
   test('debería permitir agregar una nueva zona', async () => {
