@@ -10,16 +10,11 @@ jest.mock('../../src/services/sucursalService');
 jest.mock('../../src/services/api');
 
 describe('SucursalForm component', () => {
-  const mockZonas = [
-    { id: 1, nombre: 'Zona A' },
-    { id: 2, nombre: 'Zona B' },
-  ];
-
   const sucursalMock = {
     id: 1,
     nombre: 'Sucursal Centro',
     direccion: 'Calle Falsa 123',
-    zona: 'Zona A',
+    zona: 'Zona 1',
     superficie: 300,
   };
   
@@ -27,7 +22,6 @@ describe('SucursalForm component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    zonaService.getZonas.mockResolvedValue({ data: mockZonas });
   });
 
   test('renderiza correctamente el formulario para crear', async () => {
@@ -56,9 +50,9 @@ describe('SucursalForm component', () => {
     fireEvent.click(screen.getByText(/Agregar nueva zona/i));
 
     const newZonaInput = screen.getByPlaceholderText(/Escriba la nueva zona/i);
-    fireEvent.change(newZonaInput, { target: { value: 'Zona C' } });
+    fireEvent.change(newZonaInput, { target: { value: 'Zona 1' } });
 
-    zonaService.createZona.mockResolvedValue({ data: { id: 3, nombre: 'Zona C' } });
+    zonaService.createZona.mockResolvedValue({ data: { id: 1, nombre: 'Zona 1' } });
 
     fireEvent.click(screen.getByText(/^Agregar$/));
 
@@ -73,7 +67,7 @@ describe('SucursalForm component', () => {
     render(<SucursalForm sucursal={sucursalMock} />);
     
     expect(screen.getByDisplayValue('Sucursal Centro')).toBeInTheDocument();
-    expect(screen.getByText('Zona A')).toBeInTheDocument();
+    expect(screen.getByText('Zona 1')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Calle Falsa 123')).toBeInTheDocument();
     expect(screen.getByDisplayValue('300')).toBeInTheDocument();
   });
@@ -91,7 +85,7 @@ describe('SucursalForm component', () => {
   });
   
   test('debería permitir agregar una nueva zona', async () => {
-    zonaService.createZona.mockResolvedValue({ data: { id: 4, nombre: 'Zona Nueva' } });
+    zonaService.createZona.mockResolvedValue({ data: { id: 2, nombre: 'Zona Nueva' } });
   
     render(<SucursalForm />);
     fireEvent.click(screen.getByText(/Seleccione una zona/i));

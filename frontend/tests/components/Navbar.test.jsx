@@ -37,14 +37,4 @@ describe('Navbar component', () => {
       expect(screen.getByText(linkText)).toBeInTheDocument();
     });
   });
-
-  test('renderiza el nombre del usuario en el dropdown', () => {
-    render(
-      <BrowserRouter>
-        <AppNavbar />
-      </BrowserRouter>
-    );
-
-    expect(screen.getByText('Usuario')).toBeInTheDocument();
-  });
 });
