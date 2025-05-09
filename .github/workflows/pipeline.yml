@@ -48,12 +48,6 @@ jobs:
       - name: Write Coverage to Summary
         run: |
           cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
-      - name: Upload Backend Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage-report
-          path: backend/htmlcov/
-          if-no-files-found: warn
       - name: Prepare Backend Artifact
         run: |
           mkdir -p backend-artifact
@@ -156,12 +150,6 @@ jobs:
             echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
             echo "| Summary | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
           fi
-      - name: Upload Frontend Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage-report
-          path: frontend/coverage/
-          if-no-files-found: warn
       - name: Build Frontend
         run: |
           cd frontend
