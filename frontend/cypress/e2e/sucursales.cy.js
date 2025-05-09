@@ -9,30 +9,26 @@ describe('Gestión de Sucursales', () => {
   it('Carga correctamente una zona', () => {
     // Intercepta la solicitud GET a /zonas que se dispara al abrir el formulario
     cy.intercept('GET', '**/zonas').as('getZonas');
-    cy.contains('button', 'Crear Sucursal').click();
+    cy.contains('button', 'Agregar').click();
     cy.wait('@getZonas').its('response.statusCode').should('eq', 200);
 
-    // Selecciona una zona del dropdown
-    cy.get('#zona').click();
-    cy.get('.dropdown-item').click();
-    // Ingresa el nombre de la zona
-    cy.get('.mt-2 > #zona').type('Zona 1');
-    // Guarda la zona
-    cy.get('.mt-2 > .btn').click();
-    // Cierra el modal
+    cy.get('#dropdown-zona').click();
+    cy.get('.custom-dropdown-item-add').click();
+    cy.get('#zona').type('Zona 1');
+    cy.get('.custom-add-button').click();
     cy.get('.btn-close').click();
   });
 
   it('Carga correctamente una sucursal', () => {
     // Intercepta la solicitud GET a /zonas
     cy.intercept('GET', '**/zonas').as('getZonas');
-    cy.contains('button', 'Crear Sucursal').click();
+    cy.contains('button', 'Agregar').click();
     cy.wait('@getZonas').its('response.statusCode').should('eq', 200);
 
     // Completa el formulario para crear una sucursal
     cy.get('#nombre').type('Sucursal 1');
-    cy.get('#zona').click();
-    cy.get('.custom-option').contains('Zona 1').click();
+    cy.get('#dropdown-zona').click();
+    cy.get('.custom-dropdown-item').contains('Zona 1').click();
     cy.get('#direccion').type('Dirección 1');
     cy.get('#superficie').type('100');
 
@@ -108,13 +104,13 @@ describe('Gestión de Sucursales', () => {
   it('Elimina correctamente una zona', () => {
     // Intercepta la solicitud GET a /zonas
     cy.intercept('GET', '**/zonas').as('getZonas');
-    cy.contains('button', 'Crear Sucursal').click();
+    cy.contains('button', 'Agregar').click();
     cy.wait('@getZonas').its('response.statusCode').should('eq', 200);
 
-    cy.get('#zona').click();
+    cy.get('#dropdown-zona').click();
     
     cy.intercept('DELETE', '**/zonas/*').as('deleteZona');
-    cy.get('.custom-option > .btn').click();
+    cy.get('.custom-delete-button').click();
     cy.wait('@deleteZona').its('response.statusCode').should('eq', 200);
 
     cy.get('.btn-close').click();
