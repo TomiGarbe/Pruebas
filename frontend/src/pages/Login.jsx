@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Alert } from 'react-bootstrap';
 import { auth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from '../services/firebase';
+import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
 
@@ -68,17 +69,18 @@ const Login = () => {
                 required
               />
             </Form.Group>
-            <Button type="submit" className="form-button button-l margin-b">
+            <Button type="submit" className="form-button button-l margin-b custom-login-btn">
               Iniciar Sesión
             </Button>
           </Form>
           <Button
-            variant="outline-primary"
-            className="form-button button-l margin-b"
+            className="form-button button-l margin-b d-flex align-items-center justify-content-center gap-2 custom-login-btn"
             onClick={handleGoogleSignIn}
           >
+            <FcGoogle size={20} />
             Iniciar Sesión con Google
           </Button>
+
           <p className="margin-t text-whitesmoke">
             <small>Inversur © 2025</small>
           </p>

@@ -93,3 +93,17 @@ html, body {
   .margin-b {
     margin-bottom: 20px;
   }
+
+
+.custom-login-btn {
+  color: #ffffff !important;
+  border: 1px solid #FFEB3B !important;
+  background-color: transparent !important;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.custom-login-btn:hover {
+  background-color: #FFEB3B !important;
+  color: #212121 !important;
+}
