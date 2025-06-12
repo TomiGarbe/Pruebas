@@ -81,11 +81,11 @@ jobs:
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
-          echo "FIREBASE_CREDENTIALS=src/credentials/firebase_credentials.json" >> env.config
+          echo "FIREBASE_CREDENTIALS=./credentials/firebase_credentials.json" >> env.config
           echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config
           echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config
           echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config
-          echo "GOOGLE_CREDENTIALS=src/credentials/google_credentials.json" >> env.config
+          echo "GOOGLE_CREDENTIALS=./credentials/google_cloud_credentials.json" >> env.config
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
           mkdir -p src/credentials
@@ -153,11 +153,11 @@ jobs:
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_PROD_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
-          echo "FIREBASE_CREDENTIALS=src/credentials/firebase_credentials.json" >> env.config
+          echo "FIREBASE_CREDENTIALS=./credentials/firebase_credentials.json" >> env.config
           echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_PROD }}" >> env.config
           echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_PROD }}" >> env.config
           echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_PROD }}" >> env.config
-          echo "GOOGLE_CREDENTIALS=src/credentials/google_credentials.json" >> env.config
+          echo "GOOGLE_CREDENTIALS=./credentials/google_cloud_credentials.json" >> env.config
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_PROD }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
           mkdir -p src/credentials
