@@ -83,6 +83,7 @@ jobs:
           sudo apt-get install -y jq
       - name: Create Backend Environment File
         run: |
+          cd backend/src
           echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
           echo "FIREBASE_CREDENTIALS=src/credentials/firebase_credentials.json" >> env.config
@@ -93,8 +94,10 @@ jobs:
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
           mkdir -p src/credentials
-          echo "${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" | jq . > src/credentials/firebase_credentials.json || { echo "Invalid FIREBASE_CREDENTIALS_JSON"; exit 1; }
-          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" | jq . > src/credentials/google_credentials.json || { echo "Invalid GOOGLE_CREDENTIALS_JSON"; exit 1; }
+          printf '%s' "${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" > src/credentials/firebase_credentials.json
+          jq . credentials/firebase_credentials.json || { echo "Invalid FIREBASE_CREDENTIALS_JSON"; exit 1; }
+          printf '%s' "${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" > src/credentials/google_credentials.json
+          jq . credentials/google_credentials.json || { echo "Invalid GOOGLE_CREDENTIALS_JSON"; exit 1; }
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -155,6 +158,7 @@ jobs:
           path: .
       - name: Create Backend Environment File
         run: |
+          cd backend/src
           echo "DATABASE_URL=${{ secrets.DATABASE_PROD_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
           echo "FIREBASE_CREDENTIALS=src/credentials/firebase_credentials.json" >> env.config
@@ -165,8 +169,10 @@ jobs:
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_PROD }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
           mkdir -p src/credentials
-          echo "${{ secrets.FIREBASE_CREDENTIALS_JSON_PROD }}" > src/credentials/firebase_credentials.json
-          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON_PROD }}" > src/credentials/google_credentials.json
+          printf '%s' "${{ secrets.FIREBASE_CREDENTIALS_JSON_PROD }}" > src/credentials/firebase_credentials.json
+          jq . credentials/firebase_credentials.json || { echo "Invalid FIREBASE_CREDENTIALS_JSON"; exit 1; }
+          printf '%s' "${{ secrets.GOOGLE_CREDENTIALS_JSON_PROD }}" > src/credentials/google_credentials.json
+          jq . credentials/google_credentials.json || { echo "Invalid GOOGLE_CREDENTIALS_JSON"; exit 1; }
       - name: Login to Azure
         uses: azure/login@v1
         with:
