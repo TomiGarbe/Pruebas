@@ -3,6 +3,9 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from sqlalchemy.orm import Session
 from api.models import MantenimientoCorrectivo, MantenimientoPreventivo
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path="./env.config")
 
 GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
