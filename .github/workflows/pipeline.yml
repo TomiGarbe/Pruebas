@@ -77,6 +77,10 @@ jobs:
         with:
           name: backend-artifact
           path: .
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
       - name: Create Backend Environment File
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
@@ -89,8 +93,8 @@ jobs:
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
           mkdir -p src/credentials
-          echo "${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" > src/credentials/firebase_credentials.json
-          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" > src/credentials/google_credentials.json
+          echo "${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" | jq . > src/credentials/firebase_credentials.json
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" | jq . > src/credentials/google_credentials.json
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -140,7 +144,7 @@ jobs:
   # STAGE: DEPLOY TO PROD
   #=======================
   deploy-backend-prod:
-    #needs: integration-tests
+    needs: deploy-backend-qa
     environment: production
     runs-on: ubuntu-latest
     steps:
@@ -149,6 +153,10 @@ jobs:
         with:
           name: backend-artifact
           path: .
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
       - name: Create Backend Environment File
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_PROD_URL }}" > env.config
@@ -161,8 +169,8 @@ jobs:
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_PROD }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
           mkdir -p src/credentials
-          echo "${{ secrets.FIREBASE_CREDENTIALS_JSON_PROD }}" > src/credentials/firebase_credentials.json
-          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON_PROD }}" > src/credentials/google_credentials.json
+          echo "${{ secrets.FIREBASE_CREDENTIALS_JSON_PROD }}" | jq . > src/credentials/firebase_credentials.json
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON_PROD }}" | jq . > src/credentials/google_credentials.json
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -179,7 +187,7 @@ jobs:
             az webapp start --name Inversur --resource-group Inversur
 
   deploy-frontend-prod:
-    #needs: integration-tests
+    needs: deploy-frontend-qa
     environment: production
     runs-on: ubuntu-latest
     steps:
