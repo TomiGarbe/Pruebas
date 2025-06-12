@@ -2,106 +2,209 @@ name: Pipeline
 
 on:
   push:
-    branches: [none]
-  pull_request:
-    branches: [none]
+    branches:
+      - main
+
+permissions:
+  checks: write # Permite escribir check runs para mostrar resultados de tests
+  actions: read # Permite leer acciones
+  contents: read # Permite leer el contenido del repositorio
 
 jobs:
-  backend:
+  #=======================
+  # STAGE: BUILD AND TEST
+  #=======================
+  build-and-test-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12.10"
-      - name: Install dependencies
+          python-version: '3.12'
+      - name: Install Backend Dependencies
         run: |
           cd backend
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-      # - name: Run tests
-      #   run: |
-      #     cd backend
-      #     pytest
+      - name: Prepare Backend Artifact
+        run: |
+          mkdir -p backend-artifact
+          cp -r backend/src/* backend-artifact/
+          cp backend/requirements.txt backend-artifact/
+      - name: Upload Backend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-artifact
+          path: backend-artifact/
+          if-no-files-found: error
 
-  frontend:
+  build-and-test-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
-      - name: Install dependencies
+          node-version: '20'
+      - name: Install Frontend Dependencies
         run: |
           cd frontend
-          npm ci
-      - name: Build
+          npm install
+      - name: Build Frontend
         run: |
           cd frontend
           npm run build
-      # - name: Run tests
-      #   run: |
-      #     cd frontend
-      #     npm test
+      - name: Copy staticwebapp.config.json to dist
+        run: |
+          cp frontend/staticwebapp.config.json frontend/dist/
+      - name: Upload Frontend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-artifact
+          path: frontend/dist/
+          if-no-files-found: error
 
-  deploy-backend:
-    needs: [backend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #==========================================
+  # STAGE: DEPLOY TO QA AND INTEGRATION TEST
+  #==========================================
+  deploy-backend-qa:
+    needs: build-and-test-backend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v4
         with:
-          python-version: "3.12.10"
-      - name: Install dependencies
+          name: backend-artifact
+          path: .
+      - name: Create Backend Environment File
         run: |
-          cd backend
-          pip install -r requirements.txt
-      - name: Generate .env file
-        run: |
-          cd backend
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
+          echo "FIREBASE_CREDENTIALS=src/credentials/firebase_credentials.json" >> env.config
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config
+          echo "GOOGLE_CREDENTIALS=src/credentials/google_credentials.json" >> env.config
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
+          mkdir -p src/credentials
+          echo "${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" > src/credentials/firebase_credentials.json
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" > src/credentials/google_credentials.json
+      - name: Login to Azure
+        uses: azure/login@v1
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
         with:
-          project_id: massive-physics-453901-s4
-      - name: Deploy to App Engine
-        run: |
-          cd backend
-          gcloud app deploy app.yaml --quiet --verbosity=debug
+          app-name: 'Inversur-QA'
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_QA }}
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Inversur-QA --resource-group Inversur
 
-  #deploy-frontend:
-  #  needs: [frontend]
-  #  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - uses: actions/checkout@v3
-  #    - name: Set up Node.js
-  #      uses: actions/setup-node@v3
-  #      with:
-  #        node-version: "22"
-  #    - name: Install dependencies
-  #      run: |
-  #        cd frontend
-  #        npm ci
-  #    - name: Generate .env file
-  #      run: |
-  #        cd frontend
-  #        echo "VITE_API_URL=${{ secrets.API_URL }}" > .env
-  #    - name: Build
-  #      run: |
-  #        cd frontend
-  #        npm run build
-  #    - name: Deploy to Firebase Hosting
-  #      uses: FirebaseExtended/action-hosting-deploy@v0
-  #      with:
-  #        repoToken: '${{ secrets.GITHUB_TOKEN }}'
-  #        firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}'
-  #        channelId: live
-  #        projectId: mantenimiento-project
+  deploy-frontend-qa:
+    needs: build-and-test-frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-artifact
+          path: frontend/dist/
+      - name: Create Frontend .env File
+        run: |
+          cd frontend
+          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
+          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+          echo "VITE_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY_QA }}" >> .env
+          echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN_QA }}" >> .env
+          echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID_QA }}" >> .env
+          echo "VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET_QA }}" >> .env
+          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID_QA }}" >> .env
+          echo "VITE_FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID_QA }}" >> .env
+          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID_QA }}" >> .env
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_QA }}
+          action: "upload"
+          app_location: "frontend/dist"
+          skip_app_build: true
+
+  #=======================
+  # STAGE: DEPLOY TO PROD
+  #=======================
+  deploy-backend-prod:
+    #needs: integration-tests
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-artifact
+          path: .
+      - name: Create Backend Environment File
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_PROD_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
+          echo "FIREBASE_CREDENTIALS=src/credentials/firebase_credentials.json" >> env.config
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_PROD }}" >> env.config
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_PROD }}" >> env.config
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_PROD }}" >> env.config
+          echo "GOOGLE_CREDENTIALS=src/credentials/google_credentials.json" >> env.config
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_PROD }}" >> env.config
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
+          mkdir -p src/credentials
+          echo "${{ secrets.FIREBASE_CREDENTIALS_JSON_PROD }}" > src/credentials/firebase_credentials.json
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON_PROD }}" > src/credentials/google_credentials.json
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'Inversur'
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_PROD }}
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Inversur --resource-group Inversur
+
+  deploy-frontend-prod:
+    #needs: integration-tests
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-artifact
+          path: frontend/dist/
+      - name: Create Frontend .env File
+        run: |
+          cd frontend
+          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
+          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+          echo "VITE_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY_PROD }}" >> .env
+          echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN_PROD }}" >> .env
+          echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID_PROD }}" >> .env
+          echo "VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET_PROD }}" >> .env
+          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID_PROD }}" >> .env
+          echo "VITE_FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID_PROD }}" >> .env
+          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID_PROD }}" >> .env
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PROD }}
+          action: "upload"
+          app_location: "frontend/dist"
+          skip_app_build: true

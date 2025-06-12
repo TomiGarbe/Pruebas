@@ -1,13 +1,14 @@
 from pydantic import BaseModel, EmailStr
 from enum import Enum
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, List
+from fastapi import UploadFile
 
 # Enum para los roles
 class Role(str, Enum):
     ADMIN = "Administrador"
     ENCARGADO = "Encargado de Mantenimiento"
-
+    
 # Enum para el estado de los mantenimientos correctivos
 class Estado(str, Enum):
     PENDIENTE = "Pendiente"
@@ -48,15 +49,12 @@ class Frecuencia(str, Enum):
     CUATRIMESTRAL = "Cuatrimestral"
     SEMESTRAL = "Semestral"
 
-# Esquemas para Zona
-class Zona(BaseModel):
-    nombre: str
-
 # Esquemas para Usuario
 class UserCreate(BaseModel):
     nombre: str
     email: EmailStr
     rol: Role
+    id_token: str
 
 class UserUpdate(BaseModel):
     nombre: Optional[str] = None
@@ -68,18 +66,23 @@ class CuadrillaCreate(BaseModel):
     nombre: str
     zona: str
     email: EmailStr
+    id_token: str
 
 class CuadrillaUpdate(BaseModel):
     nombre: Optional[str] = None
     zona: Optional[str] = None
     email: Optional[EmailStr] = None
 
+# Esquemas para Zona
+class Zona(BaseModel):
+    nombre: str
+
 # Esquemas para Sucursal
 class SucursalCreate(BaseModel):
     nombre: str
     zona: str
     direccion: str
-    superficie: Optional[str] = None
+    superficie: str
 
 class SucursalUpdate(BaseModel):
     nombre: Optional[str] = None
@@ -97,64 +100,21 @@ class PreventivoUpdate(BaseModel):
     id_sucursal: Optional[int] = None
     nombre_sucursal: Optional[str] = None
     frecuencia: Optional[Frecuencia] = None
-
+    
 # Esquemas para Mantenimiento Preventivo
 class MantenimientoPreventivoCreate(BaseModel):
-    id_preventivo: int
+    id_sucursal: int
+    frecuencia: Frecuencia
     id_cuadrilla: int
     fecha_apertura: date
-    fecha_cierre: Optional[date] = None
-    planilla_1: Optional[str] = None
-    planilla_2: Optional[str] = None
-    planilla_3: Optional[str] = None
-    extendido: Optional[datetime] = None
-
-class MantenimientoPreventivoUpdate(BaseModel):
-    id_preventivo: Optional[int] = None
-    id_cuadrilla: Optional[int] = None
-    fecha_apertura: Optional[date] = None
-    fecha_cierre: Optional[date] = None
-    planilla_1: Optional[str] = None
-    planilla_2: Optional[str] = None
-    planilla_3: Optional[str] = None
-    extendido: Optional[datetime] = None
 
 # Esquemas para Mantenimiento Correctivo
 class MantenimientoCorrectivoCreate(BaseModel):
     id_sucursal: int
     id_cuadrilla: Optional[int] = None
     fecha_apertura: date
-    fecha_cierre: Optional[date] = None
     numero_caso: str
     incidente: str
     rubro: Rubro
-    planilla: Optional[str] = None
     estado: Estado
     prioridad: Prioridad
-    extendido: Optional[datetime] = None
-
-class MantenimientoCorrectivoUpdate(BaseModel):
-    id_sucursal: Optional[int] = None
-    id_cuadrilla: Optional[int] = None
-    fecha_apertura: Optional[date] = None
-    fecha_cierre: Optional[date] = None
-    numero_caso: Optional[str] = None
-    incidente: Optional[str] = None
-    rubro: Optional[Rubro] = None
-    planilla: Optional[str] = None
-    estado: Optional[Estado] = None
-    prioridad: Optional[Prioridad] = None
-    extendido: Optional[datetime] = None
-
-# Esquemas para Reporte
-class ReporteCreate(BaseModel):
-    id_usuario: int
-    tipo: str
-    contenido: str
-    fecha: date
-
-class ReporteUpdate(BaseModel):
-    id_usuario: Optional[int] = None
-    tipo: Optional[str] = None
-    contenido: Optional[str] = None
-    fecha: Optional[date] = None

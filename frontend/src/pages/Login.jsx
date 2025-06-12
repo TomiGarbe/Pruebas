@@ -1,67 +1,80 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { signInWithGoogle, signInWithEmail, verifyUserWithBackend } from '../services/authService';
+import { useState, useContext } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Button, Alert, Spinner } from 'react-bootstrap';
+import { AuthContext } from '../context/AuthContext';
+import { auth, GoogleAuthProvider, signInWithPopup, signOut } from '../services/firebase';
+import { FcGoogle } from 'react-icons/fc';
+import '../styles/login.css';
+import logoInversur from '../assets/logo_inversur.png';
 
 const Login = () => {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const googleProvider = new GoogleAuthProvider();
+  const { verifyUser, verifying } = useContext(AuthContext);
 
   const handleGoogleSignIn = async () => {
+    setError(null);
     try {
-      const idToken = await signInWithGoogle();
-      await verifyUserWithBackend(idToken);
-      navigate('/');
-    } catch (error) {
-      console.error('Error al iniciar sesión con Google:', error);
-      setError('Error al iniciar sesión con Google. Por favor, intenta de nuevo.');
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken(true); // Force token refresh
+      localStorage.setItem('authToken', idToken);
+      localStorage.setItem('activeUserId', result.user.uid);
+      const verificationResult = await verifyUser(result.user, idToken);
+      if (verificationResult.success) {
+        navigate('/');
+      } else {
+        setError('Error al verificar el usuario después de múltiples intentos');
+        await signOut(auth);
+        localStorage.removeItem('authToken');
+      }
+    } catch (err) {
+      console.error("Error en inicio de sesión con Google:", err);
+      setError(err.message || 'Error al iniciar sesión con Google');
+      await signOut(auth);
+      localStorage.removeItem('authToken');
     }
   };
 
-  const handleEmailSignIn = async (e) => {
-    e.preventDefault();
-    try {
-      const idToken = await signInWithEmail(email, password);
-      await verifyUserWithBackend(idToken);
-      navigate('/');
-    } catch (error) {
-      console.error('Error al iniciar sesión con email:', error);
-      setError('Error al iniciar sesión con email. Por favor, verifica tus credenciales.');
-    }
-  };
+  if (verifying) {
+    return (
+      <div className="main-bg">
+        <div className="login-container text-c animated flipInX">
+          <div>
+            <img src={logoInversur} alt="Inversur Logo" className="logo" />
+          </div>
+          <div className="container-content d-flex justify-content-center align-items-center min-vh-50">
+            <Spinner animation="border" role="status" style={{ color: 'white' }}>
+              <span className="visually-hidden">Verificando...</span>
+            </Spinner>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="login-container">
-      <h2>Iniciar Sesión</h2>
-      {error && <p className="error">{error}</p>}
-      <div className="login-options">
-        <button onClick={handleGoogleSignIn} className="google-btn">
-          Iniciar sesión con Google
-        </button>
-        <div className="email-login">
-          <h3>O usa tu email y contraseña</h3>
-          <form onSubmit={handleEmailSignIn}>
-            <div>
-              <label>Email:</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label>Contraseña:</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit">Iniciar Sesión</button>
-          </form>
+    <div className="main-bg">
+      <div className="login-container text-c animated flipInX">
+        <div>
+          <img src={logoInversur} alt="Inversur Logo" className="logo" />
+        </div>
+        <div className="container-content">
+          {(error || location.state?.error) && (
+            <Alert variant="danger">{error || location.state.error}</Alert>
+          )}
+          <Button
+            className="form-button button-l margin-b d-flex align-items-center justify-content-center gap-2 custom-login-btn"
+            onClick={handleGoogleSignIn}
+            disabled={verifying}
+          >
+            <FcGoogle size={20} />
+            Iniciar Sesión con Google
+          </Button>
+          <p className="margin-t text-whitesmoke">
+            <small>Inversur © 2025</small>
+          </p>
         </div>
       </div>
     </div>

@@ -1,38 +1,61 @@
 /* src/styles/custom.css */
 .custom-option {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-right: 10px;
-  }
-  
-  .custom-option span {
-    flex-grow: 1;
-  }
-  
-  .custom-option button {
-    margin-left: 10px;
-    font-size: 0.8rem;
-    padding: 2px 6px;
-    line-height: 1;
-  }
-  
-  .custom-select option {
-    padding: 8px;
-  }
-
-  /* Asterisco rojo para campos obligatorios */
-.required-asterisk::after {
-  content: '*';
-  color: red;
-  font-size: 1rem;
-  position: absolute;
-  top: 0;
-  right: -1px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 10px;
 }
 
-/* Contenedor del label para posicionar el asterisco */
-.form-label.required {
-  position: relative;
-  padding-right: 15px; /* Espacio para el asterisco */
+.custom-option span {
+  flex-grow: 1;
+}
+
+.custom-option button {
+  margin-left: 10px;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.custom-select option {
+  padding: 8px;
+}
+
+.custom-button {
+  background-color: #2c2c2c;
+  border-color: #2c2c2c;
+  border-radius: 0.75rem;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.custom-button:hover {
+  background-color: #ffffff;
+  border-color: #2c2c2c;
+  color: #2c2c2c;
+  border-radius: 0.75rem;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.text-end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+body {
+  background: white;
+}
+
+.custom-container{
+  padding-top: 6rem;
+  padding-bottom: 6rem;
 }

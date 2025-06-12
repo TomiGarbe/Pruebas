@@ -1,72 +1,114 @@
-import React from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
-import { auth } from '../services/firebase';
-import { signOutUser } from '../services/authService';
+import { Navbar as BootstrapNavbar, Nav, Container, Image, Modal, Button } from 'react-bootstrap';
+import logoInversur from '../assets/logo_inversur.png';
+import { FaRegBell, FaUser } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
+import { auth, signOut } from '../services/firebase';
+import '../styles/navbar.css';
 
-const AppNavbar = () => {
+const Navbar = () => {
+  const { currentUser, currentEntity } = useContext(AuthContext);
   const navigate = useNavigate();
-  const user = auth.currentUser; // Verifica si hay un usuario autenticado
-  const userRole = localStorage.getItem('userRole'); // Obtiene el rol del usuario
+  const [showNotifications, setShowNotifications] = useState(false);
 
-  const handleSignOut = async () => {
+  const handleShowNotifications = () => setShowNotifications(true);
+  const handleCloseNotifications = () => setShowNotifications(false);
+
+  const handleLogout = async () => {
     try {
-      await signOutUser();
+      await signOut(auth);
+      localStorage.removeItem('authToken');
       navigate('/login');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
   };
 
+  const notifications = [
+    { id: 1, message: 'Nueva obra asignada a Cuadrilla #1', time: 'Hace 5 minutos' },
+    { id: 2, message: 'Mantenimiento preventivo programado', time: 'Hace 1 hora' },
+    { id: 3, message: 'Usuario Juan Pérez actualizó su perfil', time: 'Hace 2 horas' },
+  ];
+
   return (
-    <Navbar bg="dark" variant="dark" expand="lg">
-      <Container>
-        <Navbar.Brand as={Link} to="/">Inversur App</Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          {user ? (
-            <>
-              <Nav className="me-auto">
-                <Nav.Link as={Link} to="/">Home</Nav.Link>
-                {/* Solo los admins pueden gestionar usuarios */}
-                {userRole === 'admin' && (
+    <>
+      <BootstrapNavbar bg="dark" variant="dark" expand="lg" className="custom-navbar">
+        <Container fluid>
+          <BootstrapNavbar.Brand as={Link} to="/" className="d-flex align-items-center custom-navbar-brand">
+            <Image
+              src={logoInversur}
+              height="65"
+              alt="Inversur Logo"
+              className="custom-logo"
+            />
+          </BootstrapNavbar.Brand>
+         {/* <BootstrapNavbar.Toggle aria-controls="basic-navbar-nav" />*/}
+          {/*<BootstrapNavbar.Collapse id="basic-navbar-nav">*/}
+            <Nav className="me-auto custom-nav-links">
+              {currentEntity && currentEntity.type === 'usuario' && currentEntity.data.rol === 'Administrador' && (
+                <>
                   <Nav.Link as={Link} to="/users">Usuarios</Nav.Link>
-                )}
-                {/* Admins y encargados pueden gestionar sucursales */}
-                {(userRole === 'admin' || userRole === 'encargado') && (
-                  <Nav.Link as={Link} to="/sucursales">Sucursales</Nav.Link>
-                )}
-                {/* Admins y encargados pueden gestionar cuadrillas */}
-                {(userRole === 'admin' || userRole === 'encargado') && (
+                </>
+              )}
+              {currentEntity && currentEntity.type === 'usuario' && (
+                <>
                   <Nav.Link as={Link} to="/cuadrillas">Cuadrillas</Nav.Link>
-                )}
-                {/* Admins y encargados pueden gestionar preventivos */}
-                {(userRole === 'admin' || userRole === 'encargado') && (
-                  <Nav.Link as={Link} to="/preventivos">Preventivos</Nav.Link>
-                )}
-                {/* Todos los roles pueden ver los mantenimientos preventivos y correctivos */}
-                <Nav.Link as={Link} to="/mantenimientos-preventivos">
-                  Mantenimientos Preventivos
-                </Nav.Link>
-                <Nav.Link as={Link} to="/mantenimientos-correctivos">
-                  Mantenimientos Correctivos
-                </Nav.Link>
-              </Nav>
-              <Nav>
-                <Button variant="outline-light" onClick={handleSignOut}>
-                  Cerrar Sesión
-                </Button>
-              </Nav>
-            </>
-          ) : (
-            <Nav>
-              <Nav.Link as={Link} to="/login">Iniciar Sesión</Nav.Link>
+                  <Nav.Link as={Link} to="/sucursales">Sucursales</Nav.Link>
+                </>
+              )}
+              {currentEntity && (
+                <>
+                  <Nav.Link as={Link} to="/mantenimientos-preventivos">Mantenimientos Preventivos</Nav.Link>
+                  <Nav.Link as={Link} to="/mantenimientos-correctivos">Mantenimientos Correctivos</Nav.Link>
+                  <Nav.Link /*as={Link} to="/mapas"*/>Mapa</Nav.Link>
+                </>
+              )}
+              {currentEntity && currentEntity.type === 'usuario' && currentEntity.data.rol === 'Administrador' && (
+                <>
+                  <Nav.Link /*as={Link} to="/reportes"*/>Reportes</Nav.Link>
+                </>
+              )}
             </Nav>
+            <Nav className="nav-right">
+              <Nav.Link onClick={handleShowNotifications} aria-label="Notificaciones">
+                <div className="icon-container">
+                  <FaUser size={22} className="icon-user" />
+                  <FaRegBell size={14} className="icon-bell" />
+                </div>
+              </Nav.Link>
+            </Nav>
+          {/*</BootstrapNavbar.Collapse>*/}
+        </Container>
+      </BootstrapNavbar>
+
+      <Modal show={showNotifications} onHide={handleCloseNotifications} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Notificaciones</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {notifications.length > 0 ? (
+            notifications.map((notification) => (
+              <div key={notification.id} className="mb-3 p-2 border-bottom">
+                <p className="mb-1">{notification.message}</p>
+                <small className="text-muted">{notification.time}</small>
+              </div>
+            ))
+          ) : (
+            <p>No tienes notificaciones.</p>
           )}
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
+        </Modal.Body>
+        <Modal.Footer className="d-flex justify-content-between">
+          <Button variant="danger" onClick={handleLogout}>
+            Cerrar Sesión
+          </Button>
+          <Button variant="secondary" onClick={handleCloseNotifications}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 };
 
-export default AppNavbar;
+export default Navbar;

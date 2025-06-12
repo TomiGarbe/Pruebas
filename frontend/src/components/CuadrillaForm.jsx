@@ -1,14 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { Modal, Button, Form, InputGroup, Dropdown, FormControl } from 'react-bootstrap';
+import React from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
+import { Modal, Button, Form, InputGroup, Dropdown, Alert } from 'react-bootstrap';
 import { createCuadrilla, updateCuadrilla } from '../services/cuadrillaService';
 import { getZonas, createZona, deleteZona } from '../services/zonaService';
+import { AuthContext } from '../context/AuthContext';
+import { FcGoogle } from 'react-icons/fc';
+import { FaPlus } from 'react-icons/fa';
+import '../styles/formularios.css';
 
 const CuadrillaForm = ({ cuadrilla, onClose }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     zona: '',
-    email: '',
-    contrasena: '',
   });
   const [zonas, setZonas] = useState([]);
   const [newZona, setNewZona] = useState('');
@@ -16,12 +19,12 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [error, setError] = useState(null);
   const dropdownRef = useRef(null);
+  const { signInWithGoogleForRegistration } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchZonas = async () => {
       try {
         const response = await getZonas();
-        console.log('Zonas cargadas:', response.data); // Debug: inspeccionar datos
         setZonas(response.data);
       } catch (error) {
         console.error('Error fetching zonas:', error);
@@ -32,10 +35,8 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
 
     if (cuadrilla) {
       setFormData({
-        nombre: cuadrilla.nombre || '',
-        zona: cuadrilla.zona || '',
-        email: cuadrilla.email || '',
-        contrasena: '',
+        nombre: cuadrilla.nombre || null,
+        zona: cuadrilla.zona || null,
       });
     }
   }, [cuadrilla]);
@@ -71,18 +72,12 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
     }
   };
 
-  const handleDeleteZona = async (id, e) => {
-    e.stopPropagation();
-    console.log('Intentando eliminar zona con ID:', id); // Debug: verificar ID
-    if (!id) {
-      setError('ID de zona no válido.');
-      return;
-    }
+  const handleDeleteZona = async (id) => {
     try {
       await deleteZona(id);
       setZonas(zonas.filter((zona) => zona.id !== id));
       if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
-        setFormData({ ...formData, zona: '' });
+        setFormData({ ...formData, zona: null });
       }
       setError(null);
     } catch (error) {
@@ -98,13 +93,19 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
       if (cuadrilla) {
         await updateCuadrilla(cuadrilla.id, formData);
       } else {
-        await createCuadrilla(formData);
+        const { idToken, email } = await signInWithGoogleForRegistration();
+        const payload = { ...formData, email: email, id_token: idToken };
+        await createCuadrilla(payload);
       }
       onClose();
     } catch (error) {
       console.error('Error saving cuadrilla:', error);
-      setError('Error al guardar la cuadrilla.');
+      setError(error.message || 'Error al guardar la cuadrilla.');
     }
+  };
+
+  const isFormValid = () => {
+    return formData.nombre.trim() && formData.zona.trim();
   };
 
   const toggleDropdown = () => {
@@ -123,7 +124,7 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
           </div>
         )}
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="nombre">
             <Form.Label className="required required-asterisk">Nombre</Form.Label>
             <Form.Control
               type="text"
@@ -133,36 +134,45 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="zona">
             <Form.Label className="required required-asterisk">Zona</Form.Label>
             <Dropdown show={dropdownOpen} onToggle={toggleDropdown} ref={dropdownRef}>
-              <FormControl
-                value={formData.zona}
-                onChange={(e) => setFormData({ ...formData, zona: e.target.value })}
-                placeholder="Seleccione una zona"
-                readOnly
-                onClick={toggleDropdown}
-                required
-              />
-              <Dropdown.Menu style={{ width: '100%' }}>
+              <Dropdown.Toggle
+                id="dropdown-zona"
+                className="custom-dropdown-toggle"
+              >
+                {formData.zona || 'Seleccione una zona'}
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="w-100">
                 {zonas.map((zona) => (
                   <Dropdown.Item
                     key={zona.id}
+                    as="div"
+                    className="custom-dropdown-item"
                     onClick={() => handleZonaSelect(zona.nombre)}
-                    className="custom-option"
                   >
-                    <span>{zona.nombre}</span>
+                    <span
+                      className="custom-dropdown-item-span"
+                    >
+                      {zona.nombre}
+                    </span>
                     <Button
-                      variant="outline-danger"
                       size="sm"
-                      onClick={(e) => handleDeleteZona(zona.id, e)}
+                      className="custom-delete-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteZona(zona.id);
+                      }}
                     >
                       ×
                     </Button>
                   </Dropdown.Item>
                 ))}
-                <Dropdown.Item onClick={() => handleZonaSelect('new')}>
-                  Agregar nueva zona...
+                <Dropdown.Item
+                  onClick={() => handleZonaSelect('new')}
+                  className="custom-dropdown-item-add"
+                >
+                  <span className="custom-dropdown-item-add-span"><FaPlus /></span> Agregar nueva zona...
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
@@ -175,7 +185,7 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
                   placeholder="Escriba la nueva zona"
                 />
                 <Button
-                  variant="outline-primary"
+                  className="custom-add-button"
                   onClick={handleNewZonaSubmit}
                   disabled={!newZona.trim()}
                 >
@@ -184,28 +194,13 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
               </InputGroup>
             )}
           </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label className="required required-asterisk">Email</Form.Label>
-            <Form.Control
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label className="required required-asterisk">Contraseña</Form.Label>
-            <Form.Control
-              type="password"
-              name="contrasena"
-              value={formData.contrasena}
-              onChange={handleChange}
-              required={!cuadrilla}
-            />
-          </Form.Group>
-          <Button variant="primary" type="submit">
-            Guardar
+          <Button
+            className="custom-save-button d-flex align-items-center justify-content-center gap-2"
+            type="submit"
+            disabled={!isFormValid()}
+          >
+            <FcGoogle size={20} />
+            {cuadrilla ? 'Guardar' : 'Registrar con Google'}
           </Button>
         </Form>
       </Modal.Body>

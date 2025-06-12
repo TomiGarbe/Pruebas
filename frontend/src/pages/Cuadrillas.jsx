@@ -1,44 +1,48 @@
-import { useState, useEffect } from 'react';
-import { Table, Button, Container, Row, Col } from 'react-bootstrap';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Table, Button, Container, Row, Col, Alert } from 'react-bootstrap';
 import CuadrillaForm from '../components/CuadrillaForm';
 import { getCuadrillas, deleteCuadrilla } from '../services/cuadrillaService';
-import { getZonas } from '../services/zonaService';
+import { AuthContext } from '../context/AuthContext';
+import { FaPlus } from 'react-icons/fa';
 
 const Cuadrillas = () => {
+  const { currentEntity } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [cuadrillas, setCuadrillas] = useState([]);
-  const [zonas, setZonas] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [selectedCuadrilla, setSelectedCuadrilla] = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchCuadrillas = async () => {
     try {
       const response = await getCuadrillas();
       setCuadrillas(response.data);
+      setError(null);
     } catch (error) {
-      console.error('Error fetching cuadrillas:', error);
-    }
-  };
-
-  const fetchZonas = async () => {
-    try {
-      const response = await getZonas();
-      setZonas(response.data);
-    } catch (error) {
-      console.error('Error fetching zonas:', error);
+      setError(error.response?.data?.detail || 'Error al cargar las cuadrillas');
     }
   };
 
   useEffect(() => {
-    fetchCuadrillas();
-    fetchZonas();
-  }, []);
+    if (currentEntity.type === 'usuario') {
+      fetchCuadrillas();
+    }
+    else if (currentEntity) {
+      navigate('/');
+    }
+    else {
+      navigate('/login');
+    }
+  }, [currentEntity]);
 
   const handleDelete = async (id) => {
     try {
       await deleteCuadrilla(id);
       fetchCuadrillas();
+      setError(null);
     } catch (error) {
-      console.error('Error deleting cuadrilla:', error);
+      setError(error.response?.data?.detail || 'Error al eliminar la cuadrilla');
     }
   };
 
@@ -54,17 +58,20 @@ const Cuadrillas = () => {
   };
 
   return (
-    <Container className="mt-4">
-      <Row className="mb-3">
+    <Container className="custom-container">
+      <Row className="align-items-center mb-2">
         <Col>
           <h2>Gestión de Cuadrillas</h2>
         </Col>
         <Col className="text-end">
-          <Button variant="primary" onClick={() => setShowForm(true)}>
-            Crear Cuadrilla
+          <Button className="custom-button" onClick={() => setShowForm(true)}>
+            <FaPlus />
+            Agregar
           </Button>
         </Col>
       </Row>
+
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {showForm && (
         <CuadrillaForm
@@ -72,7 +79,7 @@ const Cuadrillas = () => {
           onClose={handleFormClose}
         />
       )}
-
+    <div className="table-responsive">
       <Table striped bordered hover>
         <thead>
           <tr>
@@ -109,6 +116,7 @@ const Cuadrillas = () => {
           ))}
         </tbody>
       </Table>
+    </div>
     </Container>
   );
 };

@@ -1,0 +1,105 @@
+/* Estilo para el navbar */
+.custom-navbar {
+  position: fixed !important;
+  top: 0;
+  width: 100%;
+  z-index: 1050;
+}
+
+/* Estilo para la marca del navbar (logo) */
+.custom-navbar-brand {
+  margin-left: 1rem;
+}
+
+/* Estilo para la imagen del logo */
+.custom-logo {
+  object-fit: contain;
+}
+
+/* Estilo para los enlaces del nav */
+.custom-nav-links {
+  gap: 2rem;
+  margin-left: 2rem;
+}
+
+/* Contenedor del ícono de usuario + campana */
+.icon-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 1rem; /* Podés ajustar este valor */
+}
+
+
+/* Ícono de usuario */
+.icon-user {
+  color: white;
+}
+
+/* Ícono de campana */
+.icon-bell {
+  position: absolute;
+  bottom: -2px;
+  right: -8px;
+  color: white;
+}
+
+@media (max-width: 991px) {
+  .custom-nav-links {
+    display: none !important;
+  }
+
+  .icon-container {
+    margin-left: auto;
+  }
+
+  .custom-navbar {
+  position: fixed !important;
+  }
+
+}
+
+ /* Pantallas grandes (PC) */
+  @media (min-width: 768px) {
+  .custom-nav-links {
+    display: none !important;
+  }
+
+  .icon-container {
+    margin-left: auto;
+  }
+
+  .custom-navbar {
+  position: fixed !important;
+  }
+}
+  
+  /* Ajustes para pantallas pequeñas (móviles) */
+  @media (max-width: 767px) {
+  .custom-nav-links {
+    display: none !important;
+  }
+
+  .icon-container {
+    margin-left: auto;
+  }
+
+  .custom-navbar {
+  position: fixed !important;
+  }
+}
+  
+  /* Ajustes para pantallas muy pequeñas */
+  @media (max-width: 400px) {
+  .custom-nav-links {
+    display: none !important;
+  }
+
+  .icon-container {
+    margin-left: auto;
+  }
+
+  .custom-navbar {
+  position: fixed !important;
+  }
+}

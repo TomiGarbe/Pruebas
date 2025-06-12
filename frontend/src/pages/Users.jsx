@@ -1,32 +1,46 @@
-import { useState, useEffect } from 'react';
-import { Table, Button, Container, Row, Col } from 'react-bootstrap';
+import React, { useState, useEffect, useContext } from 'react';
+import { Table, Button, Container, Row, Col, Alert } from 'react-bootstrap';
 import UserForm from '../components/UserForm';
 import { getUsers, deleteUser } from '../services/userService';
+import { AuthContext } from '../context/AuthContext';
+import { FaPlus } from 'react-icons/fa';
 
 const Users = () => {
+  const { currentEntity } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchUsers = async () => {
     try {
       const response = await getUsers();
       setUsers(response.data);
+      setError(null);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      setError(error.response?.data?.detail || 'Error al cargar los usuarios');
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (currentEntity.data.rol === 'Administrador') {
+      fetchUsers();
+    }
+    else if (currentEntity) {
+      navigate('/');
+    }
+    else {
+      navigate('/login');
+    }
+  }, [currentEntity]);
 
   const handleDelete = async (id) => {
     try {
       await deleteUser(id);
       fetchUsers();
+      setError(null);
     } catch (error) {
-      console.error('Error deleting user:', error);
+      setError(error.response?.data?.detail || 'Error al eliminar el usuario');
     }
   };
 
@@ -42,17 +56,20 @@ const Users = () => {
   };
 
   return (
-    <Container className="mt-4">
-      <Row className="mb-3">
+    <Container className="custom-container">
+      <Row className="align-items-center mb-2">
         <Col>
           <h2>Gestión de Usuarios</h2>
         </Col>
         <Col className="text-end">
-          <Button variant="primary" onClick={() => setShowForm(true)}>
-            Crear Usuario
+          <Button className="custom-button" onClick={() => setShowForm(true)}>
+            <FaPlus />
+            Agregar
           </Button>
         </Col>
       </Row>
+
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {showForm && (
         <UserForm
@@ -60,7 +77,7 @@ const Users = () => {
           onClose={handleFormClose}
         />
       )}
-
+    <div className="table-responsive">
       <Table striped bordered hover>
         <thead>
           <tr>
@@ -97,6 +114,7 @@ const Users = () => {
           ))}
         </tbody>
       </Table>
+    </div>
     </Container>
   );
 };

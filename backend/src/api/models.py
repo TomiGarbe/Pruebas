@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Date, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
@@ -18,14 +18,16 @@ class Sucursal(Base):
     superficie = Column(String)
     
     preventivos = relationship("Preventivo", back_populates="sucursal")
-    correctivos = relationship("MantenimientoCorrectivo", back_populates="sucursal")
+    mantenimientos_preventivos = relationship("MantenimientoPreventivo", back_populates="sucursal")
+    mantenimientos_correctivos = relationship("MantenimientoCorrectivo", back_populates="sucursal")
 
 class Cuadrilla(Base):
     __tablename__ = "cuadrilla"
     id = Column(Integer, primary_key=True)
     nombre = Column(String)
     zona = Column(String)
-    email = Column(String)
+    email = Column(String, unique=True, nullable=False)
+    firebase_uid = Column(String, unique=True, nullable=True)  # ID de Firebase
     
     mantenimientos_preventivos = relationship("MantenimientoPreventivo", back_populates="cuadrilla")
     mantenimientos_correctivos = relationship("MantenimientoCorrectivo", back_populates="cuadrilla")
@@ -38,22 +40,33 @@ class Preventivo(Base):
     frecuencia = Column(String)
     
     sucursal = relationship("Sucursal", back_populates="preventivos")
-    mantenimiento = relationship("MantenimientoPreventivo", back_populates="preventivo", uselist=False)
 
 class MantenimientoPreventivo(Base):
     __tablename__ = "mantenimiento_preventivo"
     id = Column(Integer, primary_key=True)
-    id_preventivo = Column(Integer, ForeignKey("preventivo.id"))
+    id_sucursal = Column(Integer, ForeignKey("sucursal.id"))
+    frecuencia = Column(String)
     id_cuadrilla = Column(Integer, ForeignKey("cuadrilla.id"))
     fecha_apertura = Column(Date)
     fecha_cierre = Column(Date)
-    planilla_1 = Column(String)
-    planilla_2 = Column(String)
-    planilla_3 = Column(String)
     extendido = Column(DateTime, nullable=True)
 
-    preventivo = relationship("Preventivo", back_populates="mantenimiento")
+    sucursal = relationship("Sucursal", back_populates="mantenimientos_preventivos")
     cuadrilla = relationship("Cuadrilla", back_populates="mantenimientos_preventivos")
+    planillas = relationship("MantenimientoPreventivoPlanilla", backref="mantenimiento")
+    fotos = relationship("MantenimientoPreventivoFoto", backref="mantenimiento")
+    
+class MantenimientoPreventivoPlanilla(Base):
+    __tablename__ = "mantenimiento_preventivo_planilla"
+    id = Column(Integer, primary_key=True)
+    mantenimiento_id = Column(Integer, ForeignKey("mantenimiento_preventivo.id"))
+    url = Column(String, nullable=False)
+
+class MantenimientoPreventivoFoto(Base):
+    __tablename__ = "mantenimiento_preventivo_foto"
+    id = Column(Integer, primary_key=True)
+    mantenimiento_id = Column(Integer, ForeignKey("mantenimiento_preventivo.id"))
+    url = Column(String, nullable=False)
 
 class MantenimientoCorrectivo(Base):
     __tablename__ = "mantenimiento_correctivo"
@@ -70,16 +83,24 @@ class MantenimientoCorrectivo(Base):
     prioridad = Column(String)
     extendido = Column(DateTime, nullable=True)
     
-    sucursal = relationship("Sucursal", back_populates="correctivos")
+    sucursal = relationship("Sucursal", back_populates="mantenimientos_correctivos")
     cuadrilla = relationship("Cuadrilla", back_populates="mantenimientos_correctivos")
+    fotos = relationship("MantenimientoCorrectivoFoto", backref="mantenimiento")
+
+class MantenimientoCorrectivoFoto(Base):
+    __tablename__ = "mantenimiento_correctivo_foto"
+    id = Column(Integer, primary_key=True)
+    mantenimiento_id = Column(Integer, ForeignKey("mantenimiento_correctivo.id"))
+    url = Column(String, nullable=False)
 
 class Usuario(Base):
     __tablename__ = "usuario"
     id = Column(Integer, primary_key=True)
     nombre = Column(String)
-    email = Column(String)
+    email = Column(String, unique=True, nullable=False)
     rol = Column(String)
-
+    firebase_uid = Column(String, unique=True, nullable=True)  # ID de Firebase
+    
     reportes = relationship("Reporte", back_populates="usuario")
 
 class Reporte(Base):

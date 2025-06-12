@@ -1,25 +1,25 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { createMantenimientoCorrectivo, updateMantenimientoCorrectivo } from '../services/mantenimientoCorrectivoService';
 import { getSucursales } from '../services/sucursalService';
 import { getCuadrillas } from '../services/cuadrillaService';
+import '../styles/formularios.css';
 
 const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
   const [formData, setFormData] = useState({
-    id_sucursal: '',
-    id_cuadrilla: '',
-    fecha_apertura: '',
-    fecha_cierre: null,
-    numero_caso: '',
-    incidente: '',
-    rubro: '',
-    planilla: null,
+    id_sucursal: null,
+    id_cuadrilla: null,
+    fecha_apertura: null,
+    numero_caso: null,
+    incidente: null,
+    rubro: null,
     estado: 'Pendiente',
     prioridad: 'Media',
-    extendido: null,
   });
   const [sucursales, setSucursales] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,34 +32,47 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
         setCuadrillas(cuadrillasResponse.data);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setError('Error al cargar los datos. Por favor, intenta de nuevo.');
       }
     };
     fetchData();
 
     if (mantenimiento) {
       setFormData({
-        id_sucursal: mantenimiento.id_sucursal,
-        id_cuadrilla: mantenimiento.id_cuadrilla,
-        fecha_apertura: mantenimiento.fecha_apertura?.split('T')[0] || '',
-        fecha_cierre: mantenimiento.fecha_cierre?.split('T')[0] || '',
-        numero_caso: mantenimiento.numero_caso,
-        incidente: mantenimiento.incidente,
-        rubro: mantenimiento.rubro,
-        planilla: mantenimiento.planilla,
-        estado: mantenimiento.estado,
-        prioridad: mantenimiento.prioridad,
-        extendido: mantenimiento.extendido?.split('.')[0] || '',
+        id_sucursal: mantenimiento.id_sucursal || null,
+        id_cuadrilla: mantenimiento.id_cuadrilla || null,
+        fecha_apertura: mantenimiento.fecha_apertura?.split('T')[0] || null,
+        numero_caso: mantenimiento.numero_caso || null,
+        incidente: mantenimiento.incidente || null,
+        rubro: mantenimiento.rubro || null,
+        estado: mantenimiento.estado || 'Pendiente',
+        prioridad: mantenimiento.prioridad || 'Media',
       });
     }
   }, [mantenimiento]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Validar que los campos obligatorios no estén vacíos
+      if (
+        !formData.id_sucursal ||
+        !formData.fecha_apertura ||
+        !formData.numero_caso ||
+        !formData.incidente ||
+        !formData.rubro ||
+        !formData.estado ||
+        !formData.prioridad
+      ) {
+        setError('Por favor, completa todos los campos obligatorios.');
+        return;
+      }
+
       if (mantenimiento) {
         await updateMantenimientoCorrectivo(mantenimiento.id, formData);
       } else {
@@ -68,7 +81,12 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
       onClose();
     } catch (error) {
       console.error('Error saving mantenimiento correctivo:', error);
+      setError('Error al guardar el mantenimiento correctivo. Por favor, intenta de nuevo.');
     }
+  };
+
+  const isFormValid = () => {
+    return formData.id_sucursal && formData.fecha_apertura && formData.numero_caso && formData.incidente && formData.rubro && formData.estado && formData.prioridad;
   };
 
   return (
@@ -77,14 +95,16 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
         <Modal.Title>{mantenimiento ? 'Editar Mantenimiento Correctivo' : 'Crear Mantenimiento Correctivo'}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {error && <div className="alert alert-danger">{error}</div>}
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="id_sucursal">
             <Form.Label className="required required-asterisk">Sucursal</Form.Label>
             <Form.Select
               name="id_sucursal"
               value={formData.id_sucursal}
               onChange={handleChange}
               required
+              className='form-select'
             >
               <option value="">Seleccione una sucursal</option>
               {sucursales.map((sucursal) => (
@@ -94,13 +114,14 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               ))}
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="id_cuadrilla">
             <Form.Label className="required required-asterisk">Cuadrilla</Form.Label>
             <Form.Select
               name="id_cuadrilla"
               value={formData.id_cuadrilla}
               onChange={handleChange}
               required
+              className='form-select'
             >
               <option value="">Seleccione una cuadrilla</option>
               {cuadrillas.map((cuadrilla) => (
@@ -110,52 +131,44 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               ))}
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="fecha_apertura">
             <Form.Label className="required required-asterisk">Fecha Apertura</Form.Label>
             <Form.Control
               type="date"
               name="fecha_apertura"
-              value={formData.fecha_apertura}
+              value={formData.fecha_apertura || ''}
               onChange={handleChange}
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Fecha Cierre</Form.Label>
-            <Form.Control
-              type="date"
-              name="fecha_cierre"
-              value={formData.fecha_cierre}
-              onChange={handleChange}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="numero_caso">
             <Form.Label className="required required-asterisk">Número de Caso</Form.Label>
             <Form.Control
               type="text"
               name="numero_caso"
-              value={formData.numero_caso}
+              value={formData.numero_caso || ''}
               onChange={handleChange}
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="incidente">
             <Form.Label className="required required-asterisk">Incidente</Form.Label>
             <Form.Control
               type="text"
               name="incidente"
-              value={formData.incidente}
+              value={formData.incidente || ''}
               onChange={handleChange}
               required
             />
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="rubro">
             <Form.Label className="required required-asterisk">Rubro</Form.Label>
             <Form.Select
               name="rubro"
-              value={formData.rubro}
+              value={formData.rubro || ''}
               onChange={handleChange}
               required
+              className='form-select'
             >
               <option value="">Seleccione un rubro</option>
               <option value="Iluminación/Electricidad">Iluminación/Electricidad</option>
@@ -171,22 +184,14 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               <option value="Otros">Otros</option>
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Planilla</Form.Label>
-            <Form.Control
-              type="text"
-              name="planilla"
-              value={formData.planilla}
-              onChange={handleChange}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="estado">
             <Form.Label className="required required-asterisk">Estado</Form.Label>
             <Form.Select
               name="estado"
-              value={formData.estado}
+              value={formData.estado || ''}
               onChange={handleChange}
               required
+              className='form-select'
             >
               <option value="Pendiente">Pendiente</option>
               <option value="En Progreso">En Progreso</option>
@@ -200,29 +205,21 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
               <option value="Solucionado">Solucionado</option>
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-3" controlId="prioridad">
             <Form.Label className="required required-asterisk">Prioridad</Form.Label>
             <Form.Select
               name="prioridad"
-              value={formData.prioridad}
+              value={formData.prioridad || ''}
               onChange={handleChange}
               required
+              className='form-select'
             >
               <option value="Alta">Alta</option>
               <option value="Media">Media</option>
               <option value="Baja">Baja</option>
             </Form.Select>
           </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Extendido</Form.Label>
-            <Form.Control
-              type="datetime-local"
-              name="extendido"
-              value={formData.extendido}
-              onChange={handleChange}
-            />
-          </Form.Group>
-          <Button variant="primary" type="submit">
+          <Button className="custom-save-button" type="submit" disabled={!isFormValid()}>
             Guardar
           </Button>
         </Form>
