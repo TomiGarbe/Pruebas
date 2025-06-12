@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path="./env.config")
 
-GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
+GOOGLE_CREDENTIALS = "../credentials/google_cloud_credentials.json"
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
 SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 
