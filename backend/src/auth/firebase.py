@@ -3,8 +3,8 @@ from firebase_admin import credentials, auth
 import os
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="/home/site/wwwroot/env.config")
-print(f"Loaded env: FIREBASE_CREDENTIALS={os.getenv('FIREBASE_CREDENTIALS')}")
+load_dotenv(dotenv_path="./env.config")
+
 def initialize_firebase():
     if not firebase_admin._apps:  # Verifica si la app ya está inicializada
         if os.getenv("TESTING") == "true":
