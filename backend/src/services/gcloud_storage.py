@@ -6,7 +6,7 @@ import os
 
 def create_folder_if_not_exists(bucket_name: str, folder_path: str):
     try:
-        credentials_path = "../credentials/google_cloud_credentials.json"
+        credentials_path = os.getenv("GOOGLE_CREDENTIALS")
         if not credentials_path or not os.path.exists(credentials_path):
             raise HTTPException(status_code=500, detail="Google Cloud credentials not configured")
         
@@ -23,7 +23,7 @@ def create_folder_if_not_exists(bucket_name: str, folder_path: str):
 def generate_gallery_html(bucket_name: str, folder: str):
     """Generate an HTML gallery for photos in the specified GCS folder."""
     try:
-        credentials_path = "../credentials/google_cloud_credentials.json"
+        credentials_path = os.getenv("GOOGLE_CREDENTIALS")
         if not isinstance(credentials_path, str) or not os.path.exists(credentials_path):
             raise HTTPException(status_code=500, detail="Google Cloud credentials not configured")
         
@@ -66,7 +66,7 @@ def generate_gallery_html(bucket_name: str, folder: str):
 
 async def upload_file_to_gcloud(file: UploadFile, bucket_name: str, folder: str = "") -> str:
     try:
-        credentials_path = "../credentials/google_cloud_credentials.json"
+        credentials_path = os.getenv("GOOGLE_CREDENTIALS")
         if not credentials_path or not os.path.exists(credentials_path):
             raise HTTPException(status_code=500, detail="Google Cloud credentials not configured")
         
@@ -91,7 +91,7 @@ async def upload_file_to_gcloud(file: UploadFile, bucket_name: str, folder: str 
 
 def delete_file_in_folder(bucket_name: str, folder: str, file_path: str) -> bool:
     try:
-        credentials_path = "../credentials/google_cloud_credentials.json"
+        credentials_path = os.getenv("GOOGLE_CREDENTIALS")
         if not credentials_path or not os.path.exists(credentials_path):
             raise HTTPException(status_code=500, detail="Google Cloud credentials not configured")
         

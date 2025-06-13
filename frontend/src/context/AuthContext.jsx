@@ -15,63 +15,85 @@ const AuthProvider = ({ children }) => {
   const isVerifiedRef = useRef(false);
 
   const verifyUser = async (user, idToken) => {
-    if (isVerifyingRef.current) {
+    /*if (isVerifyingRef.current) {
       console.log('Verification already in progress, skipping.');
       return { success: false, data: null };
     }
     if (isVerifiedRef.current) {
       console.log('User already verified, skipping.');
+      return { success: true, data: currentEntity };
+    }*/
+
+    isVerifyingRef.current = true;
+    try {
+      setLoading(true);
+      setVerifying(true);
+
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (attempts < maxAttempts) {
+        try {
+          const response = await api.post(
+            '/auth/verify',
+            {},
+            { headers: { Authorization: `Bearer ${idToken}` } }
+          );
+          
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          console.log('Verification succeeded:', response.data);
+          isVerifiedRef.current = true;
+          setCurrentUser(user);
+          setCurrentEntity(response.data);
+          return { success: true, data: response.data };
+        } catch (error) {
+          attempts++;
+          const errorDetail = error.response?.data?.detail || error.message;
+          console.error(`Verification attempt ${attempts} failed:`, errorDetail);
+          if (attempts === maxAttempts) {
+            throw error;
+          }
+        }
+      }
+    } catch (error) {
+      const errorDetail = error.response?.data?.detail || error.message;
+      console.error('Final verification error:', errorDetail);
+      try {
+        await signOut(auth);
+        localStorage.removeItem('authToken');
+      } catch (signOutError) {
+        console.error('Sign-out failed:', signOutError);
+      }
+      setCurrentUser(null);
+      setCurrentEntity(null);
+      isVerifiedRef.current = false;
+      const errorMessage =
+        error.response?.status === 403
+          ? 'Usuario no registrado. Por favor, crea una cuenta.'
+          : error.response?.status === 401
+          ? `Token de autenticación inválido: ${errorDetail}`
+          : 'Error al verificar el usuario.';
+      navigate('/login', { state: { error: errorMessage } });
+      return { success: false, data: null };
+    } finally {
+      isVerifyingRef.current = false;
       setLoading(false);
       setVerifying(false);
-      return { success: true, data: currentEntity };
-    }
-    isVerifyingRef.current = true;
-    setLoading(true);
-    setVerifying(true);
-
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    while (attempts < maxAttempts) {
-      try {
-        const response = await api.post(
-          '/auth/verify',
-          {},
-          { headers: { Authorization: `Bearer ${idToken}` } }
-        );
-        console.log('Verification succeeded:', response.data);
-        isVerifiedRef.current = true;
-        setCurrentUser(user);
-        setCurrentEntity(response.data);
-        setLoading(false);
-        setVerifying(false);
-        isVerifyingRef.current = false;
-        return { success: true, data: response.data };
-      } catch (error) {
-        attempts++;
-        const errorDetail = error.response?.data?.detail || error.message;
-        console.error(`Verification attempt ${attempts} failed:`, errorDetail);
-        if (attempts === maxAttempts) {
-          await signOut(auth);
-          localStorage.removeItem('authToken');
-          setCurrentUser(null);
-          setCurrentEntity(null);
-          setLoading(false);
-          setVerifying(false);
-          isVerifyingRef.current = false;
-          isVerifiedRef.current = false;
-          const errorMessage = error.response?.status === 403
-            ? 'Usuario no registrado. Por favor, crea una cuenta.'
-            : error.response?.status === 401
-            ? `Token de autenticación inválido: ${errorDetail}`
-            : 'Error al verificar el usuario.';
-          navigate('/login', { state: { error: errorMessage } });
-          return { success: false, data: null };
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
     }
   };
+
+  const logOut = async () => {
+    await signOut(auth);
+    localStorage.removeItem('authToken');
+    setCurrentUser(null);
+    setCurrentEntity(null);
+    setLoading(false);
+    setVerifying(false);
+    isVerifyingRef.current = false;
+    isVerifiedRef.current = false;
+    navigate('/login');
+  }
 
   const signInWithGoogleForRegistration = async () => {
     return new Promise((resolve, reject) => {
@@ -138,7 +160,7 @@ const AuthProvider = ({ children }) => {
   }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ currentUser, currentEntity, loading, verifying, verifyUser, signInWithGoogleForRegistration }}>
+    <AuthContext.Provider value={{ currentUser, currentEntity, loading, verifying, verifyUser, signInWithGoogleForRegistration, logOut }}>
       {children}
     </AuthContext.Provider>
   );

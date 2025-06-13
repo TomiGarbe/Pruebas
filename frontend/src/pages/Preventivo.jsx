@@ -20,8 +20,10 @@ const Preventivo = () => {
     planillas: [],
     fotos: [],
     fecha_cierre: null,
-    extendido: '',
+    extendido: null,
   });
+  const [isSelectingPhotos, setIsSelectingPhotos] = useState(false);
+  const [isSelectingPlanillas, setIsSelectingPlanillas] = useState(false);
   const [planillaPreviews, setPlanillaPreviews] = useState([]);
   const [fotoPreviews, setFotoPreviews] = useState([]);
   const [selectedPlanillas, setSelectedPlanillas] = useState([]);
@@ -33,22 +35,26 @@ const Preventivo = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchMantenimiento = async () => {
-  try {
-    const response = await getMantenimientoPreventivo(mantenimiento.id);
-    setFormData({
-      planillas: [],
-      fotos: [],
-      fecha_cierre: mantenimiento.fecha_cierre?.split('T')[0] || null,
-      extendido: response.data.extendido?.split('T')[0] || '',
-    });
-    navigate(location.pathname, { state: { mantenimiento: response.data } });
-  } catch (error) {
-    console.error('Error fetching mantenimiento:', error);
-    setError('Error al cargar los datos actualizados.');
-  }
-};
+    setIsLoading(true);
+    try {
+      const response = await getMantenimientoPreventivo(mantenimiento.id);
+      setFormData({
+        planillas: [],
+        fotos: [],
+        fecha_cierre: mantenimiento.fecha_cierre?.split('T')[0] || null,
+        extendido: response.data.extendido || null,
+      });
+      navigate(location.pathname, { state: { mantenimiento: response.data } });
+    } catch (error) {
+      console.error('Error fetching mantenimiento:', error);
+      setError('Error al cargar los datos actualizados.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchData = async () => {
+    setIsLoading(true);
     try {
       const [cuadrillasResponse, sucursalesResponse] = await Promise.all([
         getCuadrillas(),
@@ -58,6 +64,8 @@ const Preventivo = () => {
       setSucursales(sucursalesResponse.data);
     } catch (error) {
       console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -94,13 +102,14 @@ const Preventivo = () => {
     );
   };
 
-  const handlePhotoSelect = (photoUrl) => {
-    setSelectedPhotos(prev =>
-      prev.includes(photoUrl)
-        ? prev.filter(url => url !== photoUrl)
-        : [...prev, photoUrl]
-    );
-  };
+    const handlePhotoSelect = (photo) => {
+      setSelectedPhotos((prev) =>
+        prev.includes(photo)
+          ? prev.filter((p) => p !== photo)
+          : [...prev, photo]
+      );
+    };
+
 
   const handleImageClick = (imageUrl) => {
     setSelectedImage(imageUrl);
@@ -113,6 +122,7 @@ const Preventivo = () => {
   };
 
   const handleDeleteSelectedPlanillas = async () => {
+    setIsLoading(true);
     try {
       for (const planillaUrl of selectedPlanillas) {
         const fileName = planillaUrl.split('/').pop();
@@ -124,10 +134,13 @@ const Preventivo = () => {
     } catch (error) {
       console.error('Error deleting planillas:', error);
       setError('Error al eliminar las planillas.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDeleteSelectedPhotos = async () => {
+    setIsLoading(true);
     try {
       for (const photoUrl of selectedPhotos) {
         const fileName = photoUrl.split('/').pop();
@@ -139,6 +152,8 @@ const Preventivo = () => {
     } catch (error) {
       console.error('Error deleting photos:', error);
       setError('Error al eliminar las fotos.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -232,7 +247,7 @@ const Preventivo = () => {
   return (
     <Container fluid className="mantenimiento-container">
       {isLoading ? (
-        <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="custom-div">
           <div className="spinner-border" role="status">
             <span className="visually-hidden">Cargando...</span>
           </div>
@@ -260,7 +275,7 @@ const Preventivo = () => {
               </div>
               <div className="info-field">
                 <strong className="info-label">Fecha Cierre:</strong>{' '}
-                {mantenimiento.fecha_cierre?.split('T')[0] || 'N/A'}
+                {mantenimiento.fecha_cierre?.split('T')[0] || 'Mantenimiento no finalizado'}
               </div>
               <div className="info-field">
                 <strong className="info-label">Extendido:</strong>{' '}
@@ -345,7 +360,7 @@ const Preventivo = () => {
                 </Button>
                 {/* Mostrar nombres de archivos seleccionados */}
                 {formData.planillas.length > 0 && (
-                  <div className="selected-files mt-2">
+                  <div className="selected-files justify-content-center align-items-center mt-2">
                     <strong>Archivos seleccionados:</strong>
                     <ul>
                       {formData.planillas.map((file, index) => (
@@ -360,12 +375,6 @@ const Preventivo = () => {
                   {planillaPreviews.map((preview, index) => (
                     <Col md={3} key={index} className="gallery-item">
                       <div className="photo-container">
-                        <input
-                          type="checkbox"
-                          checked={selectedPlanillas.includes(preview)}
-                          onChange={() => handlePlanillaSelect(preview)}
-                          className="gallery-checkbox"
-                        />
                         <img
                           src={preview}
                           alt={`Nueva planilla ${index + 1}`}
@@ -377,42 +386,60 @@ const Preventivo = () => {
                   ))}
                 </Row>
               )}
-              {mantenimiento.planillas?.length > 0 ? (
-                <>
-                  <Row className="gallery-section mt-3">
-                    {mantenimiento.planillas.map((planilla, index) => (
-                      <Col md={3} key={index} className="gallery-item">
-                        <div className="photo-container">
-                          <input
-                            type="checkbox"
-                            checked={selectedPlanillas.includes(planilla)}
-                            onChange={() => handlePlanillaSelect(planilla)}
-                            className="gallery-checkbox"
-                          />
-                          <img
-                            src={planilla}
-                            alt={`Planilla ${index + 1}`}
-                            className="gallery-thumbnail"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleImageClick(planilla);
-                            }}
-                          />
-                        </div>
-                      </Col>
-                    ))}
-                  </Row>
-                  {selectedPlanillas.length > 0 && (
-                    <div className="d-flex justify-content-end mt-5">
-                      <Button variant="danger" onClick={handleDeleteSelectedPlanillas}>
-                        Eliminar Planillas Seleccionadas
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="mt-3">No hay planillas cargadas.</p>
-              )}
+              {mantenimiento.planillas?.length > 0 && (
+              <div className="d-flex justify-content-end mt-3 gap-2">
+                {!isSelectingPlanillas && (
+                  <Button variant="outline-danger" onClick={() => setIsSelectingPlanillas(true)}>
+                    Eliminar Planillas
+                  </Button>
+                )}
+                {isSelectingPlanillas && selectedPlanillas.length > 0 && (
+                  <Button variant="danger" onClick={handleDeleteSelectedPlanillas}>
+                    Eliminar Planillas Seleccionadas
+                  </Button>
+                )}
+                {isSelectingPlanillas && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setIsSelectingPlanillas(false);
+                      setSelectedPlanillas([]);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {mantenimiento.planillas?.length > 0 ? (
+              <>
+                <Row className="gallery-section mt-3">
+                  {mantenimiento.planillas.map((planilla, index) => (
+                    <Col md={3} key={index} className="gallery-item">
+                      <div
+                        className={`photo-container ${isSelectingPlanillas ? 'selectable' : ''}`}
+                        onClick={() => {
+                          if (isSelectingPlanillas) {
+                            handlePlanillaSelect(planilla);
+                          } else {
+                            handleImageClick(planilla);
+                          }
+                        }}
+                      >
+                        <img
+                          src={planilla}
+                          alt={`Planilla ${index + 1}`}
+                          className="gallery-thumbnail"
+                        />
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+              </>
+            ) : (
+              <p className="mt-3">No hay planillas cargadas.</p>
+            )}
             </Col>
           </Row>
 
@@ -435,7 +462,7 @@ const Preventivo = () => {
               </Button>
               {/* Mostrar nombres de archivos seleccionados */}
               {formData.fotos.length > 0 && (
-                <div className="selected-files mt-2">
+                <div className="selected-files justify-content-center align-items-center mt-2">
                   <strong>Archivos seleccionados:</strong>
                   <ul>
                     {formData.fotos.map((file, index) => (
@@ -450,12 +477,6 @@ const Preventivo = () => {
                 {fotoPreviews.map((preview, index) => (
                   <Col md={3} key={index} className="gallery-item">
                     <div className="photo-container">
-                      <input
-                        type="checkbox"
-                        checked={selectedPhotos.includes(preview)}
-                        onChange={() => handlePhotoSelect(preview)}
-                        className="gallery-checkbox"
-                      />
                       <img
                         src={preview}
                         alt={`Nueva foto ${index + 1}`}
@@ -467,38 +488,57 @@ const Preventivo = () => {
                 ))}
               </Row>
             )}
+            {mantenimiento.fotos?.length > 0 && (
+              <div className="d-flex justify-content-center mt-3 gap-2">
+                {!isSelectingPhotos && (
+                  <Button variant="outline-danger" onClick={() => setIsSelectingPhotos(true)}>
+                    Eliminar Fotos
+                  </Button>
+                )}
+                {isSelectingPhotos && selectedPhotos.length > 0 && (
+                  <Button variant="danger" onClick={handleDeleteSelectedPhotos}>
+                    Eliminar Fotos Seleccionadas
+                  </Button>
+                )}
+                {isSelectingPhotos && (
+                  <Button variant="secondary" onClick={() => {
+                    setIsSelectingPhotos(false);
+                    setSelectedPhotos([]);
+                  }}>
+                    Cancelar
+                  </Button>
+                )}
+              </div>
+            )}
+
             {mantenimiento.fotos?.length > 0 ? (
               <>
                 <Row className="gallery-section mt-3">
-                  {mantenimiento.fotos.map((photo, index) => (
-                    <Col md={3} key={index} className="gallery-item">
-                      <div className="photo-container">
-                        <input
-                          type="checkbox"
-                          checked={selectedPhotos.includes(photo)}
-                          onChange={() => handlePhotoSelect(photo)}
-                          className="gallery-checkbox"
-                        />
-                        <img
-                          src={photo}
-                          alt={`Foto ${index + 1}`}
-                          className="gallery-thumbnail"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleImageClick(photo);
+                  {mantenimiento.fotos.map((photo, index) => {
+                    const isSelected = selectedPhotos.includes(photo);
+                    return (
+                      <Col md={3} key={index} className="gallery-item">
+                        <div
+                          className={`photo-container ${isSelectingPhotos ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
+                          onClick={() => {
+                            if (isSelectingPhotos) {
+                              handlePhotoSelect(photo);
+                            } else {
+                              handleImageClick(photo);
+                            }
                           }}
-                        />
-                      </div>
-                    </Col>
-                  ))}
+                        >
+                          <img
+                            src={photo}
+                            alt={`Foto ${index + 1}`}
+                            className="gallery-thumbnail"
+                          />
+                        </div>
+                      </Col>
+                    );
+                  })}
                 </Row>
-                {selectedPhotos.length > 0 && (
-                  <div className="d-flex justify-content-center mt-5">
-                    <Button variant="danger" onClick={handleDeleteSelectedPhotos}>
-                      Eliminar Fotos Seleccionadas
-                    </Button>
-                  </div>
-                )}
+
               </>
             ) : (
               <p className="mt-3">No hay fotos cargadas.</p>

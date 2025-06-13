@@ -6,9 +6,6 @@ from typing import Optional, List
 from services.gcloud_storage import upload_file_to_gcloud, delete_file_in_folder
 from services.google_sheets import append_preventivo, update_preventivo, delete_preventivo
 import os
-from dotenv import load_dotenv
-
-load_dotenv(dotenv_path="./env.config")
 
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
 
@@ -129,7 +126,7 @@ def delete_mantenimiento_planilla(db: Session, mantenimiento_id: int, file_name:
     
     db_mantenimiento = db.query(MantenimientoPreventivo).filter(MantenimientoPreventivo.id == mantenimiento_id).first()
     if not db_mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento preventive no encontrado")
+        raise HTTPException(status_code=404, detail="Mantenimiento preventivo no encontrado")
     
     planilla = db.query(MantenimientoPreventivoPlanilla).filter(
         MantenimientoPreventivoPlanilla.mantenimiento_id == mantenimiento_id,
@@ -150,7 +147,7 @@ def delete_mantenimiento_photo(db: Session, mantenimiento_id: int, file_name: st
     
     db_mantenimiento = db.query(MantenimientoPreventivo).filter(MantenimientoPreventivo.id == mantenimiento_id).first()
     if not db_mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento preventive no encontrado")
+        raise HTTPException(status_code=404, detail="Mantenimiento preventivo no encontrado")
     
     foto = db.query(MantenimientoPreventivoFoto).filter(
         MantenimientoPreventivoFoto.mantenimiento_id == mantenimiento_id,
