@@ -4,6 +4,9 @@ from fastapi import HTTPException, UploadFile
 import uuid
 import os
 import json
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path="./env.config")
 
 def create_folder_if_not_exists(bucket_name: str, folder_path: str):
     try:
