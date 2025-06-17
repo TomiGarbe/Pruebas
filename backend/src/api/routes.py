@@ -9,9 +9,6 @@ from init_admin import init_admin
 from dotenv import load_dotenv
 import os
 from starlette.responses import JSONResponse
-import logging
-logging.basicConfig(level=logging.DEBUG, filename='/tmp/app.log')
-logger = logging.getLogger(__name__)
 
 load_dotenv(dotenv_path="./env.config")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
@@ -19,18 +16,11 @@ EMAIL_ADMIN = os.getenv("EMAIL_ADMIN")
 NOMBRE_ADMIN = os.getenv("NOMBRE_ADMIN")
 PASSWORD_ADMIN = os.getenv("PASSWORD_ADMIN")
 
+initialize_firebase()
+init_admin(email=EMAIL_ADMIN, nombre=NOMBRE_ADMIN, password=PASSWORD_ADMIN)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.debug(f"Env vars: EMAIL_ADMIN={EMAIL_ADMIN}, NOMBRE_ADMIN={NOMBRE_ADMIN}")
-    logger.debug("Starting init_admin")
-    logger.debug("Firebase initialization attempt")
-    initialize_firebase()
-    logger.debug("Firebase initialized")
-    init_admin(
-        email=EMAIL_ADMIN,
-        nombre=NOMBRE_ADMIN,
-        password=PASSWORD_ADMIN
-    )
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -108,9 +98,3 @@ app.include_router(auth.router)
 app.include_router(preventivos.router)
 app.include_router(mantenimientos_preventivos.router)
 app.include_router(mantenimientos_correctivos.router)
-
-@app.get("/debug/init-admin")
-async def debug_init_admin():
-    logger.debug("Manual init_admin trigger")
-    init_admin(email=EMAIL_ADMIN, nombre=NOMBRE_ADMIN, password=PASSWORD_ADMIN)
-    return {"status": "init_admin triggered"}
