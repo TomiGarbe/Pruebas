@@ -18,13 +18,13 @@ PASSWORD_ADMIN = os.getenv("PASSWORD_ADMIN")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    initialize_firebase()
     init_admin(
         email=EMAIL_ADMIN,
         nombre=NOMBRE_ADMIN,
         password=PASSWORD_ADMIN
     )
     yield
-    pass
 
 app = FastAPI(lifespan=lifespan)
 
