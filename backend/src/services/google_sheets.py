@@ -3,7 +3,6 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from sqlalchemy.orm import Session
 from api.models import MantenimientoCorrectivo, MantenimientoPreventivo
-import json
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path="./env.config")
@@ -14,7 +13,7 @@ SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 
 def get_client():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json(json.loads(GOOGLE_CREDENTIALS), scope)
+    creds = ServiceAccountCredentials.from_json(GOOGLE_CREDENTIALS, scope)
     return gspread.authorize(creds)
 
 def get_fotos_gallery_url(mantenimiento_id, tipo):
@@ -48,7 +47,6 @@ def append_correctivo(db: Session, mantenimiento: MantenimientoCorrectivo):
         mantenimiento.estado,
         mantenimiento.prioridad,
         str(mantenimiento.extendido) if mantenimiento.extendido else "",
-        get_fotos_gallery_url(mantenimiento.id, "correctivos")
     ]
     worksheet.append_row(row)
 
@@ -106,8 +104,6 @@ def append_preventivo(db: Session, mantenimiento: MantenimientoPreventivo):
         str(mantenimiento.fecha_apertura),
         str(mantenimiento.fecha_cierre) if mantenimiento.fecha_cierre else "",
         str(mantenimiento.extendido) if mantenimiento.extendido else "",
-        get_planillas_gallery_url(mantenimiento.id),
-        get_fotos_gallery_url(mantenimiento.id, "preventivos")
     ]
     worksheet.append_row(row)
 
