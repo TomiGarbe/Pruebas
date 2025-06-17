@@ -2,6 +2,9 @@ import firebase_admin
 from firebase_admin import credentials, auth
 import os
 import json
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path="./env.config")
 
 def initialize_firebase():
     if not firebase_admin._apps:  # Verifica si la app ya está inicializada
