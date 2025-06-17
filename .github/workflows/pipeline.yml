@@ -51,6 +51,16 @@ jobs:
         run: |
           cd frontend
           npm install
+      - name: Create Frontend .env File
+        run: |
+          cd frontend
+          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
+          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+          echo "VITE_FIREBASE_CONFIG_QA=${{ secrets.FIREBASE_CONFIG_QA }}" >> .env
+          echo "VITE_GOOGLE_CLIENT_ID_QA=${{ secrets.GOOGLE_CLIENT_ID_QA }}" >> .env
+          echo "VITE_FIREBASE_CONFIG_PROD=${{ secrets.FIREBASE_CONFIG_PROD }}" >> .env
+          echo "VITE_GOOGLE_CLIENT_ID_PROD=${{ secrets.GOOGLE_CLIENT_ID_PROD }}" >> .env
       - name: Build Frontend
         run: |
           cd frontend
@@ -112,19 +122,6 @@ jobs:
         with:
           name: frontend-artifact
           path: frontend/dist/
-      - name: Create Frontend .env File
-        run: |
-          cd frontend
-          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
-          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
-          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
-          echo "VITE_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY_QA }}" >> .env
-          echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN_QA }}" >> .env
-          echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID_QA }}" >> .env
-          echo "VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET_QA }}" >> .env
-          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID_QA }}" >> .env
-          echo "VITE_FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID_QA }}" >> .env
-          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID_QA }}" >> .env
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -182,19 +179,6 @@ jobs:
         with:
           name: frontend-artifact
           path: frontend/dist/
-      - name: Create Frontend .env File
-        run: |
-          cd frontend
-          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
-          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
-          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
-          echo "VITE_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY_PROD }}" >> .env
-          echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN_PROD }}" >> .env
-          echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID_PROD }}" >> .env
-          echo "VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET_PROD }}" >> .env
-          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID_PROD }}" >> .env
-          echo "VITE_FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID_PROD }}" >> .env
-          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID_PROD }}" >> .env
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
