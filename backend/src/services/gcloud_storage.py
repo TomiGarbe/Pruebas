@@ -3,15 +3,13 @@ from google.api_core.exceptions import GoogleAPIError
 from fastapi import HTTPException, UploadFile
 import uuid
 import os
-from dotenv import load_dotenv
 import json
 
-load_dotenv(dotenv_path="./env.config")
 GOOGLE_CREDENTIALS = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
 
 def create_folder_if_not_exists(bucket_name: str, folder_path: str):
     try:
-        if not os.getenv("GOOGLE_CREDENTIALS"):
+        if not GOOGLE_CREDENTIALS:
             raise HTTPException(status_code=500, detail="Google Cloud credentials not configured")
         
         storage_client = storage.Client.from_service_account_info(GOOGLE_CREDENTIALS)
@@ -27,7 +25,7 @@ def create_folder_if_not_exists(bucket_name: str, folder_path: str):
 def generate_gallery_html(bucket_name: str, folder: str):
     """Generate an HTML gallery for photos in the specified GCS folder."""
     try:
-        if not os.getenv("GOOGLE_CREDENTIALS"):
+        if not GOOGLE_CREDENTIALS:
             raise HTTPException(status_code=500, detail="Google Cloud credentials not configured")
         
         storage_client = storage.Client.from_service_account_info(GOOGLE_CREDENTIALS)
@@ -69,7 +67,7 @@ def generate_gallery_html(bucket_name: str, folder: str):
 
 async def upload_file_to_gcloud(file: UploadFile, bucket_name: str, folder: str = "") -> str:
     try:
-        if not os.getenv("GOOGLE_CREDENTIALS"):
+        if not GOOGLE_CREDENTIALS:
             raise HTTPException(status_code=500, detail="Google Cloud credentials not configured")
         
         storage_client = storage.Client.from_service_account_info(GOOGLE_CREDENTIALS)
@@ -93,7 +91,7 @@ async def upload_file_to_gcloud(file: UploadFile, bucket_name: str, folder: str 
 
 def delete_file_in_folder(bucket_name: str, folder: str, file_path: str) -> bool:
     try:
-        if not os.getenv("GOOGLE_CREDENTIALS"):
+        if not GOOGLE_CREDENTIALS:
             raise HTTPException(status_code=500, detail="Google Cloud credentials not configured")
         
         storage_client = storage.Client.from_service_account_info(GOOGLE_CREDENTIALS)
