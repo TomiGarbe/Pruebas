@@ -1,5 +1,6 @@
 import React, { useContext, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { LoadScript } from '@react-google-maps/api';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import LocationProvider from './context/LocationContext';
 import Navbar from './components/Navbar';
@@ -15,7 +16,10 @@ import Preventivo from './pages/Preventivo';
 import Correctivo from './pages/Correctivo';
 import Login from './pages/Login';
 import Mapa from './pages/Mapa';
+import Ruta from './pages/Ruta';
 import 'bootstrap/dist/css/bootstrap.min.css';
+
+const libraries = ['places', 'routes'];
 
 const ProtectedRoute = ({ children, adminOnly, usersOnly }) => {
   const { currentEntity, loading, verifying } = useContext(AuthContext);
@@ -72,7 +76,8 @@ const AppContent = () => {
           <Route path="/preventivo" element={<ProtectedRoute><Preventivo /></ProtectedRoute>} />
           <Route path="/correctivo" element={<ProtectedRoute><Correctivo /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
-          <Route path="/mapa" element={<ProtectedRoute><Mapa /></ProtectedRoute>} />
+          <Route path="/mapa" element={<ProtectedRoute usersOnly><Mapa /></ProtectedRoute>} />
+          <Route path="/ruta" element={<ProtectedRoute><Ruta /></ProtectedRoute>} />
         </Routes>
       </main>
       {!isLoginPage && <Footer />}
@@ -81,14 +86,18 @@ const AppContent = () => {
 };
 
 function App() {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
   return (
-    <Router>
-      <AuthProvider>
-        <LocationProvider>
-          <AppContent />
-        </LocationProvider>
-      </AuthProvider>
-    </Router>
+    <LoadScript googleMapsApiKey={apiKey} libraries={libraries}>
+      <Router>
+        <AuthProvider>
+            <LocationProvider>
+              <AppContent />
+            </LocationProvider>
+        </AuthProvider>
+      </Router>
+    </LoadScript>
   );
 }
 

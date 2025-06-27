@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { getLocations } from '../services/maps';
+import { GoogleMap, Marker } from '@react-google-maps/api';
+import { getUsersLocations, getSucursalesLocations } from '../services/maps';
 import '../styles/mapa.css';
 
 const containerStyle = {
@@ -10,72 +11,69 @@ const containerStyle = {
 };
 
 const defaultCenter = {
-  lat: -34.397,
-  lng: 150.644
+  lat: -31.416,
+  lng: -64.183
 };
 
 const Mapa = () => {
   const [users, setUsers] = useState([]);
+  const [sucursales, setSucursales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { currentEntity } = useContext(AuthContext);
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const navigate = useNavigate();
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey
-  });
+  const fetchLocations = async () => {
+    try {
+      const responseUsers = await getUsersLocations();
+      console.log('Fetched locations:', responseUsers.data);
+      const updatedUsers = responseUsers.data.map(user => ({
+        id: user.id,
+        name: user.name || 'Unknown',
+        lat: parseFloat(user.lat),
+        lng: parseFloat(user.lng)
+      })).filter(user => !isNaN(user.lat) && !isNaN(user.lng) && user.lat !== 0 && user.lng !== 0);
+
+      setUsers(updatedUsers);
+
+      const responseSucursales = await getSucursalesLocations();
+
+      const updatedSucursales = responseSucursales.data.map(sucursal => ({
+        id: sucursal.id,
+        name: sucursal.name || 'Unknown',
+        lat: parseFloat(sucursal.lat),
+        lng: parseFloat(sucursal.lng)
+      })).filter(sucursal => !isNaN(sucursal.lat) && !isNaN(sucursal.lng) && sucursal.lat !== 0 && sucursal.lng !== 0);
+
+      setSucursales(updatedSucursales);
+    } catch (error) {
+      setError('Error al cargar ubicaciones');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!currentEntity) {
-      setError('Autenticación requerida');
-      setLoading(false);
-      return;
+      navigate('/login');
+    } else if (currentEntity.type !== 'usuario') {
+      navigate('/');
+    } else {
+      fetchLocations();
+      const intervalId = setInterval(fetchLocations, 30000);
+      return () => clearInterval(intervalId);
     }
-
-    const fetchLocations = async () => {
-      try {
-        const response = await getLocations();
-        console.log('Fetched locations:', response.data);
-
-        const updatedUsers = response.data.map(user => ({
-          id: user.id,
-          name: user.name || 'Unknown',
-          lat: parseFloat(user.lat),
-          lng: parseFloat(user.lng)
-        })).filter(user => !isNaN(user.lat) && !isNaN(user.lng) && user.lat !== 0 && user.lng !== 0);
-
-        console.log('Parsed users:', updatedUsers);
-        setUsers(updatedUsers);
-      } catch (error) {
-        console.error('Error fetching locations:', error);
-        setError('Error al cargar ubicaciones');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLocations();
-    const intervalId = setInterval(fetchLocations, 30000);
-    return () => clearInterval(intervalId);
-  }, [currentEntity]);
+  }, [currentEntity, navigate]);
 
   if (loading) return <div className="map-container">Cargando mapa...</div>;
   if (error) return <div className="map-container">{error}</div>;
-  if (loadError) return <div className="map-container">Error al cargar Google Maps</div>;
-  if (!isLoaded) return <div className="map-container">Cargando mapa de Google...</div>;
-
-  const mapCenter = users.length > 0
-    ? { lat: users[0].lat, lng: users[0].lng }
-    : defaultCenter;
 
   return (
-    <div className="map-container" style={{ border: '2px solid red' }}>
-      <h2>Mapa de Usuarios</h2>
-      {users.length === 0 && <p>No hay usuarios con ubicaciones disponibles</p>}
-
+    <div className="map-container">
+      <h2>Mapa de Usuarios y Sucursales</h2>
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={mapCenter}
+        center={defaultCenter}
         zoom={users.length > 0 ? 12 : 2}
         onLoad={map => console.log('Map loaded:', map)}
         onUnmount={map => console.log('Map unmounted:', map)}
@@ -84,8 +82,25 @@ const Mapa = () => {
           <Marker
             key={user.id}
             position={{ lat: user.lat, lng: user.lng }}
-            title={user.name}
-            onClick={() => console.log(`Marker clicked: ${user.name}`)}
+            icon={{
+              url: 'https://maps.google.com/mapfiles/kml/shapes/cabs.png',
+              scaledSize: new window.google.maps.Size(40, 40),
+              anchor: new window.google.maps.Point(20, 20),
+              labelOrigin: new window.google.maps.Point(60, 20)
+            }}
+            label={{
+              text: user.name,
+              color: "#000",
+              fontSize: "14px",
+              fontWeight: "bold"
+            }}
+          />
+        ))}
+        {sucursales.map(sucursal => (
+          <Marker
+            key={sucursal.id}
+            position={{ lat: sucursal.lat, lng: sucursal.lng }}
+            title={sucursal.name}
           />
         ))}
       </GoogleMap>
