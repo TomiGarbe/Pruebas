@@ -262,7 +262,6 @@ const Ruta = () => {
             icon={{
               path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
               scale: 5,
-              rotation: mapHeading,
               fillColor: 'blue',
               fillOpacity: 1,
               strokeWeight: 1,
