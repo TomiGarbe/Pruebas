@@ -31,8 +31,14 @@ const Home = () => {
               Mantenimiento
             </Link>
           )}
-          {currentEntity && (
+          {currentEntity && currentEntity.type === 'usuario' && (
             <Link to="/mapa" className="home-button">
+              <FaMapMarkerAlt />
+              Mapa
+            </Link>
+          )}
+          {currentEntity && currentEntity.type === 'cuadrilla' && (
+            <Link to="/ruta" className="home-button">
               <FaMapMarkerAlt />
               Mapa
             </Link>

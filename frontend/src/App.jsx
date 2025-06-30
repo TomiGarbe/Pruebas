@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavig
 import { LoadScript } from '@react-google-maps/api';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import LocationProvider from './context/LocationContext';
+import { RouteProvider } from './context/RouteContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -19,7 +20,7 @@ import Mapa from './pages/Mapa';
 import Ruta from './pages/Ruta';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const libraries = ['places', 'routes'];
+const libraries = ['places', 'routes', 'geometry'];
 
 const ProtectedRoute = ({ children, adminOnly, usersOnly }) => {
   const { currentEntity, loading, verifying } = useContext(AuthContext);
@@ -93,7 +94,9 @@ function App() {
       <Router>
         <AuthProvider>
             <LocationProvider>
-              <AppContent />
+              <RouteProvider>
+                <AppContent />
+              </RouteProvider>
             </LocationProvider>
         </AuthProvider>
       </Router>
