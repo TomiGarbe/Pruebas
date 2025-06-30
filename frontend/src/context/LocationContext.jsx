@@ -7,6 +7,7 @@ export const LocationContext = createContext();
 const LocationProvider = ({ children }) => {
   const { currentEntity } = useContext(AuthContext);
   const [userLocation, setUserLocation] = useState(null);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     if (!currentEntity) {
@@ -14,38 +15,34 @@ const LocationProvider = ({ children }) => {
       return;
     }
 
-    const updateLocation = () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            const location = { lat: latitude, lng: longitude };
-            setUserLocation(location);
-            const name = currentEntity.data.nombre || 'Unknown';
-            updateUserLocation({ lat: latitude, lng: longitude, name })
-              .catch(error => console.error('Error updating location:', error));
-          },
-          (error) => {
-            console.error('Geolocation error:', error);
-            setUserLocation(null); // Fallback to null if geolocation fails
-          },
-          { enableHighAccuracy: true }
-        );
-      } else {
-        console.error('Geolocation not supported');
+    if (!navigator.geolocation) {
+      console.error('Geolocation not supported');
+      setUserLocation(null);
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const location = { lat: latitude, lng: longitude };
+        setUserLocation(location);
+        console.log('Location updated:', location);
+        const name = currentEntity.data?.nombre || 'Unknown';
+        updateUserLocation({ lat: latitude, lng: longitude, name })
+          .catch(error => console.error('Error updating location:', error));
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
         setUserLocation(null);
-      }
-    };
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+    );
 
-    // Update location immediately and every 30 seconds
-    updateLocation();
-    const intervalId = setInterval(updateLocation, 30000);
-
-    return () => clearInterval(intervalId);
-  }, [currentEntity]);
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [currentEntity, isNavigating]);
 
   return (
-    <LocationContext.Provider value={{ userLocation }}>
+    <LocationContext.Provider value={{ userLocation, setIsNavigating }}>
       {children}
     </LocationContext.Provider>
   );

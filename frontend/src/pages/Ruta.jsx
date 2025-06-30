@@ -36,7 +36,7 @@ const getBearing = (lat1, lng1, lat2, lng2) => {
 };
 
 const Ruta = () => {
-  const { userLocation } = useContext(LocationContext);
+  const { userLocation, setIsNavigating } = useContext(LocationContext);
   const { currentEntity } = useContext(AuthContext);
   const { selectedMantenimientos, removeMantenimiento } = useContext(RouteContext);
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ const Ruta = () => {
   const [directions, setDirections] = useState(null);
   const [optimizedOrder, setOptimizedOrder] = useState([]);
   const [mapHeading, setMapHeading] = useState(0);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [isNavigating, setIsNavigatingState] = useState(false);
   const [routePolyline, setRoutePolyline] = useState(null);
   const [error, setError] = useState(null);
   const [steps, setSteps] = useState([]);
@@ -65,6 +65,10 @@ const Ruta = () => {
     const sucursalIds = [...new Set(selectedMantenimientos.map(m => m.id_sucursal))].filter(Boolean);
     setSelectedSucursales(sucursalIds.map(id => String(id)));
   }, [selectedMantenimientos]);
+
+  useEffect(() => {
+    setIsNavigating(isNavigating);
+  }, [isNavigating, setIsNavigating]);
 
   const onMapLoad = (map) => {
     mapRef.current = map;
@@ -87,7 +91,7 @@ const Ruta = () => {
     mapRef.current.setZoom(20);
     mapRef.current.setOptions({ heading });
     setMapHeading(heading);
-    setIsNavigating(true);
+    setIsNavigatingState(true);
     console.log('Navigation started, zoomed to:', userLocation, 'Heading:', heading);
   };
 
@@ -152,7 +156,7 @@ const Ruta = () => {
       setRoutePolyline(null);
       setSteps([]);
       setOptimizedOrder([]);
-      setIsNavigating(false);
+      setIsNavigatingState(false);
       lastRouteRef.current = null;
       return;
     }
@@ -227,7 +231,7 @@ const Ruta = () => {
       setRoutePolyline(null);
       setSteps([]);
       setOptimizedOrder([]);
-      setIsNavigating(false);
+      setIsNavigatingState(false);
       lastRouteRef.current = null;
     }
   }, [userLocation, selectedSucursales, sucursales, selectedMantenimientos, removeMantenimiento]);
