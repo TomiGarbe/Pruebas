@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { GoogleMap, Marker, DirectionsRenderer } from '@react-google-maps/api';
-import { ListGroup, Button } from 'react-bootstrap';
+import { ListGroup } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { LocationContext } from '../context/LocationContext';
@@ -45,10 +45,11 @@ const Ruta = () => {
   const [directions, setDirections] = useState(null);
   const [optimizedOrder, setOptimizedOrder] = useState([]);
   const [mapHeading, setMapHeading] = useState(0);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(true);
   const [routePolyline, setRoutePolyline] = useState(null);
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
+  const firstNavigationRef = useRef(false);
 
   useEffect(() => {
     if (!currentEntity) navigate('/login');
@@ -65,9 +66,8 @@ const Ruta = () => {
     map.setTilt(45);
   };
 
-  const startNavigation = () => {
+  const iniciarNavegacion = () => {
     if (!userLocation || !mapRef.current || !directions) return;
-    setIsNavigating(true);
     const leg = directions.routes[0].legs[0];
     const heading = getBearing(
       leg.start_location.lat(),
@@ -78,6 +78,7 @@ const Ruta = () => {
     mapRef.current.panTo(userLocation);
     mapRef.current.setZoom(17);
     mapRef.current.setHeading(heading);
+    setIsNavigating(true);
   };
 
   useEffect(() => {
@@ -85,10 +86,12 @@ const Ruta = () => {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { heading, latitude, longitude } = pos.coords;
-        if (heading !== null && isNavigating && mapRef.current) {
+        if (heading !== null && mapRef.current) {
           setMapHeading(heading);
-          mapRef.current.setHeading(heading);
-          mapRef.current.panTo({ lat: latitude, lng: longitude });
+          if (isNavigating) {
+            mapRef.current.setHeading(heading);
+            mapRef.current.panTo({ lat: latitude, lng: longitude });
+          }
         }
       },
       console.error,
@@ -133,6 +136,10 @@ const Ruta = () => {
         setRoutePolyline(new window.google.maps.Polyline({ path: res.routes[0].overview_path }));
         const order = res.routes[0].waypoint_order.map(i => selectedSucursales.filter(id => id !== String(farthest.id))[i]);
         setOptimizedOrder([...order, String(farthest.id)]);
+        if (!firstNavigationRef.current) {
+          iniciarNavegacion();
+          firstNavigationRef.current = true;
+        }
       } else {
         console.error('Directions error:', status);
       }
@@ -142,13 +149,6 @@ const Ruta = () => {
   return (
     <div className="map-container">
       {error && <div className="alert alert-danger">{error}</div>}
-      <Button
-        variant="primary"
-        onClick={startNavigation}
-        disabled={!selectedSucursales.length || !userLocation || !directions || isNavigating}
-        className="mb-3">
-        Iniciar Navegación
-      </Button>
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         center={userLocation || defaultCenter}
