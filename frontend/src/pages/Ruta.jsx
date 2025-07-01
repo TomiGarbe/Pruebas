@@ -15,8 +15,8 @@ import '../styles/mapa.css';
 
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
-const PROXIMITY_THRESHOLD = 0.05; // 50 meters in km
-const DEVIATION_THRESHOLD = 50; // 50 meters for route recalculation
+const PROXIMITY_THRESHOLD = 0.05;
+const DEVIATION_THRESHOLD = 50;
 
 const getBearing = (lat1, lng1, lat2, lng2) => {
   const toRad = (deg) => deg * Math.PI / 180;
@@ -49,7 +49,6 @@ const Ruta = () => {
   useEffect(() => {
     if (!currentEntity) navigate('/login');
     else getSucursalesLocations().then(res => {
-      console.log('Fetched sucursales:', res.data);
       setSucursales(res.data);
     }).catch(err => {
       console.error(err);
@@ -67,11 +66,7 @@ const Ruta = () => {
   }, [isNavigating, setIsNavigating]);
 
   useEffect(() => {
-    if (!mapRef.current) {
-      console.error('mapRef is null');
-      return;
-    }
-
+    if (!mapRef.current) return;
     mapInstanceRef.current = L.map(mapRef.current, {
       center: [userLocation?.lat || defaultCenter.lat, userLocation?.lng || defaultCenter.lng],
       zoom: 20,
@@ -80,19 +75,23 @@ const Ruta = () => {
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      attribution: '© OpenStreetMap contributors'
     }).addTo(mapInstanceRef.current);
 
-    mapInstanceRef.current.invalidateSize();
-    console.log('Map initialized');
-
     return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        console.log('Map unmounted');
-      }
+      if (mapInstanceRef.current) mapInstanceRef.current.remove();
     };
   }, []);
+
+  const toggleNavegacion = () => {
+    if (isNavigating) {
+      setIsNavigatingState(false);
+      setSteps([]);
+      setCurrentStepIndex(0);
+    } else if (routingControl) {
+      iniciarNavegacion(routingControl);
+    }
+  };
 
   const iniciarNavegacion = (route) => {
     if (!userLocation || !mapInstanceRef.current || !route) return;
@@ -102,82 +101,50 @@ const Ruta = () => {
       return;
     }
     const instructions = waypoints.slice(1).map((wp, i) => {
-      const instruction = route.getPlan().instructions && route.getPlan().instructions.find(inst => inst.waypointIndex === i + 1);
+      const instruction = route.getPlan().instructions?.find(inst => inst.waypointIndex === i + 1);
       return {
         start_location: [wp.latLng.lat, wp.latLng.lng],
         instructions: instruction ? instruction.text : `Dirígete a waypoint ${i + 1}`
       };
     });
     const nextWaypoint = instructions[0];
-    const heading = nextWaypoint ? getBearing(
-      userLocation.lat,
-      userLocation.lng,
-      nextWaypoint.start_location[0],
-      nextWaypoint.start_location[1]
-    ) : 0;
+    const heading = nextWaypoint ? getBearing(userLocation.lat, userLocation.lng, nextWaypoint.start_location[0], nextWaypoint.start_location[1]) : 0;
+
     setSteps(instructions);
-    mapInstanceRef.current.setView([userLocation.lat, userLocation.lng], 20);
-    mapInstanceRef.current.setBearing(heading);
+    mapInstanceRef.current.flyTo([userLocation.lat, userLocation.lng], 20, { animate: true, duration: 1.5 });
+    setTimeout(() => mapInstanceRef.current.setBearing(heading), 1500);
     setIsNavigatingState(true);
-    console.log('Navigation started, zoomed to:', userLocation, 'Heading:', heading);
   };
 
   const centerOnUser = () => {
     if (!userLocation || !mapInstanceRef.current) return;
     mapInstanceRef.current.setView([userLocation.lat, userLocation.lng], 20);
-    console.log('Centered on user location:', userLocation);
   };
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      console.log('Geolocation not available');
       setError('Geolocalización no disponible');
       return;
     }
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        if (isNavigating && steps.length > 0 && mapInstanceRef.current) {
-          const nextStep = steps[currentStepIndex] || steps[0];
-          const heading = getBearing(
-            latitude,
-            longitude,
-            nextStep.start_location[0],
-            nextStep.start_location[1]
-          );
-          mapInstanceRef.current.setBearing(heading);
-          console.log('Map rotated to route heading:', heading);
-        }
-
-        if (isNavigating && routePolyline && userLocation) {
-          const point = L.latLng(userLocation.lat, userLocation.lng);
-          const closest = L.GeometryUtil.closest(mapInstanceRef.current, routePolyline, point);
-          const isOnRoute = closest && closest.distance < DEVIATION_THRESHOLD;
-          if (!isOnRoute) {
-            console.log('User deviated from route, recalculating...');
-            setRoutingControl(null);
-            setRoutePolyline(null);
-            setSteps([]);
-            setCurrentStepIndex(0);
-            lastRouteRef.current = null;
+        if (isNavigating && routePolyline && mapInstanceRef.current) {
+          const currentLatLng = L.latLng(latitude, longitude);
+          const segment = L.GeometryUtil.locateOnLine(mapInstanceRef.current, routePolyline, currentLatLng);
+          const nextPoint = L.GeometryUtil.interpolateOnLine(mapInstanceRef.current, routePolyline, segment + 0.01);
+          if (nextPoint && nextPoint.latLng) {
+            const heading = getBearing(currentLatLng.lat, currentLatLng.lng, nextPoint.latLng.lat, nextPoint.latLng.lng);
+            mapInstanceRef.current.setBearing(heading);
           }
         }
-
-        if (steps.length > 0) {
-          const index = steps.findIndex((step, i) => {
-            const loc = step.start_location;
-            const dist = L.latLng(latitude, longitude).distanceTo(L.latLng(loc[0], loc[1])) / 1000;
-            return dist < 0.03;
-          });
-          if (index !== -1 && index !== currentStepIndex) {
-            setCurrentStepIndex(index);
-            console.log('Updated step index:', index);
-          }
+        if (isNavigating && mapInstanceRef.current) {
+          mapInstanceRef.current.panTo([latitude, longitude]);
         }
       },
       (err) => {
         console.error('Geolocation error:', err);
-        setError('No se pudo obtener la ubicación. Habilite los servicios de ubicación o verifique los permisos en su navegador.');
+        setError('No se pudo obtener la ubicación. Habilite los servicios de ubicación.');
         if (!userLocation) {
           setIsNavigatingState(false);
           mapInstanceRef.current?.setView([defaultCenter.lat, defaultCenter.lng], 20);
@@ -186,7 +153,7 @@ const Ruta = () => {
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [isNavigating, routePolyline, userLocation, steps, currentStepIndex]);
+  }, [isNavigating, steps, currentStepIndex, userLocation]);
 
   useEffect(() => {
     if (!selectedSucursales.length || !userLocation || !sucursales.length || !mapInstanceRef.current) {
@@ -194,19 +161,22 @@ const Ruta = () => {
         mapInstanceRef.current.removeControl(routingControl);
         setRoutingControl(null);
       }
-      setRoutePolyline(null);
+      if (routePolyline) {
+        routePolyline.remove();
+        setRoutePolyline(null);
+      }
       setSteps([]);
       setOptimizedOrder([]);
       setIsNavigatingState(false);
       lastRouteRef.current = null;
+      if (userLocation) {
+        mapInstanceRef.current.setView([userLocation.lat, userLocation.lng], 20);
+      }
       return;
     }
 
     const currentRouteKey = JSON.stringify(selectedSucursales);
-    if (routingControl && lastRouteRef.current === currentRouteKey) {
-      console.log('Route already calculated, skipping');
-      return;
-    }
+    if (routingControl && lastRouteRef.current === currentRouteKey) return;
 
     let farthest = null;
     let maxDist = -1;
@@ -220,31 +190,24 @@ const Ruta = () => {
       }
     });
 
-    if (!farthest) {
-      setError('No se pudo determinar la sucursal más lejana');
-      return;
-    }
-
-    const waypoints = selectedSucursales
-      .filter(id => id !== String(farthest.id))
-      .map(id => {
-        const s = sucursales.find(s => s.id == id);
-        return s ? L.latLng(s.lat, s.lng) : null;
-      })
-      .filter(Boolean);
+    const waypoints = selectedSucursales.filter(id => id !== String(farthest.id)).map(id => {
+      const s = sucursales.find(s => s.id == id);
+      return s ? L.latLng(s.lat, s.lng) : null;
+    }).filter(Boolean);
 
     if (routingControl) {
       mapInstanceRef.current.removeControl(routingControl);
+      setRoutingControl(null);
+    }
+    if (routePolyline) {
+      routePolyline.remove();
+      setRoutePolyline(null);
     }
 
     const control = L.Routing.control({
       waypoints: [L.latLng(userLocation.lat, userLocation.lng), ...waypoints, L.latLng(farthest.lat, farthest.lng)],
-      router: L.Routing.osrmv1({
-        serviceUrl: import.meta.env.VITE_OSRM_URL
-      }),
-      lineOptions: {
-        styles: [{ color: '#FF0000', weight: 5 }]
-      },
+      router: L.Routing.osrmv1({ serviceUrl: import.meta.env.VITE_OSRM_URL }),
+      lineOptions: { styles: [{ color: '#FF0000', weight: 5 }] },
       createMarker: () => null,
       addWaypoints: false,
       routeWhileDragging: false
@@ -252,13 +215,11 @@ const Ruta = () => {
 
     control.on('routesfound', (e) => {
       const route = e.routes[0];
-      console.log('Route data:', route);
       setRoutePolyline(L.polyline(route.coordinates, { color: '#FF0000', weight: 5 }));
+      mapInstanceRef.current.fitBounds(L.latLngBounds(route.coordinates));
       setOptimizedOrder([...waypoints.map((_, i) => selectedSucursales[i]), String(farthest.id)]);
       lastRouteRef.current = currentRouteKey;
       setRoutingControl(control);
-      iniciarNavegacion(control);
-      console.log('Route calculated, polyline set:', route.coordinates);
     });
 
     control.on('routingerror', (err) => {
@@ -267,104 +228,16 @@ const Ruta = () => {
     });
   }, [selectedSucursales, userLocation, sucursales]);
 
-  useEffect(() => {
-    if (!userLocation || !selectedSucursales.length || !mapInstanceRef.current) return;
-
-    const userMarkers = [];
-    const sucursalMarkers = [];
-
-    if (userLocation) {
-      const userMarker = L.marker([userLocation.lat, userLocation.lng], {
-        icon: L.divIcon({
-          html: `<div style="width: 20px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); transform: translateY(-50%);"></div>`,
-          className: '',
-          iconSize: [20, 20],
-          iconAnchor: [10, 20]
-        })
-      }).addTo(mapInstanceRef.current);
-      userMarkers.push(userMarker);
-    }
-
-    sucursalMarkers.push(...selectedSucursales.map(id => {
-      const s = sucursales.find(s => s.id == id);
-      if (!s) return null;
-      const marker = L.marker([s.lat, s.lng], {
-        icon: L.divIcon({
-          html: `<div style="color: white; font-size: 14px; font-weight: bold; transform: translate(10px, -20px);">${s.name}</div>`,
-          className: '',
-          iconSize: [40, 40],
-          iconAnchor: [20, 20]
-        })
-      }).addTo(mapInstanceRef.current);
-      return marker;
-    }).filter(Boolean));
-
-    return () => {
-      userMarkers.forEach(marker => marker.remove());
-      sucursalMarkers.forEach(marker => marker.remove());
-      if (routePolyline) routePolyline.remove();
-    };
-  }, [userLocation, selectedSucursales, sucursales]);
-
-  useEffect(() => {
-    if (!userLocation || !selectedSucursales.length) return;
-    const visited = selectedSucursales.find(id => {
-      const s = sucursales.find(s => s.id == id);
-      if (!s) return false;
-      return L.latLng(userLocation.lat, userLocation.lng).distanceTo(L.latLng(s.lat, s.lng)) / 1000 < PROXIMITY_THRESHOLD;
-    });
-    if (visited) {
-      setSelectedSucursales(prev => prev.filter(id => id !== String(visited)));
-      selectedMantenimientos
-        .filter(m => m.id_sucursal == visited)
-        .forEach(m => removeMantenimiento(m.id));
-      setRoutingControl(null);
-      setRoutePolyline(null);
-      setSteps([]);
-      setOptimizedOrder([]);
-      setIsNavigatingState(false);
-      lastRouteRef.current = null;
-    }
-  }, [userLocation, selectedSucursales, sucursales, selectedMantenimientos, removeMantenimiento]);
-
   return (
     <div className="map-container">
       {error && <div className="alert alert-danger">{error}</div>}
-      <Button
-        variant="primary"
-        onClick={centerOnUser}
-        disabled={!userLocation}
-        className="mb-3"
-      >
+      <Button variant="primary" onClick={centerOnUser} disabled={!userLocation} className="mb-2">
         Centrar en mi ubicación
       </Button>
+      <Button variant={isNavigating ? 'danger' : 'success'} onClick={toggleNavegacion} disabled={!routingControl} className="mb-3 ms-2">
+        {isNavigating ? 'Detener navegación' : 'Iniciar navegación'}
+      </Button>
       <div ref={mapRef} style={mapContainerStyle}></div>
-      {optimizedOrder.length > 0 && (
-        <div className="mt-3">
-          <h5>Ruta Optimizada</h5>
-          <ListGroup>
-            {optimizedOrder.map((id, index) => {
-              const s = sucursales.find((s) => s.id == id);
-              return <ListGroup.Item key={id}>{index + 1}. {s?.name || 'Unknown'}</ListGroup.Item>;
-            })}
-          </ListGroup>
-        </div>
-      )}
-      {steps.length > 0 && (
-        <div className="mt-3">
-          <h5>Instrucciones paso a paso</h5>
-          <ListGroup>
-            {steps.map((step, i) => (
-              <ListGroup.Item
-                key={i}
-                active={i === currentStepIndex}
-              >
-                {step.instructions}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
-        </div>
-      )}
     </div>
   );
 };
