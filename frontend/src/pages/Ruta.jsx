@@ -183,7 +183,7 @@ const Ruta = () => {
           mapInstanceRef.current?.setView([defaultCenter.lat, defaultCenter.lng], 20);
         }
       },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [isNavigating, routePolyline, userLocation, steps, currentStepIndex]);
@@ -240,7 +240,7 @@ const Ruta = () => {
     const control = L.Routing.control({
       waypoints: [L.latLng(userLocation.lat, userLocation.lng), ...waypoints, L.latLng(farthest.lat, farthest.lng)],
       router: L.Routing.osrmv1({
-        serviceUrl: 'http://router.project-osrm.org/route/v1'
+        serviceUrl: import.meta.env.VITE_OSRM_URL
       }),
       lineOptions: {
         styles: [{ color: '#FF0000', weight: 5 }]
