@@ -15,8 +15,6 @@ import '../styles/mapa.css';
 
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
-const PROXIMITY_THRESHOLD = 0.05;
-const DEVIATION_THRESHOLD = 50;
 
 const getBearing = (lat1, lng1, lat2, lng2) => {
   const toRad = (deg) => deg * Math.PI / 180;
@@ -36,7 +34,6 @@ const Ruta = () => {
   const [sucursales, setSucursales] = useState([]);
   const [selectedSucursales, setSelectedSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
-  const [optimizedOrder, setOptimizedOrder] = useState([]);
   const [isNavigating, setIsNavigatingState] = useState(false);
   const [routePolyline, setRoutePolyline] = useState(null);
   const [error, setError] = useState(null);
@@ -45,6 +42,7 @@ const Ruta = () => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const lastRouteRef = useRef(null);
+  const userMarkerRef = useRef(null);
 
   useEffect(() => {
     if (!currentEntity) navigate('/login');
@@ -107,12 +105,8 @@ const Ruta = () => {
         instructions: instruction ? instruction.text : `Dirígete a waypoint ${i + 1}`
       };
     });
-    const nextWaypoint = instructions[0];
-    const heading = nextWaypoint ? getBearing(userLocation.lat, userLocation.lng, nextWaypoint.start_location[0], nextWaypoint.start_location[1]) : 0;
-
     setSteps(instructions);
     mapInstanceRef.current.flyTo([userLocation.lat, userLocation.lng], 20, { animate: true, duration: 1.5 });
-    setTimeout(() => mapInstanceRef.current.setBearing(heading), 1500);
     setIsNavigatingState(true);
   };
 
@@ -129,6 +123,17 @@ const Ruta = () => {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
+
+        if (userMarkerRef.current) userMarkerRef.current.remove();
+        userMarkerRef.current = L.marker([latitude, longitude], {
+          icon: L.divIcon({
+            html: `<div style="width: 20px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); transform: translateY(-50%);"></div>`,
+            className: '',
+            iconSize: [20, 20],
+            iconAnchor: [10, 20]
+          })
+        }).addTo(mapInstanceRef.current);
+
         if (isNavigating && routePolyline && mapInstanceRef.current) {
           const currentLatLng = L.latLng(latitude, longitude);
           const segment = L.GeometryUtil.locateOnLine(mapInstanceRef.current, routePolyline, currentLatLng);
@@ -150,10 +155,10 @@ const Ruta = () => {
           mapInstanceRef.current?.setView([defaultCenter.lat, defaultCenter.lng], 20);
         }
       },
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [isNavigating, steps, currentStepIndex, userLocation]);
+  }, [isNavigating, routePolyline, userLocation]);
 
   useEffect(() => {
     if (!selectedSucursales.length || !userLocation || !sucursales.length || !mapInstanceRef.current) {
@@ -166,7 +171,6 @@ const Ruta = () => {
         setRoutePolyline(null);
       }
       setSteps([]);
-      setOptimizedOrder([]);
       setIsNavigatingState(false);
       lastRouteRef.current = null;
       if (userLocation) {
@@ -215,9 +219,10 @@ const Ruta = () => {
 
     control.on('routesfound', (e) => {
       const route = e.routes[0];
-      setRoutePolyline(L.polyline(route.coordinates, { color: '#FF0000', weight: 5 }));
+      const poly = L.polyline(route.coordinates, { color: '#FF0000', weight: 5 });
+      setRoutePolyline(poly);
+      poly.addTo(mapInstanceRef.current);
       mapInstanceRef.current.fitBounds(L.latLngBounds(route.coordinates));
-      setOptimizedOrder([...waypoints.map((_, i) => selectedSucursales[i]), String(farthest.id)]);
       lastRouteRef.current = currentRouteKey;
       setRoutingControl(control);
     });
