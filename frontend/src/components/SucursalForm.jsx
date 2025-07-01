@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Button, Form, InputGroup, Dropdown } from 'react-bootstrap';
 import { createSucursal, updateSucursal } from '../services/sucursalService';
 import { getZonas, createZona, deleteZona } from '../services/zonaService';

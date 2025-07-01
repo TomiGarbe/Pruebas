@@ -26,7 +26,6 @@ const LocationProvider = ({ children }) => {
         const { latitude, longitude } = position.coords;
         const location = { lat: latitude, lng: longitude };
         setUserLocation(location);
-        console.log('Location updated:', location);
         const name = currentEntity.data?.nombre || 'Unknown';
         updateUserLocation({ lat: latitude, lng: longitude, name })
           .catch(error => console.error('Error updating location:', error));

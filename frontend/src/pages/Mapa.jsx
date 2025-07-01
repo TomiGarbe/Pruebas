@@ -1,55 +1,60 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { GoogleMap, Marker } from '@react-google-maps/api';
 import { getUsersLocations, getSucursalesLocations } from '../services/maps';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import '../styles/mapa.css';
 
-const containerStyle = {
-  width: '100%',
-  height: '600px'
-};
+const mapContainerStyle = { width: '100%', height: '100vh' };
+const defaultCenter = { lat: -31.4167, lng: -64.1833 };;
 
-const defaultCenter = {
-  lat: -31.416,
-  lng: -64.183
-};
+const carIcon = L.icon({
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  shadowSize: [41, 41]
+});
 
 const Mapa = () => {
   const [users, setUsers] = useState([]);
   const [sucursales, setSucursales] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { currentEntity } = useContext(AuthContext);
   const navigate = useNavigate();
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
 
   const fetchLocations = async () => {
     try {
       const responseUsers = await getUsersLocations();
-      console.log('Fetched locations:', responseUsers.data);
-      const updatedUsers = responseUsers.data.map(user => ({
-        id: user.id,
-        name: user.name || 'Unknown',
-        lat: parseFloat(user.lat),
-        lng: parseFloat(user.lng)
-      })).filter(user => !isNaN(user.lat) && !isNaN(user.lng) && user.lat !== 0 && user.lng !== 0);
-
+      console.log('Fetched users:', responseUsers.data);
+      const updatedUsers = responseUsers.data
+        .map(user => ({
+          id: user.id,
+          name: user.name || 'Unknown',
+          lat: parseFloat(user.lat),
+          lng: parseFloat(user.lng)
+        }))
+        .filter(user => !isNaN(user.lat) && !isNaN(user.lng) && user.lat !== 0 && user.lng !== 0);
       setUsers(updatedUsers);
 
       const responseSucursales = await getSucursalesLocations();
-
-      const updatedSucursales = responseSucursales.data.map(sucursal => ({
-        id: sucursal.id,
-        name: sucursal.name || 'Unknown',
-        lat: parseFloat(sucursal.lat),
-        lng: parseFloat(sucursal.lng)
-      })).filter(sucursal => !isNaN(sucursal.lat) && !isNaN(sucursal.lng) && sucursal.lat !== 0 && sucursal.lng !== 0);
-
+      console.log('Fetched sucursales:', responseSucursales.data);
+      const updatedSucursales = responseSucursales.data
+        .map(sucursal => ({
+          id: sucursal.id,
+          name: sucursal.name || 'Unknown',
+          lat: parseFloat(sucursal.lat),
+          lng: parseFloat(sucursal.lng)
+        }))
+        .filter(sucursal => !isNaN(sucursal.lat) && !isNaN(sucursal.lng) && sucursal.lat !== 0 && sucursal.lng !== 0);
       setSucursales(updatedSucursales);
     } catch (error) {
+      console.error('Error fetching locations:', error);
       setError('Error al cargar ubicaciones');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -65,45 +70,66 @@ const Mapa = () => {
     }
   }, [currentEntity, navigate]);
 
-  if (loading) return <div className="map-container">Cargando mapa...</div>;
-  if (error) return <div className="map-container">{error}</div>;
+  useEffect(() => {
+    if (!mapRef.current) {
+      console.error('mapRef is null');
+      return;
+    }
+
+    mapInstanceRef.current = L.map(mapRef.current, {
+      center: [defaultCenter.lat, defaultCenter.lng],
+      zoom: 15
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mapInstanceRef.current);
+
+    mapInstanceRef.current.invalidateSize();
+    console.log('Map initialized:', mapInstanceRef.current);
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        console.log('Map unmounted');
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const userMarkers = users.map(user => {
+      const marker = L.marker([user.lat, user.lng], {
+        icon: carIcon,
+        title: user.name
+      }).addTo(mapInstanceRef.current);
+      return marker;
+    });
+
+    const sucursalMarkers = sucursales.map(sucursal => {
+      const marker = L.marker([sucursal.lat, sucursal.lng], {
+        title: sucursal.name
+      }).addTo(mapInstanceRef.current);
+      return marker;
+    });
+
+    if (users.length > 0 || sucursales.length > 0) {
+      const bounds = L.latLngBounds([...users, ...sucursales].map(loc => [loc.lat, loc.lng]));
+      mapInstanceRef.current.fitBounds(bounds);
+    }
+
+    return () => {
+      userMarkers.forEach(marker => marker.remove());
+      sucursalMarkers.forEach(marker => marker.remove());
+    };
+  }, [users, sucursales]);
 
   return (
     <div className="map-container">
+      {error && <div className="alert alert-danger">{error}</div>}
       <h2>Mapa de Usuarios y Sucursales</h2>
-      <GoogleMap
-        mapContainerStyle={containerStyle}
-        center={defaultCenter}
-        zoom={users.length > 0 ? 12 : 2}
-        onLoad={map => console.log('Map loaded:', map)}
-        onUnmount={map => console.log('Map unmounted:', map)}
-      >
-        {users.map(user => (
-          <Marker
-            key={user.id}
-            position={{ lat: user.lat, lng: user.lng }}
-            icon={{
-              url: 'https://maps.google.com/mapfiles/kml/shapes/cabs.png',
-              scaledSize: new window.google.maps.Size(40, 40),
-              anchor: new window.google.maps.Point(20, 20),
-              labelOrigin: new window.google.maps.Point(60, 20)
-            }}
-            label={{
-              text: user.name,
-              color: "#000",
-              fontSize: "14px",
-              fontWeight: "bold"
-            }}
-          />
-        ))}
-        {sucursales.map(sucursal => (
-          <Marker
-            key={sucursal.id}
-            position={{ lat: sucursal.lat, lng: sucursal.lng }}
-            title={sucursal.name}
-          />
-        ))}
-      </GoogleMap>
+      <div ref={mapRef} style={mapContainerStyle}></div>
     </div>
   );
 };

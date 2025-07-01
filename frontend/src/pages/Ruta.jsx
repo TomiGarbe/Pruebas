@@ -1,29 +1,22 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { GoogleMap, Marker, DirectionsRenderer } from '@react-google-maps/api';
 import { ListGroup, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { LocationContext } from '../context/LocationContext';
 import { RouteContext } from '../context/RouteContext';
 import { getSucursalesLocations } from '../services/maps';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-rotate/dist/leaflet-rotate.js';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+import 'leaflet-routing-machine';
+import 'leaflet-geometryutil';
 import '../styles/mapa.css';
 
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
 const PROXIMITY_THRESHOLD = 0.05; // 50 meters in km
 const DEVIATION_THRESHOLD = 50; // 50 meters for route recalculation
-
-const haversineDistance = (lat1, lon1, lat2, lon2) => {
-  const toRad = (x) => (x * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
 
 const getBearing = (lat1, lng1, lat2, lng2) => {
   const toRad = (deg) => deg * Math.PI / 180;
@@ -42,20 +35,23 @@ const Ruta = () => {
   const navigate = useNavigate();
   const [sucursales, setSucursales] = useState([]);
   const [selectedSucursales, setSelectedSucursales] = useState([]);
-  const [directions, setDirections] = useState(null);
+  const [routingControl, setRoutingControl] = useState(null);
   const [optimizedOrder, setOptimizedOrder] = useState([]);
-  const [mapHeading, setMapHeading] = useState(0);
   const [isNavigating, setIsNavigatingState] = useState(false);
   const [routePolyline, setRoutePolyline] = useState(null);
   const [error, setError] = useState(null);
   const [steps, setSteps] = useState([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
   const lastRouteRef = useRef(null);
 
   useEffect(() => {
     if (!currentEntity) navigate('/login');
-    else getSucursalesLocations().then(res => setSucursales(res.data)).catch(err => {
+    else getSucursalesLocations().then(res => {
+      console.log('Fetched sucursales:', res.data);
+      setSucursales(res.data);
+    }).catch(err => {
       console.error(err);
       setError('Error al cargar sucursales');
     });
@@ -70,61 +66,96 @@ const Ruta = () => {
     setIsNavigating(isNavigating);
   }, [isNavigating, setIsNavigating]);
 
-  const onMapLoad = (map) => {
-    mapRef.current = map;
-    map.setTilt(45);
-    map.setMapTypeId('hybrid');
-    console.log('Map loaded with tilt=45, mapTypeId=hybrid');
-  };
+  useEffect(() => {
+    if (!mapRef.current) {
+      console.error('mapRef is null');
+      return;
+    }
 
-  const iniciarNavegacion = (directionsResult) => {
-    if (!userLocation || !mapRef.current || !directionsResult) return;
-    const firstLeg = directionsResult.routes[0].legs[0];
-    const heading = getBearing(
-      firstLeg.start_location.lat(),
-      firstLeg.start_location.lng(),
-      firstLeg.steps[0].end_location.lat(),
-      firstLeg.steps[0].end_location.lng()
-    );
-    setSteps(firstLeg.steps);
-    mapRef.current.panTo(userLocation);
-    mapRef.current.setZoom(20);
-    mapRef.current.setOptions({ heading });
-    setMapHeading(heading);
+    mapInstanceRef.current = L.map(mapRef.current, {
+      center: [userLocation?.lat || defaultCenter.lat, userLocation?.lng || defaultCenter.lng],
+      zoom: 20,
+      rotate: true,
+      rotateControl: false
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mapInstanceRef.current);
+
+    mapInstanceRef.current.invalidateSize();
+    console.log('Map initialized');
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        console.log('Map unmounted');
+      }
+    };
+  }, []);
+
+  const iniciarNavegacion = (route) => {
+    if (!userLocation || !mapInstanceRef.current || !route) return;
+    const waypoints = route.getPlan().getWaypoints();
+    if (!waypoints || waypoints.length < 2) {
+      setError('Ruta inválida: insuficientes waypoints');
+      return;
+    }
+    const instructions = waypoints.slice(1).map((wp, i) => {
+      const instruction = route.getPlan().instructions && route.getPlan().instructions.find(inst => inst.waypointIndex === i + 1);
+      return {
+        start_location: [wp.latLng.lat, wp.latLng.lng],
+        instructions: instruction ? instruction.text : `Dirígete a waypoint ${i + 1}`
+      };
+    });
+    const nextWaypoint = instructions[0];
+    const heading = nextWaypoint ? getBearing(
+      userLocation.lat,
+      userLocation.lng,
+      nextWaypoint.start_location[0],
+      nextWaypoint.start_location[1]
+    ) : 0;
+    setSteps(instructions);
+    mapInstanceRef.current.setView([userLocation.lat, userLocation.lng], 20);
+    mapInstanceRef.current.setBearing(heading);
     setIsNavigatingState(true);
     console.log('Navigation started, zoomed to:', userLocation, 'Heading:', heading);
   };
 
   const centerOnUser = () => {
-    if (!userLocation || !mapRef.current) return;
-    mapRef.current.panTo(userLocation);
-    mapRef.current.setZoom(20);
+    if (!userLocation || !mapInstanceRef.current) return;
+    mapInstanceRef.current.setView([userLocation.lat, userLocation.lng], 20);
     console.log('Centered on user location:', userLocation);
   };
 
   useEffect(() => {
     if (!navigator.geolocation) {
       console.log('Geolocation not available');
+      setError('Geolocalización no disponible');
       return;
     }
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        const { heading, latitude, longitude } = pos.coords;
-        if (heading !== null && !isNaN(heading) && isNavigating && mapRef.current) {
-          setMapHeading(heading);
-          mapRef.current.setOptions({ heading });
-          console.log('Map rotated to heading:', heading);
+        const { latitude, longitude } = pos.coords;
+        if (isNavigating && steps.length > 0 && mapInstanceRef.current) {
+          const nextStep = steps[currentStepIndex] || steps[0];
+          const heading = getBearing(
+            latitude,
+            longitude,
+            nextStep.start_location[0],
+            nextStep.start_location[1]
+          );
+          mapInstanceRef.current.setBearing(heading);
+          console.log('Map rotated to route heading:', heading);
         }
 
-        if (isNavigating && routePolyline && userLocation && window.google.maps.geometry?.polyline) {
-          const isOnRoute = window.google.maps.geometry.polyline.isLocationOnEdge(
-            new window.google.maps.LatLng(userLocation.lat, userLocation.lng),
-            routePolyline,
-            DEVIATION_THRESHOLD / 1000
-          );
+        if (isNavigating && routePolyline && userLocation) {
+          const point = L.latLng(userLocation.lat, userLocation.lng);
+          const closest = L.GeometryUtil.closest(mapInstanceRef.current, routePolyline, point);
+          const isOnRoute = closest && closest.distance < DEVIATION_THRESHOLD;
           if (!isOnRoute) {
             console.log('User deviated from route, recalculating...');
-            setDirections(null);
+            setRoutingControl(null);
             setRoutePolyline(null);
             setSteps([]);
             setCurrentStepIndex(0);
@@ -135,7 +166,7 @@ const Ruta = () => {
         if (steps.length > 0) {
           const index = steps.findIndex((step, i) => {
             const loc = step.start_location;
-            const dist = haversineDistance(latitude, longitude, loc.lat(), loc.lng());
+            const dist = L.latLng(latitude, longitude).distanceTo(L.latLng(loc[0], loc[1])) / 1000;
             return dist < 0.03;
           });
           if (index !== -1 && index !== currentStepIndex) {
@@ -144,15 +175,25 @@ const Ruta = () => {
           }
         }
       },
-      console.error,
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+      (err) => {
+        console.error('Geolocation error:', err);
+        setError('No se pudo obtener la ubicación. Habilite los servicios de ubicación o verifique los permisos en su navegador.');
+        if (!userLocation) {
+          setIsNavigatingState(false);
+          mapInstanceRef.current?.setView([defaultCenter.lat, defaultCenter.lng], 20);
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [isNavigating, routePolyline, userLocation, steps, currentStepIndex]);
 
   useEffect(() => {
-    if (!selectedSucursales.length || !userLocation || !sucursales.length) {
-      setDirections(null);
+    if (!selectedSucursales.length || !userLocation || !sucursales.length || !mapInstanceRef.current) {
+      if (routingControl) {
+        mapInstanceRef.current.removeControl(routingControl);
+        setRoutingControl(null);
+      }
       setRoutePolyline(null);
       setSteps([]);
       setOptimizedOrder([]);
@@ -161,18 +202,18 @@ const Ruta = () => {
       return;
     }
 
-    if (directions && lastRouteRef.current === JSON.stringify(selectedSucursales)) {
+    const currentRouteKey = JSON.stringify(selectedSucursales);
+    if (routingControl && lastRouteRef.current === currentRouteKey) {
       console.log('Route already calculated, skipping');
       return;
     }
 
-    const origin = userLocation;
     let farthest = null;
     let maxDist = -1;
     selectedSucursales.forEach(id => {
       const s = sucursales.find(s => s.id == id);
       if (!s) return;
-      const dist = haversineDistance(origin.lat, origin.lng, s.lat, s.lng);
+      const dist = L.latLng(userLocation.lat, userLocation.lng).distanceTo(L.latLng(s.lat, s.lng)) / 1000;
       if (dist > maxDist) {
         maxDist = dist;
         farthest = s;
@@ -188,46 +229,96 @@ const Ruta = () => {
       .filter(id => id !== String(farthest.id))
       .map(id => {
         const s = sucursales.find(s => s.id == id);
-        return s ? { location: { lat: s.lat, lng: s.lng }, stopover: true } : null;
+        return s ? L.latLng(s.lat, s.lng) : null;
       })
       .filter(Boolean);
 
-    const service = new window.google.maps.DirectionsService();
-    service.route({
-      origin,
-      destination: { lat: farthest.lat, lng: farthest.lng },
-      waypoints,
-      optimizeWaypoints: true,
-      travelMode: 'DRIVING',
-    }, (res, status) => {
-      if (status === 'OK') {
-        setDirections(res);
-        setRoutePolyline(new window.google.maps.Polyline({ path: res.routes[0].overview_path }));
-        const order = res.routes[0].waypoint_order.map(i => selectedSucursales.filter(id => id !== String(farthest.id))[i]);
-        setOptimizedOrder([...order, String(farthest.id)]);
-        lastRouteRef.current = JSON.stringify(selectedSucursales);
-        iniciarNavegacion(res);
-        console.log('Route calculated, polyline set:', res.routes[0].overview_path);
-      } else {
-        console.error('Directions error:', status);
-        setError('Error al calcular la ruta');
-      }
+    if (routingControl) {
+      mapInstanceRef.current.removeControl(routingControl);
+    }
+
+    const control = L.Routing.control({
+      waypoints: [L.latLng(userLocation.lat, userLocation.lng), ...waypoints, L.latLng(farthest.lat, farthest.lng)],
+      router: L.Routing.osrmv1({
+        serviceUrl: 'http://router.project-osrm.org/route/v1'
+      }),
+      lineOptions: {
+        styles: [{ color: '#FF0000', weight: 5 }]
+      },
+      createMarker: () => null,
+      addWaypoints: false,
+      routeWhileDragging: false
+    }).addTo(mapInstanceRef.current);
+
+    control.on('routesfound', (e) => {
+      const route = e.routes[0];
+      console.log('Route data:', route);
+      setRoutePolyline(L.polyline(route.coordinates, { color: '#FF0000', weight: 5 }));
+      setOptimizedOrder([...waypoints.map((_, i) => selectedSucursales[i]), String(farthest.id)]);
+      lastRouteRef.current = currentRouteKey;
+      setRoutingControl(control);
+      iniciarNavegacion(control);
+      console.log('Route calculated, polyline set:', route.coordinates);
+    });
+
+    control.on('routingerror', (err) => {
+      console.error('Routing error:', err);
+      setError('Error al calcular la ruta');
     });
   }, [selectedSucursales, userLocation, sucursales]);
+
+  useEffect(() => {
+    if (!userLocation || !selectedSucursales.length || !mapInstanceRef.current) return;
+
+    const userMarkers = [];
+    const sucursalMarkers = [];
+
+    if (userLocation) {
+      const userMarker = L.marker([userLocation.lat, userLocation.lng], {
+        icon: L.divIcon({
+          html: `<div style="width: 20px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); transform: translateY(-50%);"></div>`,
+          className: '',
+          iconSize: [20, 20],
+          iconAnchor: [10, 20]
+        })
+      }).addTo(mapInstanceRef.current);
+      userMarkers.push(userMarker);
+    }
+
+    sucursalMarkers.push(...selectedSucursales.map(id => {
+      const s = sucursales.find(s => s.id == id);
+      if (!s) return null;
+      const marker = L.marker([s.lat, s.lng], {
+        icon: L.divIcon({
+          html: `<div style="color: white; font-size: 14px; font-weight: bold; transform: translate(10px, -20px);">${s.name}</div>`,
+          className: '',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        })
+      }).addTo(mapInstanceRef.current);
+      return marker;
+    }).filter(Boolean));
+
+    return () => {
+      userMarkers.forEach(marker => marker.remove());
+      sucursalMarkers.forEach(marker => marker.remove());
+      if (routePolyline) routePolyline.remove();
+    };
+  }, [userLocation, selectedSucursales, sucursales]);
 
   useEffect(() => {
     if (!userLocation || !selectedSucursales.length) return;
     const visited = selectedSucursales.find(id => {
       const s = sucursales.find(s => s.id == id);
       if (!s) return false;
-      return haversineDistance(userLocation.lat, userLocation.lng, s.lat, s.lng) < PROXIMITY_THRESHOLD;
+      return L.latLng(userLocation.lat, userLocation.lng).distanceTo(L.latLng(s.lat, s.lng)) / 1000 < PROXIMITY_THRESHOLD;
     });
     if (visited) {
       setSelectedSucursales(prev => prev.filter(id => id !== String(visited)));
       selectedMantenimientos
         .filter(m => m.id_sucursal == visited)
         .forEach(m => removeMantenimiento(m.id));
-      setDirections(null);
+      setRoutingControl(null);
       setRoutePolyline(null);
       setSteps([]);
       setOptimizedOrder([]);
@@ -247,44 +338,7 @@ const Ruta = () => {
       >
         Centrar en mi ubicación
       </Button>
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={userLocation || defaultCenter}
-        zoom={20}
-        heading={mapHeading}
-        onLoad={onMapLoad}
-        options={{
-          gestureHandling: 'cooperative',
-          zoomControl: true,
-          mapTypeId: 'hybrid',
-          tilt: 45
-        }}
-      >
-        {userLocation && (
-          <Marker
-            position={userLocation}
-            icon={{
-              path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-              scale: 5,
-              fillColor: 'blue',
-              fillOpacity: 1,
-              strokeWeight: 1,
-            }}
-          />
-        )}
-        {selectedSucursales.map((id) => {
-          const s = sucursales.find((s) => s.id == id);
-          return s ? (
-            <Marker key={id} position={{ lat: s.lat, lng: s.lng }} label={{ text: s.name, color: 'white' }} />
-          ) : null;
-        })}
-        {directions && (
-          <DirectionsRenderer
-            directions={directions}
-            options={{ polylineOptions: { strokeColor: '#FF0000', strokeWeight: 5 }, preserveViewport: isNavigating }}
-          />
-        )}
-      </GoogleMap>
+      <div ref={mapRef} style={mapContainerStyle}></div>
       {optimizedOrder.length > 0 && (
         <div className="mt-3">
           <h5>Ruta Optimizada</h5>
@@ -304,8 +358,9 @@ const Ruta = () => {
               <ListGroup.Item
                 key={i}
                 active={i === currentStepIndex}
-                dangerouslySetInnerHTML={{ __html: step.instructions }}
-              />
+              >
+                {step.instructions}
+              </ListGroup.Item>
             ))}
           </ListGroup>
         </div>
