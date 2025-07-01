@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { ListGroup, Button } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { LocationContext } from '../context/LocationContext';
@@ -29,7 +29,7 @@ const getBearing = (lat1, lng1, lat2, lng2) => {
 const Ruta = () => {
   const { userLocation, setIsNavigating } = useContext(LocationContext);
   const { currentEntity } = useContext(AuthContext);
-  const { selectedMantenimientos, removeMantenimiento } = useContext(RouteContext);
+  const { selectedMantenimientos } = useContext(RouteContext);
   const navigate = useNavigate();
   const [sucursales, setSucursales] = useState([]);
   const [selectedSucursales, setSelectedSucursales] = useState([]);
@@ -42,6 +42,7 @@ const Ruta = () => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const lastRouteRef = useRef(null);
+  const lastPositionRef = useRef(null);
   const userMarkerRef = useRef(null);
 
   useEffect(() => {
@@ -123,6 +124,7 @@ const Ruta = () => {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
+        const currentLatLng = L.latLng(latitude, longitude);
 
         if (userMarkerRef.current) userMarkerRef.current.remove();
         userMarkerRef.current = L.marker([latitude, longitude], {
@@ -135,17 +137,19 @@ const Ruta = () => {
         }).addTo(mapInstanceRef.current);
 
         if (isNavigating && routePolyline && mapInstanceRef.current) {
-          const currentLatLng = L.latLng(latitude, longitude);
           const segment = L.GeometryUtil.locateOnLine(mapInstanceRef.current, routePolyline, currentLatLng);
-          const nextPoint = L.GeometryUtil.interpolateOnLine(mapInstanceRef.current, routePolyline, segment + 0.01);
-          if (nextPoint && nextPoint.latLng) {
-            const heading = getBearing(currentLatLng.lat, currentLatLng.lng, nextPoint.latLng.lat, nextPoint.latLng.lng);
+          const ahead = L.GeometryUtil.interpolateOnLine(mapInstanceRef.current, routePolyline, segment + 0.01);
+          if (ahead && ahead.latLng) {
+            const heading = getBearing(currentLatLng.lat, currentLatLng.lng, ahead.latLng.lat, ahead.latLng.lng);
             mapInstanceRef.current.setBearing(heading);
           }
         }
+
         if (isNavigating && mapInstanceRef.current) {
           mapInstanceRef.current.panTo([latitude, longitude]);
         }
+
+        lastPositionRef.current = currentLatLng;
       },
       (err) => {
         console.error('Geolocation error:', err);
@@ -155,7 +159,7 @@ const Ruta = () => {
           mapInstanceRef.current?.setView([defaultCenter.lat, defaultCenter.lng], 20);
         }
       },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [isNavigating, routePolyline, userLocation]);
