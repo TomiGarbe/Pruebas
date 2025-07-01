@@ -145,7 +145,7 @@ const Ruta = () => {
 
         userMarkerRef.current = L.marker([latitude, longitude], {
           icon: L.divIcon({
-            html: `<div style="width: 15px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); transform: translateY(-50%) rotate(${heading}deg);"></div>`,
+            html: `<div style="width: 15px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); transform: translateY(-50%);"></div>`,
             className: '',
             iconSize: [20, 20],
             iconAnchor: [10, 20]
