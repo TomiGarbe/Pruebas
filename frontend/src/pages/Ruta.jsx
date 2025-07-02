@@ -5,7 +5,6 @@ import { AuthContext } from '../context/AuthContext';
 import { LocationContext } from '../context/LocationContext';
 import { RouteContext } from '../context/RouteContext';
 import { getSucursalesLocations } from '../services/maps';
-import { bearing } from '@turf/turf';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate/dist/leaflet-rotate.js';
@@ -16,10 +15,6 @@ import '../styles/mapa.css';
 
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
-
-const getBearing = (lat1, lng1, lat2, lng2) => {
-  return bearing([lng1, lat1], [lng2, lat2]);
-};
 
 const Ruta = () => {
   const { userLocation, setIsNavigating } = useContext(LocationContext);
@@ -117,18 +112,8 @@ const Ruta = () => {
     }
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        const { latitude, longitude } = pos.coords;
+        const { heading, latitude, longitude } = pos.coords;
         const currentLatLng = L.latLng(latitude, longitude);
-
-        if (userMarkerRef.current) userMarkerRef.current.remove();
-        let heading = 0;
-        if (isNavigating && routePolyline && mapInstanceRef.current) {
-          const segment = L.GeometryUtil.locateOnLine(mapInstanceRef.current, routePolyline, currentLatLng);
-          const ahead = L.GeometryUtil.interpolateOnLine(mapInstanceRef.current, routePolyline, segment + 0.01);
-          if (ahead && ahead.latLng) {
-            heading = getBearing(latitude, longitude, ahead.latLng.lat, ahead.latLng.lng);
-          }
-        }
 
         userMarkerRef.current = L.marker([latitude, longitude], {
           icon: L.divIcon({
