@@ -88,7 +88,7 @@ const Ruta = () => {
       setError('Ruta inválida: insuficientes waypoints');
       return;
     }
-    /*const instructions = waypoints.slice(1).map((wp, i) => {
+    const instructions = waypoints.slice(1).map((wp, i) => {
       const instruction = route.getPlan().instructions?.find(inst => inst.waypointIndex === i + 1);
       return {
         start_location: [wp.latLng.lat, wp.latLng.lng],
@@ -96,7 +96,7 @@ const Ruta = () => {
       };
     });
     setSteps(instructions);
-    mapInstanceRef.current.flyTo([userLocation.lat, userLocation.lng], 20, { animate: true, duration: 1.5 });*/
+    mapInstanceRef.current.flyTo([userLocation.lat, userLocation.lng], 20, { animate: true, duration: 1.5 });
     setIsNavigatingState(true);
   };
 
@@ -231,7 +231,8 @@ const Ruta = () => {
       lineOptions: { styles: [{ color: '#FF0000', weight: 5 }] },
       createMarker: () => null,
       addWaypoints: false,
-      routeWhileDragging: false
+      routeWhileDragging: false,
+      show: false
     }).addTo(mapInstanceRef.current);
 
     control.on('routesfound', (e) => {
