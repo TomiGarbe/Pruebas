@@ -102,7 +102,7 @@ const Ruta = () => {
       };
     });
     setSteps(instructions);
-    mapInstanceRef.current.flyTo([userLocation.lat, userLocation.lng], 20, { animate: true, duration: 1.5 });
+    mapInstanceRef.current.setView([userLocation.lat, userLocation.lng], 20);
     setIsNavigatingState(true);
   };
 
@@ -121,7 +121,6 @@ const Ruta = () => {
         const { latitude, longitude } = pos.coords;
         const currentLatLng = L.latLng(latitude, longitude);
 
-        if (userMarkerRef.current) userMarkerRef.current.remove();
         let heading = 0;
         if (isNavigating && prevLatLngRef.current) {
           heading = getBearing(
@@ -140,6 +139,11 @@ const Ruta = () => {
           );
         }
 
+        if (isNavigating && mapInstanceRef.current) {
+          mapInstanceRef.current.setView([latitude, longitude], 20, { bearing: heading });
+        }
+
+        if (userMarkerRef.current) userMarkerRef.current.remove();
         userMarkerRef.current = L.marker([latitude, longitude], {
           icon: L.divIcon({
             html: `<div style="width: 15px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); transform: translateY(-50%);"></div>`,
@@ -148,12 +152,6 @@ const Ruta = () => {
             iconAnchor: [10, 20]
           })
         }).addTo(mapInstanceRef.current);
-
-        if (isNavigating && mapInstanceRef.current) {
-          mapInstanceRef.current.setBearing(heading);
-          mapInstanceRef.current.panTo([latitude, longitude]);
-          console.log('Map rotated to heading:', heading, 'Panned to:', { lat: latitude, lng: longitude });
-        }
 
         if (isNavigating && routePolyline && mapInstanceRef.current) {
           const closest = L.GeometryUtil.closest(mapInstanceRef.current, routePolyline, currentLatLng);
