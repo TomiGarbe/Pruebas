@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import { LocationContext } from '../context/LocationContext';
 import { RouteContext } from '../context/RouteContext';
 import { getSucursalesLocations } from '../services/maps';
+import { bearing } from '@turf/turf';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate/dist/leaflet-rotate.js';
@@ -15,6 +16,10 @@ import '../styles/mapa.css';
 
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
+
+const getBearing = (lat1, lng1, lat2, lng2) => {
+  return bearing([lng1, lat1], [lng2, lat2]);
+};
 
 const Ruta = () => {
   const { userLocation, setIsNavigating } = useContext(LocationContext);
@@ -33,6 +38,7 @@ const Ruta = () => {
   const mapInstanceRef = useRef(null);
   const lastRouteRef = useRef(null);
   const userMarkerRef = useRef(null);
+  const prevLatLngRef = useRef(null);
 
   useEffect(() => {
     if (!currentEntity) navigate('/login');
@@ -112,10 +118,28 @@ const Ruta = () => {
     }
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        const { heading, latitude, longitude } = pos.coords;
+        const { latitude, longitude } = pos.coords;
         const currentLatLng = L.latLng(latitude, longitude);
 
         if (userMarkerRef.current) userMarkerRef.current.remove();
+        let heading = 0;
+        if (isNavigating && prevLatLngRef.current) {
+          heading = getBearing(
+            prevLatLngRef.current.lat,
+            prevLatLngRef.current.lng,
+            latitude,
+            longitude
+          );
+        } else if (isNavigating && steps.length > 0) {
+          const nextStep = steps[currentStepIndex] || steps[0];
+          heading = getBearing(
+            latitude,
+            longitude,
+            nextStep.start_location[0],
+            nextStep.start_location[1]
+          );
+        }
+
         userMarkerRef.current = L.marker([latitude, longitude], {
           icon: L.divIcon({
             html: `<div style="width: 15px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); transform: translateY(-50%);"></div>`,
@@ -155,6 +179,8 @@ const Ruta = () => {
             console.log('Updated step index:', index);
           }
         }
+
+        prevLatLngRef.current = currentLatLng;
       },
       (err) => {
         console.error('Geolocation error:', err);
@@ -237,10 +263,15 @@ const Ruta = () => {
 
     control.on('routesfound', (e) => {
       const route = e.routes[0];
+      if (routePolyline) {
+        routePolyline.remove();
+      }
       const poly = L.polyline(route.coordinates, { color: '#FF0000', weight: 5 });
       setRoutePolyline(poly);
       poly.addTo(mapInstanceRef.current);
-      mapInstanceRef.current.fitBounds(L.latLngBounds(route.coordinates));
+      if (!isNavigating) {
+        mapInstanceRef.current.fitBounds(L.latLngBounds(route.coordinates));
+      }
       lastRouteRef.current = currentRouteKey;
       setRoutingControl(control);
     });
@@ -249,7 +280,7 @@ const Ruta = () => {
       console.error('Routing error:', err);
       setError('Error al calcular la ruta');
     });
-  }, [selectedSucursales, userLocation, sucursales]);
+  }, [selectedSucursales, userLocation, sucursales, isNavigating]);
 
   return (
     <div className="map-container">
