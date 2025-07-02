@@ -140,7 +140,7 @@ const Ruta = () => {
         }
 
         if (isNavigating && mapInstanceRef.current) {
-          mapInstanceRef.current.setView([latitude, longitude], 20, { bearing: heading });
+          mapInstanceRef.current.setView([latitude, longitude], 20, { bearing: -heading });
         }
 
         if (userMarkerRef.current) userMarkerRef.current.remove();
