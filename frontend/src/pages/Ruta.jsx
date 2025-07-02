@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import { LocationContext } from '../context/LocationContext';
 import { RouteContext } from '../context/RouteContext';
 import { getSucursalesLocations } from '../services/maps';
+import { bearing } from '@turf/turf';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate/dist/leaflet-rotate.js';
@@ -17,13 +18,7 @@ const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
 
 const getBearing = (lat1, lng1, lat2, lng2) => {
-  const toRad = (deg) => deg * Math.PI / 180;
-  const toDeg = (rad) => rad * 180 / Math.PI;
-  const dLon = toRad(lng2 - lng1);
-  const y = Math.sin(dLon) * Math.cos(toRad(lat2));
-  const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
-    Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
-  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+  return bearing([lng1, lat1], [lng2, lat2]);
 };
 
 const Ruta = () => {
@@ -36,7 +31,6 @@ const Ruta = () => {
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigatingState] = useState(false);
   const [routePolyline, setRoutePolyline] = useState(null);
-  const [polylineSegments, setPolylineSegments] = useState([]);
   const [error, setError] = useState(null);
   const [steps, setSteps] = useState([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -128,15 +122,11 @@ const Ruta = () => {
 
         if (userMarkerRef.current) userMarkerRef.current.remove();
         let heading = 0;
-        let segmentStart = null;
-        if (isNavigating && routePolyline && mapInstanceRef.current && polylineSegments.length > 0) {
-          const segmentIndex = L.GeometryUtil.locateOnLine(mapInstanceRef.current, routePolyline, currentLatLng);
-          const segmentNumber = Math.floor(segmentIndex * (polylineSegments.length - 1));
-          const nextSegment = polylineSegments[Math.min(segmentNumber + 1, polylineSegments.length - 1)];
-          if (nextSegment && nextSegment.length === 2) {
-            const [start, end] = nextSegment;
-            heading = getBearing(start.lat, start.lng, end.lat, end.lng);
-            segmentStart = start;
+        if (isNavigating && routePolyline && mapInstanceRef.current) {
+          const segment = L.GeometryUtil.locateOnLine(mapInstanceRef.current, routePolyline, currentLatLng);
+          const ahead = L.GeometryUtil.interpolateOnLine(mapInstanceRef.current, routePolyline, segment + 0.01);
+          if (ahead && ahead.latLng) {
+            heading = getBearing(latitude, longitude, ahead.latLng.lat, ahead.latLng.lng);
           }
         }
 
@@ -149,12 +139,10 @@ const Ruta = () => {
           })
         }).addTo(mapInstanceRef.current);
 
-        if (isNavigating && mapInstanceRef.current && segmentStart) {
+        if (isNavigating && mapInstanceRef.current) {
           mapInstanceRef.current.setBearing(heading);
-          mapInstanceRef.current.panTo([segmentStart.lat, segmentStart.lng]);
-          console.log('Map rotated to heading:', heading, 'Panned to:', { lat: segmentStart.lat, lng: segmentStart.lng });
-        } else if (isNavigating && mapInstanceRef.current) {
           mapInstanceRef.current.panTo([latitude, longitude]);
+          console.log('Map rotated to heading:', heading, 'Panned to:', { lat: latitude, lng: longitude });
         }
 
         if (isNavigating && routePolyline && mapInstanceRef.current) {
@@ -164,7 +152,6 @@ const Ruta = () => {
             console.log('User deviated from route, recalculating...');
             setRoutingControl(null);
             setRoutePolyline(null);
-            setPolylineSegments([]);
             setSteps([]);
             setCurrentStepIndex(0);
             lastRouteRef.current = null;
@@ -194,7 +181,7 @@ const Ruta = () => {
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [isNavigating, routePolyline, userLocation, steps, currentStepIndex, polylineSegments]);
+  }, [isNavigating, routePolyline, userLocation, steps, currentStepIndex]);
 
   useEffect(() => {
     if (!selectedSucursales.length || !userLocation || !sucursales.length || !mapInstanceRef.current) {
@@ -206,7 +193,6 @@ const Ruta = () => {
         routePolyline.remove();
         setRoutePolyline(null);
       }
-      setPolylineSegments([]);
       setSteps([]);
       setIsNavigatingState(false);
       lastRouteRef.current = null;
@@ -265,11 +251,6 @@ const Ruta = () => {
     control.on('routesfound', (e) => {
       const route = e.routes[0];
       const poly = L.polyline(route.coordinates, { color: '#FF0000', weight: 5 });
-      const segments = [];
-      for (let i = 0; i < route.coordinates.length - 1; i++) {
-        segments.push([route.coordinates[i], route.coordinates[i + 1]]);
-      }
-      setPolylineSegments(segments);
       setRoutePolyline(poly);
       poly.addTo(mapInstanceRef.current);
       mapInstanceRef.current.fitBounds(L.latLngBounds(route.coordinates));
