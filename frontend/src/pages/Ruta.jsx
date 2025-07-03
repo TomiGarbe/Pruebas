@@ -165,41 +165,31 @@ const Ruta = () => {
     generarRuta();
   }, [selectedSucursales, prevLatLngRef.current]);
 
-  // Geolocalización
+  // Geolocalización y orientación del dispositivo
   useEffect(() => {
     if (!navigator.geolocation) {
       console.log('Geolocation not available');
       return setError('Geolocalización no disponible');
     }
 
+    console.log('Starting geolocation watch');
     const watchId = navigator.geolocation.watchPosition(
       ({ coords }) => {
-        const { heading, latitude, longitude } = coords;
+        const { latitude, longitude } = coords;
         const currentLatLng = L.latLng(latitude, longitude);
+        console.log('User location updated:', currentLatLng);
 
         // Actualizar marcador de usuario
         userMarkerRef.current?.remove();
         userMarkerRef.current = L.marker(currentLatLng, {
           icon: L.divIcon({
-            html: `<div style="wigth: 15px; height: 25px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+            html: `<div style="width: 15px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
             className: '',
             iconSize: [20, 20],
             iconAnchor: [10, 20],
           }),
         }).addTo(mapInstanceRef.current);
-
-        // Rotar mapa si está navegando
-        if (isNavigating && mapInstanceRef.current?.setBearing) {
-          /*let heading = 0;
-          if (prevLatLngRef.current) {
-            heading = bearing([
-              prevLatLngRef.current.lng,
-              prevLatLngRef.current.lat,
-            ], [longitude, latitude]);
-          }*/
-          mapInstanceRef.current.setView(currentLatLng, 20);
-          mapInstanceRef.current.setBearing(-heading);
-        }
+        console.log('User marker updated');
 
         prevLatLngRef.current = currentLatLng;
       },
@@ -210,8 +200,41 @@ const Ruta = () => {
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
     );
 
+    // Orientación del dispositivo
+    let orientationHandler = null;
+    if (isNavigating && mapInstanceRef.current?.setBearing) {
+      orientationHandler = (e) => {
+        if (!e.webkitCompassHeading && e.alpha === null) {
+          console.log('Device orientation not available, falling back to movement-based heading');
+          if (prevLatLngRef.current) {
+            const heading = bearing(
+              [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
+              [prevLatLngRef.current.lng, prevLatLngRef.current.lat]
+            );
+            mapInstanceRef.current.setView(prevLatLngRef.current, 20);
+            mapInstanceRef.current.setBearing(-heading);
+            console.log('Map rotated (fallback), heading:', -heading);
+          }
+          return;
+        }
+
+        const heading = e.webkitCompassHeading || (360 - e.alpha); // Webkit (iOS) or standard alpha
+        mapInstanceRef.current.setView(prevLatLngRef.current, 20);
+        mapInstanceRef.current.setBearing(-heading);
+        console.log('Map rotated with device orientation, heading:', -heading);
+      };
+
+      console.log('Starting device orientation watch');
+      window.addEventListener('deviceorientation', orientationHandler);
+    }
+
     return () => {
+      console.log('Clearing geolocation watch');
       navigator.geolocation.clearWatch(watchId);
+      if (orientationHandler) {
+        console.log('Clearing device orientation watch');
+        window.removeEventListener('deviceorientation', orientationHandler);
+      }
     };
   }, [isNavigating]);
 
