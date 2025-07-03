@@ -15,6 +15,7 @@ import '../styles/mapa.css';
 
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
+const ARRIVAL_RADIUS = 50; // meters
 
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
@@ -35,7 +36,23 @@ const Ruta = () => {
       const response = await getSucursalesLocations();
       const sucursales = response.data;
       const ids = [...new Set(selectedMantenimientos.map(m => m.id_sucursal))].filter(Boolean);
-      const filteredSucursales = sucursales.filter(sucursal => ids.includes(Number(sucursal.id)));
+      let filteredSucursales = sucursales.filter(sucursal => ids.includes(Number(sucursal.id)));
+      
+      // Sort by distance from user if location available
+      if (prevLatLngRef.current) {
+        filteredSucursales = [...filteredSucursales].sort((a, b) => {
+          const distA = Math.sqrt(
+            Math.pow(prevLatLngRef.current.lat - a.lat, 2) +
+            Math.pow(prevLatLngRef.current.lng - a.lng, 2)
+          );
+          const distB = Math.sqrt(
+            Math.pow(prevLatLngRef.current.lat - b.lat, 2) +
+            Math.pow(prevLatLngRef.current.lng - b.lng, 2)
+          );
+          return distA - distB;
+        });
+      }
+      
       setSelectedSucursales(filteredSucursales);
     } catch (error) {
       console.error('Error fetching selected sucursales:', error);
@@ -83,20 +100,7 @@ const Ruta = () => {
       return;
     }
 
-    // Sort sucursales by distance from user
-    const sortedSucursales = [...selectedSucursales].sort((a, b) => {
-      const distA = Math.sqrt(
-        Math.pow(prevLatLngRef.current.lat - a.lat, 2) +
-        Math.pow(prevLatLngRef.current.lng - a.lng, 2)
-      );
-      const distB = Math.sqrt(
-        Math.pow(prevLatLngRef.current.lat - b.lat, 2) +
-        Math.pow(prevLatLngRef.current.lng - b.lng, 2)
-      );
-      return distA - distB;
-    });
-
-    const waypoints = sortedSucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
+    const waypoints = selectedSucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
 
     if (routingControl) {
       mapInstanceRef.current.removeControl(routingControl);
@@ -160,10 +164,10 @@ const Ruta = () => {
     fetchSelectedSucursales();
   }, [currentEntity, navigate, selectedMantenimientos]);
 
-  // Generar ruta al cambiar selectedSucursales o posición del usuario
+  // Generar ruta al cambiar selectedSucursales
   useEffect(() => {
     generarRuta();
-  }, [selectedSucursales, prevLatLngRef.current]);
+  }, [selectedSucursales]);
 
   // Geolocalización
   useEffect(() => {
@@ -172,16 +176,28 @@ const Ruta = () => {
       return setError('Geolocalización no disponible');
     }
 
+    console.log('Starting geolocation watch');
     const watchId = navigator.geolocation.watchPosition(
       ({ coords }) => {
         const { latitude, longitude } = coords;
         const currentLatLng = L.latLng(latitude, longitude);
 
+        // Check if user reached any sucursal
+        if (selectedSucursales.length && currentLatLng) {
+          const updatedSucursales = selectedSucursales.filter(sucursal => {
+            const distance = currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng));
+            return distance > ARRIVAL_RADIUS;
+          });
+          if (updatedSucursales.length !== selectedSucursales.length) {
+            setSelectedSucursales(updatedSucursales);
+          }
+        }
+
         // Actualizar marcador de usuario
         userMarkerRef.current?.remove();
         userMarkerRef.current = L.marker(currentLatLng, {
           icon: L.divIcon({
-            html: `<div style="wigth: 15px; height: 25px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+            html: `<div style="width: 15px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
             className: '',
             iconSize: [20, 20],
             iconAnchor: [10, 20],
@@ -192,22 +208,27 @@ const Ruta = () => {
         if (isNavigating && mapInstanceRef.current?.setBearing) {
           let heading = 0;
           if (prevLatLngRef.current) {
-            heading = bearing([
-              prevLatLngRef.current.lng,
-              prevLatLngRef.current.lat,
-            ], [longitude, latitude]);
+            heading = bearing(
+              [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
+              [longitude, latitude]
+            );
           }
           mapInstanceRef.current.setView(currentLatLng, 20);
           mapInstanceRef.current.setBearing(-heading);
         }
 
         prevLatLngRef.current = currentLatLng;
+
+        // Trigger route recalculation if navigating
+        if (isNavigating) {
+          generarRuta();
+        }
       },
       (err) => {
         console.error('Geolocation error:', err);
         setError('No se pudo obtener la ubicación');
       },
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 250, timeout: 10000 }
     );
 
     return () => {
