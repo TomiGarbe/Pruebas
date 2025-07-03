@@ -174,7 +174,7 @@ const Ruta = () => {
 
     const watchId = navigator.geolocation.watchPosition(
       ({ coords }) => {
-        const { latitude, longitude } = coords;
+        const { heading, latitude, longitude } = coords;
         const currentLatLng = L.latLng(latitude, longitude);
 
         // Actualizar marcador de usuario
@@ -190,13 +190,13 @@ const Ruta = () => {
 
         // Rotar mapa si está navegando
         if (isNavigating && mapInstanceRef.current?.setBearing) {
-          let heading = 0;
+          /*let heading = 0;
           if (prevLatLngRef.current) {
             heading = bearing([
               prevLatLngRef.current.lng,
               prevLatLngRef.current.lat,
             ], [longitude, latitude]);
-          }
+          }*/
           mapInstanceRef.current.setView(currentLatLng, 20);
           mapInstanceRef.current.setBearing(-heading);
         }
