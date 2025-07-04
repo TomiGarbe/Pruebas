@@ -25,7 +25,6 @@ const Ruta = () => {
   const [selectedSucursales, setSelectedSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [routePolyline, setRoutePolyline] = useState(null);
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -150,6 +149,16 @@ const Ruta = () => {
     }
 
     const waypoints = selectedSucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
+    const layersToRemove = [];
+
+    // Collect existing route layers
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.eachLayer(layer => {
+        if (layer instanceof L.Polyline || layer instanceof L.Routing.Control) {
+          layersToRemove.push(layer);
+        }
+      });
+    }
 
     const control = L.Routing.control({
       waypoints: [prevLatLngRef.current, ...waypoints],
@@ -161,17 +170,13 @@ const Ruta = () => {
       show: false
     }).addTo(mapInstanceRef.current);
 
-    if (routingControl) {
-      mapInstanceRef.current.removeControl(routingControl);
-      setRoutingControl(null);
-    }
-
     control.on('routesfound', (e) => {
       const route = e.routes[0];
       const poly = L.polyline(route.coordinates, { color: '#FF0000', weight: 5 });
       poly.addTo(mapInstanceRef.current);
-      if (routePolyline) mapInstanceRef.current.removeLayer(routePolyline);
-      setRoutePolyline(poly);
+      layersToRemove.forEach(layer => {
+        mapInstanceRef.current.removeLayer(layer);
+      });
       if (!isNavigating) mapInstanceRef.current.fitBounds(poly.getBounds());
       setRoutingControl(control);
     });
@@ -221,7 +226,6 @@ const Ruta = () => {
       return setError('Geolocalización no disponible');
     }
 
-    console.log('Starting geolocation watch');
     const watchId = navigator.geolocation.watchPosition(
       ({ coords }) => {
         const { latitude, longitude } = coords;
@@ -238,8 +242,6 @@ const Ruta = () => {
             const updatedMantenimientos = selectedMantenimientos.filter(m => !reachedSucursalIds.includes(Number(m.id_sucursal)));
             setSelectedSucursales(updatedSucursales);
             removeMantenimiento(updatedMantenimientos);
-            console.log('Updated sucursales:', updatedSucursales);
-            console.log('Updated mantenimientos:', updatedMantenimientos);
           }
         }
 
