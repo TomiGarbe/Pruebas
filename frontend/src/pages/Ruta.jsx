@@ -95,14 +95,14 @@ const Ruta = () => {
   };
 
   const generarRuta = () => {
-    if (mapInstanceRef.current) {
-      console.log('Clearing all previous route layers');
-      mapInstanceRef.current.eachLayer(layer => {
-        if (layer instanceof L.Polyline || layer instanceof L.Routing.Control) {
-          mapInstanceRef.current.removeLayer(layer);
-        }
-      });
+    if (routingControl) {
+      mapInstanceRef.current.removeControl(routingControl);
       setRoutingControl(null);
+    }
+
+    if (routePolyline) {
+      mapInstanceRef.current.remove(routePolyline);
+      routePolyline.remove();
       setRoutePolyline(null);
     }
     
