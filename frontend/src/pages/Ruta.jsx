@@ -142,7 +142,7 @@ const Ruta = () => {
     if (!mapRef.current) return;
     const map = L.map(mapRef.current, {
       center: [defaultCenter.lat, defaultCenter.lng],
-      zoom: 20,
+      zoom: 10,
       rotate: true,
       rotateControl: false,
     });
@@ -213,7 +213,7 @@ const Ruta = () => {
               [longitude, latitude]
             );
           }
-          mapInstanceRef.current.flyTo(currentLatLng, 18, { duration: 1 });
+          mapInstanceRef.current.setView(currentLatLng, 20);
           mapInstanceRef.current.setBearing(-heading);
         }
 
