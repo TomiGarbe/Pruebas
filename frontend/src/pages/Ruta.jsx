@@ -16,6 +16,7 @@ import '../styles/mapa.css';
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
 const ARRIVAL_RADIUS = 50; // meters
+const ANIMATION_DURATION = 500; // ms for smooth map transition
 
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
@@ -24,12 +25,12 @@ const Ruta = () => {
   const [selectedSucursales, setSelectedSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [routePolyline, setRoutePolyline] = useState(null);
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const userMarkerRef = useRef(null);
   const prevLatLngRef = useRef(null);
+  const animationFrameRef = useRef(null);
 
   const fetchSelectedSucursales = async () => {
     try {
@@ -94,7 +95,40 @@ const Ruta = () => {
     centerOnUser();
   };
 
+  const smoothPanTo = (targetLatLng, zoom) => {
+    if (!mapInstanceRef.current || !targetLatLng) return;
+
+    const map = mapInstanceRef.current;
+    const startLatLng = map.getCenter();
+    const startTime = performance.now();
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+      // Linear interpolation for lat/lng
+      const lat = startLatLng.lat + (targetLatLng.lat - startLatLng.lat) * progress;
+      const lng = startLatLng.lng + (targetLatLng.lng - startLatLng.lng) * progress;
+
+      map.setView([lat, lng], zoom);
+
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+
+    cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = requestAnimationFrame(animate);
+  };
+
   const generarRuta = () => {
+    if (!selectedSucursales.length || !mapInstanceRef.current || !prevLatLngRef.current) {
+      console.log('Route generation skipped: missing data');
+      return;
+    }
+
     if (mapInstanceRef.current) {
       console.log('Clearing all previous route layers');
       mapInstanceRef.current.eachLayer(layer => {
@@ -103,12 +137,6 @@ const Ruta = () => {
         }
       });
       setRoutingControl(null);
-      setRoutePolyline(null);
-    }
-    
-    if (!selectedSucursales.length || !mapInstanceRef.current || !prevLatLngRef.current) {
-      console.log('Route generation skipped: missing data');
-      return;
     }
 
     const waypoints = selectedSucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
@@ -127,7 +155,6 @@ const Ruta = () => {
       const route = e.routes[0];
       const poly = L.polyline(route.coordinates, { color: '#FF0000', weight: 5 });
       poly.addTo(mapInstanceRef.current);
-      setRoutePolyline(poly);
       if (!isNavigating) mapInstanceRef.current.fitBounds(poly.getBounds());
       setRoutingControl(control);
     });
@@ -214,7 +241,7 @@ const Ruta = () => {
               [longitude, latitude]
             );
           }
-          mapInstanceRef.current.setView(currentLatLng, 20);
+          smoothPanTo(currentLatLng, 20);
           mapInstanceRef.current.setBearing(-heading);
         }
 
@@ -229,7 +256,7 @@ const Ruta = () => {
         console.error('Geolocation error:', err);
         setError('No se pudo obtener la ubicación');
       },
-      { enableHighAccuracy: true, maximumAge: 250, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
     );
 
     return () => {
