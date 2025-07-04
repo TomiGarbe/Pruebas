@@ -16,7 +16,7 @@ import '../styles/mapa.css';
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
 const ARRIVAL_RADIUS = 50; // meters
-const ANIMATION_DURATION = 500; // ms for smooth map transition
+const ANIMATION_DURATION = 1000; // ms for smooth map transition
 
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
@@ -110,7 +110,18 @@ const Ruta = () => {
       const lat = startLatLng.lat + (targetLatLng.lat - startLatLng.lat) * progress;
       const lng = startLatLng.lng + (targetLatLng.lng - startLatLng.lng) * progress;
 
-      map.setView([lat, lng], zoom);
+      const userLatLng = L.latLng(lat, lng);
+      map.setView(userLatLng, zoom);
+      // Actualizar marcador de usuario
+      userMarkerRef.current?.remove();
+      userMarkerRef.current = L.marker(userLatLng, {
+        icon: L.divIcon({
+          html: `<div style="width: 15px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+          className: '',
+          iconSize: [20, 20],
+          iconAnchor: [10, 20],
+        }),
+      }).addTo(mapInstanceRef.current);
 
       if (progress < 1) {
         animationFrameRef.current = requestAnimationFrame(animate);
@@ -220,17 +231,6 @@ const Ruta = () => {
             setSelectedSucursales(updatedSucursales);
           }
         }
-
-        // Actualizar marcador de usuario
-        userMarkerRef.current?.remove();
-        userMarkerRef.current = L.marker(currentLatLng, {
-          icon: L.divIcon({
-            html: `<div style="width: 15px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
-            className: '',
-            iconSize: [20, 20],
-            iconAnchor: [10, 20],
-          }),
-        }).addTo(mapInstanceRef.current);
 
         // Rotar mapa si está navegando
         if (isNavigating && mapInstanceRef.current?.setBearing) {
