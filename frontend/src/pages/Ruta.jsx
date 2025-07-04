@@ -25,6 +25,7 @@ const Ruta = () => {
   const [selectedSucursales, setSelectedSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [routePolyline, setRoutePolyline] = useState(null);
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -148,16 +149,6 @@ const Ruta = () => {
       return;
     }
 
-    if (mapInstanceRef.current) {
-      console.log('Clearing all previous route layers');
-      mapInstanceRef.current.eachLayer(layer => {
-        if (layer instanceof L.Polyline || layer instanceof L.Routing.Control) {
-          const layerToRemove = layer;
-        }
-      });
-      setRoutingControl(null);
-    }
-
     const waypoints = selectedSucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
 
     const control = L.Routing.control({
@@ -170,12 +161,17 @@ const Ruta = () => {
       show: false
     }).addTo(mapInstanceRef.current);
 
-    mapInstanceRef.current.removeLayer(layerToRemove);
+    if (routingControl) {
+      mapInstanceRef.current.removeControl(routingControl);
+      setRoutingControl(null);
+    }
 
     control.on('routesfound', (e) => {
       const route = e.routes[0];
       const poly = L.polyline(route.coordinates, { color: '#FF0000', weight: 5 });
       poly.addTo(mapInstanceRef.current);
+      if (routePolyline) mapInstanceRef.current.removeLayer(routePolyline);
+      setRoutePolyline(poly);
       if (!isNavigating) mapInstanceRef.current.fitBounds(poly.getBounds());
       setRoutingControl(control);
     });
