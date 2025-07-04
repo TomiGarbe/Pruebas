@@ -62,7 +62,7 @@ const Ruta = () => {
 
   const centerOnUser = () => {
     if (mapInstanceRef.current && prevLatLngRef.current) {
-      mapInstanceRef.current.setView(prevLatLngRef.current, 20);
+      mapInstanceRef.current.flyTo(prevLatLngRef.current, 20, { duration: 0.5 });
     } else {
       console.log('Cannot center: map or user location not available');
     }
@@ -95,22 +95,23 @@ const Ruta = () => {
   };
 
   const generarRuta = () => {
+    if (mapInstanceRef.current) {
+      console.log('Clearing all previous route layers');
+      mapInstanceRef.current.eachLayer(layer => {
+        if (layer instanceof L.Polyline || layer instanceof L.Routing.Control) {
+          mapInstanceRef.current.removeLayer(layer);
+        }
+      });
+      setRoutingControl(null);
+      setRoutePolyline(null);
+    }
+    
     if (!selectedSucursales.length || !mapInstanceRef.current || !prevLatLngRef.current) {
       console.log('Route generation skipped: missing data');
       return;
     }
 
     const waypoints = selectedSucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
-
-    if (routingControl) {
-      mapInstanceRef.current.removeControl(routingControl);
-      setRoutingControl(null);
-    }
-
-    if (routePolyline) {
-      routePolyline.remove();
-      setRoutePolyline(null);
-    }
 
     const control = L.Routing.control({
       waypoints: [prevLatLngRef.current, ...waypoints],
@@ -213,7 +214,7 @@ const Ruta = () => {
               [longitude, latitude]
             );
           }
-          mapInstanceRef.current.setView(currentLatLng, 20);
+          mapInstanceRef.current.flyTo(currentLatLng, 20, { duration: 0.5 });
           mapInstanceRef.current.setBearing(-heading);
         }
 
