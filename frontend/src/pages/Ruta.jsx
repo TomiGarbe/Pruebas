@@ -152,7 +152,7 @@ const Ruta = () => {
       console.log('Clearing all previous route layers');
       mapInstanceRef.current.eachLayer(layer => {
         if (layer instanceof L.Polyline || layer instanceof L.Routing.Control) {
-          mapInstanceRef.current.removeLayer(layer);
+          const layerToRemove = layer;
         }
       });
       setRoutingControl(null);
@@ -169,6 +169,8 @@ const Ruta = () => {
       routeWhileDragging: false,
       show: false
     }).addTo(mapInstanceRef.current);
+
+    mapInstanceRef.current.removeLayer(layerToRemove);
 
     control.on('routesfound', (e) => {
       const route = e.routes[0];
