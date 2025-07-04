@@ -62,7 +62,7 @@ const Ruta = () => {
 
   const centerOnUser = () => {
     if (mapInstanceRef.current && prevLatLngRef.current) {
-      mapInstanceRef.current.flyTo(prevLatLngRef.current, 15, { duration: 0.5 });
+      mapInstanceRef.current.flyTo(prevLatLngRef.current, 18, { duration: 1 });
     } else {
       console.log('Cannot center: map or user location not available');
     }
@@ -101,7 +101,7 @@ const Ruta = () => {
     }
 
     if (routePolyline) {
-      routePolyline.remove(mapInstanceRef.current);
+      routePolyline.remove();
       setRoutePolyline(null);
     }
     
@@ -213,7 +213,7 @@ const Ruta = () => {
               [longitude, latitude]
             );
           }
-          mapInstanceRef.current.flyTo(currentLatLng, 15, { duration: 0.5 });
+          mapInstanceRef.current.flyTo(currentLatLng, 18, { duration: 1 });
           mapInstanceRef.current.setBearing(-heading);
         }
 
