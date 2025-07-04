@@ -20,7 +20,7 @@ const ANIMATION_DURATION = 1000; // ms for smooth map transition
 
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
-  const { selectedMantenimientos } = useContext(RouteContext);
+  const { selectedMantenimientos, removeMantenimiento } = useContext(RouteContext);
   const navigate = useNavigate();
   const [selectedSucursales, setSelectedSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
@@ -95,23 +95,31 @@ const Ruta = () => {
     centerOnUser();
   };
 
-  const smoothPanTo = (targetLatLng, zoom) => {
+  const smoothPanTo = (targetLatLng, zoom, targetBearing) => {
     if (!mapInstanceRef.current || !targetLatLng) return;
 
     const map = mapInstanceRef.current;
     const startLatLng = map.getCenter();
+    const startBearing = map.getBearing() || 0;
     const startTime = performance.now();
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
 
-      // Linear interpolation for lat/lng
+      // Interpolate lat, lng, and bearing
       const lat = startLatLng.lat + (targetLatLng.lat - startLatLng.lat) * progress;
       const lng = startLatLng.lng + (targetLatLng.lng - startLatLng.lng) * progress;
+      // Normalize bearing difference to avoid long rotations
+      let bearingDiff = targetBearing - startBearing;
+      if (bearingDiff > 180) bearingDiff -= 360;
+      if (bearingDiff < -180) bearingDiff += 360;
+      const bearing = startBearing + bearingDiff * progress;
 
       const userLatLng = L.latLng(lat, lng);
       map.setView(userLatLng, zoom);
+      map.setBearing(bearing);
+
       // Actualizar marcador de usuario
       userMarkerRef.current?.remove();
       userMarkerRef.current = L.marker(userLatLng, {
@@ -223,12 +231,17 @@ const Ruta = () => {
 
         // Check if user reached any sucursal
         if (selectedSucursales.length && currentLatLng) {
-          const updatedSucursales = selectedSucursales.filter(sucursal => {
-            const distance = currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng));
-            return distance > ARRIVAL_RADIUS;
-          });
-          if (updatedSucursales.length !== selectedSucursales.length) {
+          const reachedSucursalIds = selectedSucursales
+            .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
+            .map(sucursal => Number(sucursal.id));
+          
+          if (reachedSucursalIds.length > 0) {
+            const updatedSucursales = selectedSucursales.filter(sucursal => !reachedSucursalIds.includes(Number(sucursal.id)));
+            const updatedMantenimientos = selectedMantenimientos.filter(m => !reachedSucursalIds.includes(Number(m.id_sucursal)));
             setSelectedSucursales(updatedSucursales);
+            removeMantenimiento(updatedMantenimientos);
+            console.log('Updated sucursales:', updatedSucursales);
+            console.log('Updated mantenimientos:', updatedMantenimientos);
           }
         }
 
@@ -241,8 +254,7 @@ const Ruta = () => {
               [longitude, latitude]
             );
           }
-          smoothPanTo(currentLatLng, 20);
-          mapInstanceRef.current.setBearing(-heading);
+          smoothPanTo(currentLatLng, 20, -heading);
         }
 
         prevLatLngRef.current = currentLatLng;
