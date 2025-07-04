@@ -101,8 +101,7 @@ const Ruta = () => {
     }
 
     if (routePolyline) {
-      mapInstanceRef.current.remove(routePolyline);
-      routePolyline.remove();
+      routePolyline.remove(mapInstanceRef.current);
       setRoutePolyline(null);
     }
     
