@@ -127,7 +127,7 @@ const Ruta = () => {
       const poly = L.polyline(route.coordinates, { color: '#FF0000', weight: 5 });
       poly.addTo(mapInstanceRef.current);
       setRoutePolyline(poly);
-      mapInstanceRef.current.fitBounds(poly.getBounds());
+      if (!isNavigating) mapInstanceRef.current.fitBounds(poly.getBounds());
       setRoutingControl(control);
     });
 
