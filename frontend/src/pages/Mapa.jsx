@@ -2,21 +2,14 @@ import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { getUsersLocations, getSucursalesLocations } from '../services/maps';
+import { renderToString } from 'react-dom/server';
+import { FaMapMarkerAlt } from 'react-icons/fa';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/mapa.css';
 
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };;
-
-const carIcon = L.icon({
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  shadowSize: [41, 41]
-});
 
 const Mapa = () => {
   const [users, setUsers] = useState([]);
@@ -102,12 +95,19 @@ const Mapa = () => {
           iconSize: [20, 20],
           iconAnchor: [10, 20],
         }),
+        title: user.name
       }).addTo(mapInstanceRef.current);
       return marker;
     });
 
     const sucursalMarkers = sucursales.map(sucursal => {
       const marker = L.marker([sucursal.lat, sucursal.lng], {
+        icon: L.divIcon({
+          html: renderToString(<FaMapMarkerAlt style={{ color: 'rgb(22, 109, 196)', fontSize: '24px' }} />),
+          className: 'sucursal-marker',
+          iconSize: [20, 20],
+          iconAnchor: [10, 20],
+        }),
         title: sucursal.name
       }).addTo(mapInstanceRef.current);
       return marker;

@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { RouteContext } from '../context/RouteContext';
 import { LocationContext } from '../context/LocationContext';
+import { renderToString } from 'react-dom/server';
+import { FaMapMarkerAlt } from 'react-icons/fa';
 import { bearing } from '@turf/turf';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -15,8 +17,8 @@ import '../styles/mapa.css';
 
 const mapContainerStyle = { width: '100%', height: '100vh' };
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
-const ARRIVAL_RADIUS = 50; // meters
-const ANIMATION_DURATION = 1000; // ms for smooth map transition
+const ARRIVAL_RADIUS = 50;
+const ANIMATION_DURATION = 1000;
 
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
@@ -31,6 +33,7 @@ const Ruta = () => {
   const userMarkerRef = useRef(null);
   const prevLatLngRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const sucursalMarkersRef = useRef([]);
 
   const centerOnUser = () => {
     if (mapInstanceRef.current && prevLatLngRef.current) {
@@ -134,10 +137,21 @@ const Ruta = () => {
       });
     }
 
-    selectedSucursales.map(s => {
-      const marker = L.marker([s.lat, s.lng], {
-        title: s.name
+    // Add markers for sucursales
+    sucursalMarkersRef.current?.forEach(marker => {
+      if (mapInstanceRef.current) mapInstanceRef.current.removeLayer(marker);
+    });
+    sucursalMarkersRef.current = selectedSucursales.map(sucursal => {
+      const marker = L.marker([sucursal.lat, sucursal.lng], {
+        icon: L.divIcon({
+          html: renderToString(<FaMapMarkerAlt style={{ color: 'rgb(22, 109, 196)', fontSize: '24px' }} />),
+          className: 'sucursal-marker',
+          iconSize: [20, 20],
+          iconAnchor: [10, 20],
+        }),
+        title: sucursal.name
       }).addTo(mapInstanceRef.current);
+      console.log('generarRuta: Added sucursal marker', { id: sucursal.id, lat: sucursal.lat, lng: sucursal.lng });
       return marker;
     });
 
@@ -183,7 +197,7 @@ const Ruta = () => {
   useEffect(() => {
     if (!mapRef.current) return;
     const map = L.map(mapRef.current, {
-      center: [defaultCenter.lat, defaultCenter.lng],
+      center: userLocation || defaultCenter,
       zoom: 12,
       rotate: true,
       rotateControl: false,
@@ -192,6 +206,7 @@ const Ruta = () => {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: 'OpenStreetMap'
     }).addTo(map);
+
     return () => {
       map.remove();
     };
@@ -215,6 +230,17 @@ const Ruta = () => {
       ({ coords }) => {
         const { latitude, longitude } = coords;
         const currentLatLng = L.latLng(latitude, longitude);
+
+        // Actualizar marcador de usuario
+        userMarkerRef.current?.remove();
+        userMarkerRef.current = L.marker(currentLatLng, {
+          icon: L.divIcon({
+            html: `<div style="width: 15px; height: 20px; background:rgb(22, 109, 196); clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+            className: '',
+            iconSize: [20, 20],
+            iconAnchor: [10, 20],
+          }),
+        }).addTo(mapInstanceRef.current);
 
         // Check if user reached any sucursal
         if (selectedSucursales.length && currentLatLng) {
@@ -271,7 +297,7 @@ const Ruta = () => {
       <Button variant="primary" onClick={centerOnUser} className="mb-2">
         Centrar en mi ubicación
       </Button>
-      <Button variant={isNavigating ? 'danger' : 'success'} onClick={toggleNavegacion} disabled={!routingControl} className="mb-3 ms-2">
+      <Button variant={isNavigating ? 'danger' : 'success'} onClick={toggleNavegacion} className="mb-3 ms-2">
         {isNavigating ? 'Detener navegación' : 'Iniciar navegación'}
       </Button>
       <Button variant="primary" onClick={borrarRuta} className="mb-2">
