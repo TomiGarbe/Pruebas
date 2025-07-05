@@ -95,7 +95,7 @@ const Ruta = () => {
       userMarkerRef.current?.remove();
       userMarkerRef.current = L.marker(userLatLng, {
         icon: L.divIcon({
-          html: `<div style="width: 15px; height: 20px; background: light-blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+          html: `<div style="width: 15px; height: 20px; background:rgb(22, 109, 196); clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
           className: '',
           iconSize: [20, 20],
           iconAnchor: [10, 20],

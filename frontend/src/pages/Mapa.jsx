@@ -30,7 +30,6 @@ const Mapa = () => {
   const fetchLocations = async () => {
     try {
       const responseUsers = await getUsersLocations();
-      console.log('Fetched users:', responseUsers.data);
       const updatedUsers = responseUsers.data
         .map(user => ({
           id: user.id,
@@ -42,7 +41,6 @@ const Mapa = () => {
       setUsers(updatedUsers);
 
       const responseSucursales = await getSucursalesLocations();
-      console.log('Fetched sucursales:', responseSucursales.data);
       const updatedSucursales = responseSucursales.data
         .map(sucursal => ({
           id: sucursal.id,
@@ -72,7 +70,6 @@ const Mapa = () => {
 
   useEffect(() => {
     if (!mapRef.current) {
-      console.error('mapRef is null');
       return;
     }
 
@@ -86,12 +83,10 @@ const Mapa = () => {
     }).addTo(mapInstanceRef.current);
 
     mapInstanceRef.current.invalidateSize();
-    console.log('Map initialized:', mapInstanceRef.current);
 
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
-        console.log('Map unmounted');
       }
     };
   }, []);
@@ -101,8 +96,12 @@ const Mapa = () => {
 
     const userMarkers = users.map(user => {
       const marker = L.marker([user.lat, user.lng], {
-        icon: carIcon,
-        title: user.name
+        icon: L.divIcon({
+          html: `<div style="width: 15px; height: 20px; background:rgb(22, 109, 196); clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+          className: '',
+          iconSize: [20, 20],
+          iconAnchor: [10, 20],
+        }),
       }).addTo(mapInstanceRef.current);
       return marker;
     });
