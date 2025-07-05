@@ -3,7 +3,7 @@ import { Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { RouteContext } from '../context/RouteContext';
-import { getSucursalesLocations } from '../services/maps';
+import { LocationContext } from '../context/LocationContext';
 import { bearing } from '@turf/turf';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -20,9 +20,9 @@ const ANIMATION_DURATION = 1000; // ms for smooth map transition
 
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
-  const { selectedMantenimientos, removeMantenimiento } = useContext(RouteContext);
+  const { userLocation } = useContext(LocationContext);
+  const { selectedSucursales, removeSucursal, clearSucursales } = useContext(RouteContext);
   const navigate = useNavigate();
-  const [selectedSucursales, setSelectedSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [error, setError] = useState(null);
@@ -31,35 +31,6 @@ const Ruta = () => {
   const userMarkerRef = useRef(null);
   const prevLatLngRef = useRef(null);
   const animationFrameRef = useRef(null);
-
-  const fetchSelectedSucursales = async () => {
-    try {
-      const response = await getSucursalesLocations();
-      const sucursales = response.data;
-      const ids = [...new Set(selectedMantenimientos.map(m => m.id_sucursal))].filter(Boolean);
-      let filteredSucursales = sucursales.filter(sucursal => ids.includes(Number(sucursal.id)));
-      
-      // Sort by distance from user if location available
-      if (prevLatLngRef.current) {
-        filteredSucursales = [...filteredSucursales].sort((a, b) => {
-          const distA = Math.sqrt(
-            Math.pow(prevLatLngRef.current.lat - a.lat, 2) +
-            Math.pow(prevLatLngRef.current.lng - a.lng, 2)
-          );
-          const distB = Math.sqrt(
-            Math.pow(prevLatLngRef.current.lat - b.lat, 2) +
-            Math.pow(prevLatLngRef.current.lng - b.lng, 2)
-          );
-          return distA - distB;
-        });
-      }
-      
-      setSelectedSucursales(filteredSucursales);
-    } catch (error) {
-      console.error('Error fetching selected sucursales:', error);
-      setError('Error al cargar sucursales');
-    }
-  };
 
   const centerOnUser = () => {
     if (mapInstanceRef.current && prevLatLngRef.current) {
@@ -124,7 +95,7 @@ const Ruta = () => {
       userMarkerRef.current?.remove();
       userMarkerRef.current = L.marker(userLatLng, {
         icon: L.divIcon({
-          html: `<div style="width: 15px; height: 20px; background: blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+          html: `<div style="width: 15px; height: 20px; background: light-blue; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
           className: '',
           iconSize: [20, 20],
           iconAnchor: [10, 20],
@@ -143,8 +114,11 @@ const Ruta = () => {
   };
 
   const generarRuta = () => {
-    if (!selectedSucursales.length || !mapInstanceRef.current || !prevLatLngRef.current) {
-      console.log('Route generation skipped: missing data');
+    if (!selectedSucursales.length || !mapInstanceRef.current) {
+      console.log('Route generation skipped: missing data', {
+        selectedSucursalesLength: selectedSucursales.length,
+        mapInstanceExists: !!mapInstanceRef.current,
+      });
       return;
     }
 
@@ -160,10 +134,17 @@ const Ruta = () => {
       });
     }
 
+    selectedSucursales.map(s => {
+      const marker = L.marker([s.lat, s.lng], {
+        title: s.name
+      }).addTo(mapInstanceRef.current);
+      return marker;
+    });
+
     const control = L.Routing.control({
-      waypoints: [prevLatLngRef.current, ...waypoints],
+      waypoints: [prevLatLngRef.current || userLocation, ...waypoints],
       router: L.Routing.osrmv1({ serviceUrl: import.meta.env.VITE_OSRM_URL }),
-      lineOptions: { styles: [{ color: '#FF0000', weight: 5 }] },
+      lineOptions: { styles: [{ color: '#3399FF', weight: 5 }] },
       createMarker: () => null,
       addWaypoints: false,
       routeWhileDragging: false,
@@ -172,7 +153,7 @@ const Ruta = () => {
 
     control.on('routesfound', (e) => {
       const route = e.routes[0];
-      const poly = L.polyline(route.coordinates, { color: '#FF0000', weight: 5 });
+      const poly = L.polyline(route.coordinates, { color: '#3399FF', weight: 5 });
       poly.addTo(mapInstanceRef.current);
       layersToRemove.forEach(layer => {
         mapInstanceRef.current.removeLayer(layer);
@@ -187,12 +168,23 @@ const Ruta = () => {
     });
   };
 
+  const borrarRuta = () => {
+    clearSucursales();
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.eachLayer(layer => {
+        if (layer instanceof L.Polyline || layer instanceof L.Routing.Control) {
+          mapInstanceRef.current.removeLayer(layer);
+        }
+      });
+    }
+  };
+
   // Iniciar mapa
   useEffect(() => {
     if (!mapRef.current) return;
     const map = L.map(mapRef.current, {
       center: [defaultCenter.lat, defaultCenter.lng],
-      zoom: 10,
+      zoom: 12,
       rotate: true,
       rotateControl: false,
     });
@@ -205,19 +197,12 @@ const Ruta = () => {
     };
   }, []);
 
-  // Cargar sucursales seleccionadas al montar o cambiar selectedMantenimientos
   useEffect(() => {
     if (!currentEntity) {
       console.log('No current entity, navigating to login');
       return navigate('/login');
     }
-    fetchSelectedSucursales();
-  }, [currentEntity, navigate, selectedMantenimientos]);
-
-  // Generar ruta al cambiar selectedSucursales
-  useEffect(() => {
-    generarRuta();
-  }, [selectedSucursales]);
+  }, [currentEntity, navigate]);
 
   // Geolocalización
   useEffect(() => {
@@ -238,10 +223,9 @@ const Ruta = () => {
             .map(sucursal => Number(sucursal.id));
           
           if (reachedSucursalIds.length > 0) {
-            const updatedSucursales = selectedSucursales.filter(sucursal => !reachedSucursalIds.includes(Number(sucursal.id)));
-            const updatedMantenimientos = selectedMantenimientos.filter(m => !reachedSucursalIds.includes(Number(m.id_sucursal)));
-            setSelectedSucursales(updatedSucursales);
-            removeMantenimiento(updatedMantenimientos);
+            for (let i = 0; i < reachedSucursalIds.length; i++) {
+              removeSucursal(reachedSucursalIds[i]);
+            }
           }
         }
 
@@ -276,6 +260,11 @@ const Ruta = () => {
     };
   }, [isNavigating]);
 
+  // Generar ruta al cambiar selectedSucursales
+  useEffect(() => {
+    generarRuta();
+  }, [selectedSucursales]);
+
   return (
     <div className="map-container">
       {error && <div className="alert alert-danger">{error}</div>}
@@ -284,6 +273,9 @@ const Ruta = () => {
       </Button>
       <Button variant={isNavigating ? 'danger' : 'success'} onClick={toggleNavegacion} disabled={!routingControl} className="mb-3 ms-2">
         {isNavigating ? 'Detener navegación' : 'Iniciar navegación'}
+      </Button>
+      <Button variant="primary" onClick={borrarRuta} className="mb-2">
+        Borrar ruta
       </Button>
       <div ref={mapRef} style={mapContainerStyle}></div>
     </div>

@@ -12,7 +12,7 @@ import '../styles/mantenimientos.css';
 
 const Correctivo = () => {
   const { currentEntity } = useContext(AuthContext);
-  const { addMantenimiento } = useContext(RouteContext);
+  const { addSucursal } = useContext(RouteContext);
   const navigate = useNavigate();
   const location = useLocation();
   const mantenimiento = location.state?.mantenimiento || {};
@@ -236,7 +236,7 @@ const handleDeleteSelectedPlanilla = async () => {
   };
 
   const handleAddToRoute = () => {
-    addMantenimiento(mantenimiento);
+    addSucursal(mantenimiento);
     setSuccess('Mantenimiento agregado a la ruta.');
   };
 
