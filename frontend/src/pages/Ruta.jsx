@@ -168,17 +168,6 @@ const Ruta = () => {
       return;
     }
 
-    if (isNavigating) {
-      const currentLatLng = L.latLng(prevLatLngRef.current.lat || userLocation.lat, prevLatLngRef.current.lng || userLocation.lng);
-      const reachedSucursalIds = sucursales
-        .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
-        .map(sucursal => Number(sucursal.id));
-      if (reachedSucursalIds.length) {
-        setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
-        reachedSucursalIds.forEach(id => deleteSucursal(id));
-      }
-    }
-
     const waypoints = sucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
 
     if (routeMarkerRef.current?.control) {
@@ -310,7 +299,16 @@ const Ruta = () => {
         prevLatLngRef.current = currentLatLng;
 
         if (isNavigating) {
-          generarRuta();
+          const currentLatLng = L.latLng(prevLatLngRef.current.lat || userLocation.lat, prevLatLngRef.current.lng || userLocation.lng);
+          const reachedSucursalIds = sucursales
+            .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
+            .map(sucursal => Number(sucursal.id));
+          if (reachedSucursalIds.length) {
+            setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
+            reachedSucursalIds.forEach(id => deleteSucursal(id));
+          } else {
+            generarRuta();
+          }
         }
       },
       (err) => {
@@ -330,9 +328,7 @@ const Ruta = () => {
   }, [currentEntity, userLocation]);
 
   useEffect(() => {
-    if (!isNavigating) {
-      generarRuta();
-    }
+    generarRuta();
   }, [sucursales]);
 
   return (
