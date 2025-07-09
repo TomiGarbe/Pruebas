@@ -123,20 +123,20 @@ const Ruta = () => {
         prevLatLngExists: !!prevLatLngRef.current,
       });
       sucursalMarkersRef.current.forEach(marker => marker.remove());
-      routeMarkerRef.current?.remove();
-      if (routingControl) {
-        routingControl.remove();
-        setRoutingControl(null);
+      if (routeMarkerRef.current?.control) {
+        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+      }
+      if (routeMarkerRef.current?.polyline) {
+        routeMarkerRef.current.polyline.remove();
       }
       return;
     }
 
-    if (routingControl) {
-      routingControl.remove();
-      setRoutingControl(null);
-    }
-
     const waypoints = sucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
+
+    if (routeMarkerRef.current?.control) {
+      mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+    }
 
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
     sucursales.map(sucursal => {
@@ -166,8 +166,13 @@ const Ruta = () => {
       const route = e.routes[0];
       const poly = L.polyline(route.coordinates, { color: '#3399FF', weight: 5 });
       poly.addTo(mapInstanceRef.current);
-      routeMarkerRef.current?.remove();
-      routeMarkerRef.current = poly;
+      if (routeMarkerRef.current?.polyline) {
+        routeMarkerRef.current.polyline.remove();
+      }
+      routeMarkerRef.current = {
+        control,
+        polyline
+      };
       if (!isNavigating) mapInstanceRef.current.fitBounds(poly.getBounds());
       setRoutingControl(control);
     });
@@ -181,10 +186,11 @@ const Ruta = () => {
   const borrarRuta = () => {
     setSucursales([]);
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
-    routeMarkerRef.current?.remove();
-    if (routingControl) {
-      routingControl.remove();
-      setRoutingControl(null);
+    if (routeMarkerRef.current?.control) {
+      mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+    }
+    if (routeMarkerRef.current?.polyline) {
+      routeMarkerRef.current.polyline.remove();
     }
     deleteSelection();
   };

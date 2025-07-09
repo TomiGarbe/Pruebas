@@ -29,6 +29,8 @@ const Mapa = () => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const routeLayersRef = useRef({});
+  const usersMarkersRef = useRef([]);
+  const sucursalMarkersRef = useRef([]);
 
   const fetchData = async () => {
     try {
@@ -146,7 +148,12 @@ const Mapa = () => {
   const generarRutas = (user) => {
     if (!user.sucursales || !mapInstanceRef.current) return;
     const waypoints = user.sucursales.map(s => L.latLng(s.lat, s.lng)).filter(Boolean);
+
     if (waypoints.length > 0) {
+      if (routeLayersRef.current[user.id]?.control) {
+        mapInstanceRef.current.removeControl(routeLayersRef.current[user.id].control);
+      }
+
       const control = L.Routing.control({
         waypoints: [[user.lat, user.lng], ...waypoints],
         router: L.Routing.osrmv1({ serviceUrl: import.meta.env.VITE_OSRM_URL }),
@@ -154,16 +161,22 @@ const Mapa = () => {
         createMarker: () => null,
         addWaypoints: false,
         routeWhileDragging: false,
-        show: false
+        show: false,
+        fitSelectedRoutes: false
       }).addTo(mapInstanceRef.current);
 
       control.on('routesfound', (e) => {
         const route = e.routes[0];
-        if (routeLayersRef.current[user.id]) {
-          routeLayersRef.current[user.id].remove();
+        if (routeLayersRef.current[user.id]?.polyline) {
+          routeLayersRef.current[user.id].polyline.remove();
         }
-        routeLayersRef.current[user.id] = L.polyline(route.coordinates, { color: '#3399FF', weight: 5 })
-          .addTo(mapInstanceRef.current);
+
+        const polyline = L.polyline(route.coordinates, { color: '#3399FF', weight: 5 }).addTo(mapInstanceRef.current);
+
+        routeLayersRef.current[user.id] = {
+          control,
+          polyline
+        };
       });
 
       control.on('routingerror', (err) => {
@@ -285,14 +298,10 @@ const Mapa = () => {
   }, []);
 
   useEffect(() => {
-    if (!mapInstanceRef.current || !users.length || !sucursales.length) return;
-
-    // Clear existing routes
-    Object.values(routeLayersRef.current).forEach(layer => layer.remove());
-    routeLayersRef.current = {};
-
+    if (!mapInstanceRef.current || !users.length || !sucursales.length) return;;
     // Add user markers
-    const userMarkers = users.map(user => {
+    usersMarkersRef.current.forEach(marker => marker?.remove());
+    users.map(user => {
       const marker = L.marker([user.lat, user.lng], {
         icon: L.divIcon({
           html: `<div style="width: 15px; height: 20px; background:rgb(22, 109, 196); clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
@@ -316,12 +325,13 @@ const Mapa = () => {
         )
       );
 
+      usersMarkersRef.current.push(marker);
       generarRutas(user);
-      return marker;
     });
 
     // Add sucursal markers
-    const sucursalMarkers = sucursales.map(sucursal => {
+    sucursalMarkersRef.current.forEach(marker => marker?.remove());
+    sucursales.map(sucursal => {
       const marker = L.marker([sucursal.lat, sucursal.lng], {
         icon: L.divIcon({
           html: renderToString(<FaMapMarkerAlt style={{ color: 'rgb(22, 109, 196)', fontSize: '24px' }} />),
@@ -344,20 +354,12 @@ const Mapa = () => {
         )
       );
 
-      return marker;
+      sucursalMarkersRef.current.push(marker);
     });
 
-    // Fit map to bounds
-    if (users.length > 0 || sucursales.length > 0) {
-      const bounds = L.latLngBounds([...users, ...sucursales].map(loc => [loc.lat, loc.lng]));
-      mapInstanceRef.current.fitBounds(bounds);
-    }
-
     return () => {
-      userMarkers.forEach(marker => marker.remove());
-      sucursalMarkers.forEach(marker => marker.remove());
-      Object.values(routeLayersRef.current).forEach(layer => layer.remove());
-      routeLayersRef.current = {};
+      usersMarkersRef.current.forEach(marker => marker?.remove());
+      sucursalMarkersRef.current.forEach(marker => marker?.remove());
     };
   }, [users, sucursales]);
 
