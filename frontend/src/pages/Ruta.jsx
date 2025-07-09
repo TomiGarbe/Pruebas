@@ -27,6 +27,7 @@ const Ruta = () => {
   const [sucursales, setSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [currentLatLng, setCurrentLatLng] = useState(null);
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -246,7 +247,7 @@ const Ruta = () => {
 
     if (userLocation) {
       const currentLatLng = L.latLng(userLocation.lat, userLocation.lng);
-
+      setCurrentLatLng(currentLatLng);
       userMarkerRef.current?.remove();
       userMarkerRef.current = L.marker(currentLatLng, {
         icon: L.divIcon({
@@ -297,6 +298,7 @@ const Ruta = () => {
         }
 
         prevLatLngRef.current = currentLatLng;
+        setCurrentLatLng(currentLatLng);
 
         if (isNavigating) {
           const currentLatLng = L.latLng(prevLatLngRef.current.lat || userLocation.lat, prevLatLngRef.current.lng || userLocation.lng);
@@ -328,8 +330,10 @@ const Ruta = () => {
   }, [currentEntity, userLocation]);
 
   useEffect(() => {
-    generarRuta();
-  }, [sucursales]);
+    if (sucursales.length && currentLatLng) {
+      generarRuta();
+    }
+  }, [sucursales, currentLatLng]);
 
   return (
     <div className="map-container">
