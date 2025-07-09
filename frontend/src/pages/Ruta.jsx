@@ -26,6 +26,7 @@ const Ruta = () => {
   const navigate = useNavigate();
   const [sucursales, setSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
@@ -256,7 +257,7 @@ const Ruta = () => {
           if (reachedSucursalIds.length) {
             setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
             reachedSucursalIds.forEach(id => deleteSucursal(id));
-            fetchData();
+            setIsDataLoaded(false);
           }
         }
 
@@ -273,7 +274,7 @@ const Ruta = () => {
 
         prevLatLngRef.current = currentLatLng;
 
-        if (isNavigating) {
+        if (isNavigating && isDataLoaded) {
           generarRuta();
         }
       },
@@ -291,7 +292,7 @@ const Ruta = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!currentEntity.data.id || !userLocation) return;
+      if (!currentEntity.data.id || !userLocation || isDataLoaded) return;
       try {
         const [sucursalesResponse, correctivosResponse, preventivosResponse] = await Promise.all([
           getSucursalesLocations(),
@@ -320,17 +321,20 @@ const Ruta = () => {
           });
         }
         setSucursales(filteredSucursales);
+        setIsDataLoaded(true);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Error al cargar datos');
       }
     };
     fetchData();
-  }, [currentEntity, userLocation]);
+  }, [currentEntity, userLocation, isDataLoaded]);
 
   useEffect(() => {
-    generarRuta();
-  }, [sucursales]);
+    if (isDataLoaded && sucursales.length) {
+      generarRuta();
+    }
+  }, [isDataLoaded, sucursales]);
 
   return (
     <div className="map-container">
