@@ -291,7 +291,7 @@ const Ruta = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!currentEntity.data.id || (!prevLatLngRef.current && !userLocation)) return;
+      if (!currentEntity.data.id || !userLocation) return;
       try {
         const [sucursalesResponse, correctivosResponse, preventivosResponse] = await Promise.all([
           getSucursalesLocations(),
@@ -306,19 +306,20 @@ const Ruta = () => {
           ...preventivoIds.map(item => Number(item.id_sucursal))
         ]);
         let filteredSucursales = allSucursales.filter(s => selectedSucursalIds.has(Number(s.id)))
-        if (prevLatLngRef.current || userLocation) {
+        if (userLocation) {
           filteredSucursales = [...filteredSucursales].sort((a, b) => {
             const distA = Math.sqrt(
-              Math.pow(prevLatLngRef.current.lat || userLocation.lat - a.lat, 2) +
-              Math.pow(prevLatLngRef.current.lng || userLocation.lng - a.lng, 2)
+              Math.pow(userLocation.lat - a.lat, 2) +
+              Math.pow(userLocation.lng - a.lng, 2)
             );
             const distB = Math.sqrt(
-              Math.pow(prevLatLngRef.current.lat || userLocation.lat - b.lat, 2) +
-              Math.pow(prevLatLngRef.current.lng || userLocation.lng - b.lng, 2)
+              Math.pow(userLocation.lat - b.lat, 2) +
+              Math.pow(userLocation.lng - b.lng, 2)
             );
             return distA - distB;
           });
         }
+        console.log(filteredSucursales);
         setSucursales(filteredSucursales);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -326,7 +327,7 @@ const Ruta = () => {
       }
     };
     fetchData();
-  }, [currentEntity]);
+  }, [currentEntity, userLocation]);
 
   useEffect(() => {
     generarRuta();
