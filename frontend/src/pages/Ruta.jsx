@@ -26,7 +26,6 @@ const Ruta = () => {
   const navigate = useNavigate();
   const [sucursales, setSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
@@ -36,6 +35,42 @@ const Ruta = () => {
   const prevLatLngRef = useRef(null);
   const animationFrameRef = useRef(null);
   const sucursalMarkersRef = useRef([]);
+
+  const fetchData = async () => {
+    if (!currentEntity?.data?.id || !userLocation) return;
+    try {
+      const [sucursalesResponse, correctivosResponse, preventivosResponse] = await Promise.all([
+        getSucursalesLocations(),
+        getCorrectivos(parseInt(currentEntity.data.id)),
+        getPreventivos(parseInt(currentEntity.data.id))
+      ]);
+      const allSucursales = sucursalesResponse.data;
+      const correctivoIds = correctivosResponse.data || [];
+      const preventivoIds = preventivosResponse.data || [];
+      const selectedSucursalIds = new Set([
+        ...correctivoIds.map(item => Number(item.id_sucursal)),
+        ...preventivoIds.map(item => Number(item.id_sucursal))
+      ]);
+      let filteredSucursales = allSucursales.filter(s => selectedSucursalIds.has(Number(s.id)))
+      if (userLocation) {
+        filteredSucursales = [...filteredSucursales].sort((a, b) => {
+          const distA = Math.sqrt(
+            Math.pow(userLocation.lat - a.lat, 2) +
+            Math.pow(userLocation.lng - a.lng, 2)
+          );
+          const distB = Math.sqrt(
+            Math.pow(userLocation.lat - b.lat, 2) +
+            Math.pow(userLocation.lng - b.lng, 2)
+          );
+          return distA - distB;
+        });
+      }
+      setSucursales(filteredSucursales);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Error al cargar datos');
+    }
+  };
 
   const centerOnUser = () => {
     if (mapInstanceRef.current && (prevLatLngRef.current || userLocation)) {
@@ -257,7 +292,7 @@ const Ruta = () => {
           if (reachedSucursalIds.length) {
             setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
             reachedSucursalIds.forEach(id => deleteSucursal(id));
-            setIsDataLoaded(false);
+            fetchData();
           }
         }
 
@@ -274,7 +309,7 @@ const Ruta = () => {
 
         prevLatLngRef.current = currentLatLng;
 
-        if (isNavigating && isDataLoaded) {
+        if (isNavigating) {
           generarRuta();
         }
       },
@@ -291,50 +326,12 @@ const Ruta = () => {
   }, [isNavigating]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!currentEntity.data.id || !userLocation || isDataLoaded) return;
-      try {
-        const [sucursalesResponse, correctivosResponse, preventivosResponse] = await Promise.all([
-          getSucursalesLocations(),
-          getCorrectivos(parseInt(currentEntity.data.id)),
-          getPreventivos(parseInt(currentEntity.data.id))
-        ]);
-        const allSucursales = sucursalesResponse.data;
-        const correctivoIds = correctivosResponse.data || [];
-        const preventivoIds = preventivosResponse.data || [];
-        const selectedSucursalIds = new Set([
-          ...correctivoIds.map(item => Number(item.id_sucursal)),
-          ...preventivoIds.map(item => Number(item.id_sucursal))
-        ]);
-        let filteredSucursales = allSucursales.filter(s => selectedSucursalIds.has(Number(s.id)))
-        if (userLocation) {
-          filteredSucursales = [...filteredSucursales].sort((a, b) => {
-            const distA = Math.sqrt(
-              Math.pow(userLocation.lat - a.lat, 2) +
-              Math.pow(userLocation.lng - a.lng, 2)
-            );
-            const distB = Math.sqrt(
-              Math.pow(userLocation.lat - b.lat, 2) +
-              Math.pow(userLocation.lng - b.lng, 2)
-            );
-            return distA - distB;
-          });
-        }
-        setSucursales(filteredSucursales);
-        setIsDataLoaded(true);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Error al cargar datos');
-      }
-    };
     fetchData();
-  }, [currentEntity, userLocation, isDataLoaded]);
+  }, [currentEntity, userLocation]);
 
   useEffect(() => {
-    if (isDataLoaded && sucursales.length) {
-      generarRuta();
-    }
-  }, [isDataLoaded, sucursales]);
+    generarRuta();
+  }, [sucursales]);
 
   return (
     <div className="map-container">
