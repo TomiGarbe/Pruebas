@@ -7,7 +7,6 @@ export const LocationContext = createContext();
 const LocationProvider = ({ children }) => {
   const { currentEntity } = useContext(AuthContext);
   const [userLocation, setUserLocation] = useState(null);
-  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     if (!currentEntity) {
@@ -38,10 +37,10 @@ const LocationProvider = ({ children }) => {
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [currentEntity, isNavigating]);
+  }, [currentEntity]);
 
   return (
-    <LocationContext.Provider value={{ userLocation, setIsNavigating }}>
+    <LocationContext.Provider value={{ userLocation }}>
       {children}
     </LocationContext.Provider>
   );

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { RouteContext } from '../context/RouteContext';
 import { LocationContext } from '../context/LocationContext';
+import { getSucursalesLocations, getCorrectivos, getPreventivos, deleteSucursal, deleteSelection } from '../services/maps';
 import { renderToString } from 'react-dom/server';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 import { bearing } from '@turf/turf';
@@ -23,8 +23,8 @@ const ANIMATION_DURATION = 1000;
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
   const { userLocation } = useContext(LocationContext);
-  const { selectedSucursales, removeSucursal, clearSucursales } = useContext(RouteContext);
   const navigate = useNavigate();
+  const [sucursales, setSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [error, setError] = useState(null);
@@ -82,10 +82,8 @@ const Ruta = () => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
 
-      // Interpolate lat, lng, and bearing
       const lat = startLatLng.lat + (targetLatLng.lat - startLatLng.lat) * progress;
       const lng = startLatLng.lng + (targetLatLng.lng - startLatLng.lng) * progress;
-      // Normalize bearing difference to avoid long rotations
       let bearingDiff = targetBearing - startBearing;
       if (bearingDiff > 180) bearingDiff -= 360;
       if (bearingDiff < -180) bearingDiff += 360;
@@ -95,7 +93,6 @@ const Ruta = () => {
       map.setView(userLatLng, zoom);
       map.setBearing(bearing);
 
-      // Actualizar marcador de usuario
       userMarkerRef.current?.remove();
       userMarkerRef.current = L.marker(userLatLng, {
         icon: L.divIcon({
@@ -118,10 +115,12 @@ const Ruta = () => {
   };
 
   const generarRuta = () => {
-    if (!selectedSucursales.length || !mapInstanceRef.current || (!prevLatLngRef.current && !userLocation)) {
+    if (!sucursales.length || !mapInstanceRef.current || (!prevLatLngRef.current && !userLocation)) {
       console.log('Route generation skipped: missing data', {
-        selectedSucursalesLength: selectedSucursales.length,
+        sucursalesLength: sucursales.length,
         mapInstanceExists: !!mapInstanceRef.current,
+        userLocationExists: !!userLocation,
+        prevLatLngExists: !!prevLatLngRef.current,
       });
       sucursalMarkersRef.current.forEach(marker => marker.remove());
       routeMarkerRef.current?.remove();
@@ -132,17 +131,15 @@ const Ruta = () => {
       return;
     }
 
-    // Remove existing routing control if it exists
     if (routingControl) {
       routingControl.remove();
       setRoutingControl(null);
     }
 
-    const waypoints = selectedSucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
+    const waypoints = sucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
 
-    // Add markers for sucursales
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
-    selectedSucursales.map(sucursal => {
+    sucursales.map(sucursal => {
       const marker = L.marker([sucursal.lat, sucursal.lng], {
         icon: L.divIcon({
           html: renderToString(<FaMapMarkerAlt style={{ color: 'rgb(22, 109, 196)', fontSize: '24px' }} />),
@@ -182,16 +179,16 @@ const Ruta = () => {
   };
 
   const borrarRuta = () => {
-    clearSucursales();
+    setSucursales([]);
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
     routeMarkerRef.current?.remove();
     if (routingControl) {
       routingControl.remove();
       setRoutingControl(null);
     }
+    deleteSelection();
   };
 
-  // Iniciar mapa
   useEffect(() => {
     if (!mapRef.current) return;
     const map = L.map(mapRef.current, {
@@ -208,7 +205,6 @@ const Ruta = () => {
     if (userLocation) {
       const currentLatLng = L.latLng(userLocation.lat, userLocation.lng);
 
-      // Actualizar marcador de usuario
       userMarkerRef.current?.remove();
       userMarkerRef.current = L.marker(currentLatLng, {
         icon: L.divIcon({
@@ -227,12 +223,15 @@ const Ruta = () => {
 
   useEffect(() => {
     if (!currentEntity) {
-      console.log('No current entity, navigating to login');
-      return navigate('/login');
+      navigate('/login');
+      return;
+    }
+    if (currentEntity.type !== 'cuadrilla') {
+      navigate('/');
+      return;
     }
   }, [currentEntity, navigate]);
 
-  // Geolocalización
   useEffect(() => {
     if (!navigator.geolocation) {
       console.log('Geolocation not available');
@@ -244,18 +243,17 @@ const Ruta = () => {
         const { latitude, longitude } = coords;
         const currentLatLng = L.latLng(latitude, longitude);
 
-        // Check if user reached any sucursal
-        if (isNavigating && selectedSucursales.length && currentLatLng) {
-          const reachedSucursalIds = selectedSucursales
+        if (isNavigating && sucursales.length && currentLatLng) {
+          const reachedSucursalIds = sucursales
             .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
             .map(sucursal => Number(sucursal.id));
           
-          reachedSucursalIds.forEach(id => {
-            removeSucursal(id);
-          });
+          if (reachedSucursalIds.length) {
+            setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
+            reachedSucursalIds.forEach(id => deleteSucursal(id));
+          }
         }
 
-        // Rotar mapa si está navegando
         if (isNavigating && mapInstanceRef.current?.setBearing) {
           let heading = 0;
           if (prevLatLngRef.current) {
@@ -269,7 +267,6 @@ const Ruta = () => {
 
         prevLatLngRef.current = currentLatLng;
 
-        // Trigger route recalculation if navigating
         if (isNavigating) {
           generarRuta();
         }
@@ -286,10 +283,34 @@ const Ruta = () => {
     };
   }, [isNavigating]);
 
-  // Generar ruta al cambiar selectedSucursales
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!currentEntity.data.id) return;
+      try {
+        const [sucursalesResponse, correctivosResponse, preventivosResponse] = await Promise.all([
+          getSucursalesLocations(),
+          getCorrectivos(parseInt(currentEntity.data.id)),
+          getPreventivos(parseInt(currentEntity.data.id))
+        ]);
+        const allSucursales = sucursalesResponse.data;
+        const correctivoIds = correctivosResponse.data || [];
+        const preventivoIds = preventivosResponse.data || [];
+        const selectedSucursalIds = new Set([
+          ...correctivoIds.map(item => Number(item.id_sucursal)),
+          ...preventivoIds.map(item => Number(item.id_sucursal))
+        ]);
+        setSucursales(allSucursales.filter(s => selectedSucursalIds.has(Number(s.id))));
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Error al cargar datos');
+      }
+    };
+    fetchData();
+  }, [currentEntity]);
+
   useEffect(() => {
     generarRuta();
-  }, [selectedSucursales]);
+  }, [sucursales]);
 
   return (
     <div className="map-container">
