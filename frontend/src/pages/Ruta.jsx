@@ -168,6 +168,17 @@ const Ruta = () => {
       return;
     }
 
+    if (isNavigating) {
+      const currentLatLng = L.latLng(prevLatLngRef.current.lat || userLocation.lat, prevLatLngRef.current.lng || userLocation.lng);
+      const reachedSucursalIds = sucursales
+        .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
+        .map(sucursal => Number(sucursal.id));
+      if (reachedSucursalIds.length) {
+        setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
+        reachedSucursalIds.forEach(id => deleteSucursal(id));
+      }
+    }
+
     const waypoints = sucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
 
     if (routeMarkerRef.current?.control) {
@@ -284,23 +295,6 @@ const Ruta = () => {
       ({ coords }) => {
         const { latitude, longitude } = coords;
         const currentLatLng = L.latLng(latitude, longitude);
-
-        if (isNavigating && sucursales.length && currentLatLng) {
-          const reachedSucursalIds = sucursales
-            .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
-            .map(sucursal => Number(sucursal.id));
-          if (reachedSucursalIds.length) {
-            reachedSucursalIds.forEach(id => {
-              const index = sucursales.findIndex(s => Number(s.id) === id);
-              if (index !== -1 && sucursalMarkersRef.current[index]) {
-                sucursalMarkersRef.current[index].remove(); // quitar el marcador
-                sucursalMarkersRef.current.splice(index, 1); // quitarlo del array de referencias
-              }
-            });
-            setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
-            reachedSucursalIds.forEach(id => deleteSucursal(id));
-          }
-        }
 
         if (isNavigating && mapInstanceRef.current?.setBearing) {
           let heading = 0;
