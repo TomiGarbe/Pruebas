@@ -319,7 +319,6 @@ const Ruta = () => {
             return distA - distB;
           });
         }
-        console.log(filteredSucursales);
         setSucursales(filteredSucursales);
       } catch (err) {
         console.error('Error fetching data:', err);
