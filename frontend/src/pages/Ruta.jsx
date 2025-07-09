@@ -292,7 +292,6 @@ const Ruta = () => {
           if (reachedSucursalIds.length) {
             setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
             reachedSucursalIds.forEach(id => deleteSucursal(id));
-            fetchData();
           }
         }
 
@@ -330,7 +329,9 @@ const Ruta = () => {
   }, [currentEntity, userLocation]);
 
   useEffect(() => {
-    generarRuta();
+    if (!isNavigating) {
+      generarRuta();
+    }
   }, [sucursales]);
 
   return (
