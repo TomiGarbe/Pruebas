@@ -164,8 +164,8 @@ const Ruta = () => {
 
     control.on('routesfound', (e) => {
       const route = e.routes[0];
-      const poly = L.polyline(route.coordinates, { color: '#3399FF', weight: 5 });
-      poly.addTo(mapInstanceRef.current);
+      const polyline = L.polyline(route.coordinates, { color: '#3399FF', weight: 5 });
+      polyline.addTo(mapInstanceRef.current);
       if (routeMarkerRef.current?.polyline) {
         routeMarkerRef.current.polyline.remove();
       }
@@ -173,7 +173,7 @@ const Ruta = () => {
         control,
         polyline
       };
-      if (!isNavigating) mapInstanceRef.current.fitBounds(poly.getBounds());
+      if (!isNavigating) mapInstanceRef.current.fitBounds(polyline.getBounds());
       setRoutingControl(control);
     });
 
