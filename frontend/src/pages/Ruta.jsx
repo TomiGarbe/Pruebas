@@ -290,6 +290,13 @@ const Ruta = () => {
             .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
             .map(sucursal => Number(sucursal.id));
           if (reachedSucursalIds.length) {
+            reachedSucursalIds.forEach(id => {
+              const index = sucursales.findIndex(s => Number(s.id) === id);
+              if (index !== -1 && sucursalMarkersRef.current[index]) {
+                sucursalMarkersRef.current[index].remove(); // quitar el marcador
+                sucursalMarkersRef.current.splice(index, 1); // quitarlo del array de referencias
+              }
+            });
             setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
             reachedSucursalIds.forEach(id => deleteSucursal(id));
           }
