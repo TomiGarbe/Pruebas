@@ -63,8 +63,21 @@ const Mapa = () => {
           const correctivoIds = Correctivos.data?.map(c => Number(c.id_sucursal)) || [];
           const preventivoIds = Preventivos.data?.map(p => Number(p.id_sucursal)) || [];
           const selectedSucursalIds = new Set([...correctivoIds, ...preventivoIds]);
-          const selectedSucursales = sucursalesLocations
-            .filter(s => selectedSucursalIds.has(Number(s.id)))
+          let filteredSucursales = sucursalesLocations.filter(s => selectedSucursalIds.has(Number(s.id)))
+          if (prevLatLngRef.current || userLocation) {
+            filteredSucursales = [...filteredSucursales].sort((a, b) => {
+              const distA = Math.sqrt(
+                Math.pow(user.lat - a.lat, 2) +
+                Math.pow(user.lng - a.lng, 2)
+              );
+              const distB = Math.sqrt(
+                Math.pow(user.lat - b.lat, 2) +
+                Math.pow(user.lng - b.lng, 2)
+              );
+              return distA - distB;
+            });
+          }
+          const selectedSucursales = filteredSucursales
             .map(s => ({
               id: s.id,
               name: s.name || 'Unknown',

@@ -291,7 +291,7 @@ const Ruta = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!currentEntity.data.id) return;
+      if (!currentEntity.data.id || (!prevLatLngRef.current && !userLocation)) return;
       try {
         const [sucursalesResponse, correctivosResponse, preventivosResponse] = await Promise.all([
           getSucursalesLocations(),
@@ -305,7 +305,21 @@ const Ruta = () => {
           ...correctivoIds.map(item => Number(item.id_sucursal)),
           ...preventivoIds.map(item => Number(item.id_sucursal))
         ]);
-        setSucursales(allSucursales.filter(s => selectedSucursalIds.has(Number(s.id))));
+        let filteredSucursales = allSucursales.filter(s => selectedSucursalIds.has(Number(s.id)))
+        if (prevLatLngRef.current || userLocation) {
+          filteredSucursales = [...filteredSucursales].sort((a, b) => {
+            const distA = Math.sqrt(
+              Math.pow(prevLatLngRef.current.lat || userLocation.lat - a.lat, 2) +
+              Math.pow(prevLatLngRef.current.lng || userLocation.lng - a.lng, 2)
+            );
+            const distB = Math.sqrt(
+              Math.pow(prevLatLngRef.current.lat || userLocation.lat - b.lat, 2) +
+              Math.pow(prevLatLngRef.current.lng || userLocation.lng - b.lng, 2)
+            );
+            return distA - distB;
+          });
+        }
+        setSucursales(filteredSucursales);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Error al cargar datos');
