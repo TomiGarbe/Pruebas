@@ -295,7 +295,7 @@ const Ruta = () => {
             setSucursales(nuevasSucursales);
             reachedSucursalIds.forEach(id => deleteSucursal(id));
           } else {
-            setCurrentLatLng(currentLatLng);
+            generarRuta();
           }
         }
 
@@ -321,16 +321,6 @@ const Ruta = () => {
 
     return () => {
       navigator.geolocation.clearWatch(watchId);
-    };
-  }, [isNavigating]);
-
-  useEffect(() => {
-    fetchData();
-  }, [currentEntity]);
-
-  useEffect(() => {
-    generarRuta();
-    return () => {
       if (routeMarkerRef.current?.control) {
         mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
       }
@@ -338,7 +328,11 @@ const Ruta = () => {
         routeMarkerRef.current.polyline.remove();
       }
     };
-  }, [sucursales, currentLatLng]);
+  }, [isNavigating, sucursales]);
+
+  useEffect(() => {
+    fetchData();
+  }, [currentEntity]);
 
   return (
     <div className="map-container">
