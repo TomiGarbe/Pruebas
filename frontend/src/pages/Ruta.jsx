@@ -279,6 +279,10 @@ const Ruta = () => {
       return setError('Geolocalización no disponible');
     }
 
+    if (!isNavigating) {
+      generarRuta();
+    }
+
     const watchId = navigator.geolocation.watchPosition(
       ({ coords }) => {
         const { latitude, longitude } = coords;
@@ -332,21 +336,6 @@ const Ruta = () => {
   useEffect(() => {
     fetchData();
   }, [currentEntity]);
-
-  useEffect(() => {
-    if (!isNavigating) {
-      generarRuta();
-    }
-    
-    return () => {
-      if (routeMarkerRef.current?.control) {
-        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
-      }
-      if (routeMarkerRef.current?.polyline) {
-        routeMarkerRef.current.polyline.remove();
-      }
-    };
-  }, [sucursales]);
 
   return (
     <div className="map-container">
