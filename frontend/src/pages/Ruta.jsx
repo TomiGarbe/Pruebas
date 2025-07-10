@@ -85,6 +85,7 @@ const Ruta = () => {
       setIsNavigating(false);
     } else if (routingControl) {
       iniciarNavegacion(routingControl);
+      setSucursales(sucursales);
     } else {
       console.log('Cannot start navigation: no routing control');
     }
