@@ -331,7 +331,7 @@ const Ruta = () => {
         routeMarkerRef.current.polyline.remove();
       }
     };
-  }, [isNavigating, sucursales]);
+  }, [sucursales]);
 
   useEffect(() => {
     fetchData();
