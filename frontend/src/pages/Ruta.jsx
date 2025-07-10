@@ -27,7 +27,6 @@ const Ruta = () => {
   const [sucursales, setSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [currentLatLng, setCurrentLatLng] = useState(null);
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -333,6 +332,21 @@ const Ruta = () => {
   useEffect(() => {
     fetchData();
   }, [currentEntity]);
+
+  useEffect(() => {
+    if (!isNavigating) {
+      generarRuta();
+    }
+    
+    return () => {
+      if (routeMarkerRef.current?.control) {
+        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+      }
+      if (routeMarkerRef.current?.polyline) {
+        routeMarkerRef.current.polyline.remove();
+      }
+    };
+  }, [sucursales]);
 
   return (
     <div className="map-container">
