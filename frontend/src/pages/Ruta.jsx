@@ -66,7 +66,7 @@ const Ruta = () => {
         });
       }
       setSucursales(filteredSucursales);
-      if (!isNavigating) generarRuta();
+      if (!isNavigating) generarRuta(filteredSucursales);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Error al cargar datos');
@@ -151,10 +151,10 @@ const Ruta = () => {
     animationFrameRef.current = requestAnimationFrame(animate);
   };
 
-  const generarRuta = () => {
-    if (!sucursales.length || !mapInstanceRef.current || (!prevLatLngRef.current && !userLocation)) {
+  const generarRuta = (listaSucursales) => {
+    if (!listaSucursales.length || !mapInstanceRef.current || (!prevLatLngRef.current && !userLocation)) {
       console.log('Route generation skipped: missing data', {
-        sucursalesLength: sucursales.length,
+        sucursalesLength: listaSucursales.length,
         mapInstanceExists: !!mapInstanceRef.current,
         userLocationExists: !!userLocation,
         prevLatLngExists: !!prevLatLngRef.current,
@@ -169,14 +169,14 @@ const Ruta = () => {
       return;
     }
 
-    const waypoints = sucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
+    const waypoints = listaSucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
 
     if (routeMarkerRef.current?.control) {
       mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
     }
 
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
-    sucursales.map(sucursal => {
+    listaSucursales.map(sucursal => {
       const marker = L.marker([sucursal.lat, sucursal.lng], {
         icon: L.divIcon({
           html: renderToString(<FaMapMarkerAlt style={{ color: 'rgb(22, 109, 196)', fontSize: '24px' }} />),
@@ -291,14 +291,12 @@ const Ruta = () => {
             .map(sucursal => Number(sucursal.id));
           
           if (reachedSucursalIds.length) {
-            setSucursales(prev => {
-              const nuevas = prev.filter(s => !reachedSucursalIds.includes(Number(s.id)));
-              generarRuta();
-              return nuevas;
-            });
+            const nuevasSucursales = sucursales.filter(s => !reachedSucursalIds.includes(Number(s.id)));
+            setSucursales(nuevasSucursales);
+            generarRuta(nuevasSucursales);
             reachedSucursalIds.forEach(id => deleteSucursal(id));
           } else {
-            generarRuta();
+            generarRuta(sucursales);
           }
         }
 
