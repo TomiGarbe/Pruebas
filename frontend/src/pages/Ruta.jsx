@@ -327,7 +327,7 @@ const Ruta = () => {
 
   useEffect(() => {
     fetchData();
-  }, [currentEntity]);
+  }, [isNavigating]);
 
   return (
     <div className="map-container">
