@@ -275,64 +275,66 @@ const Ruta = () => {
   }, [currentEntity, navigate]);
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      console.log('Geolocation not available');
-      return setError('Geolocalización no disponible');
-    }
-
-    if (!isNavigating) {
-      generarRuta();
-    }
-
-    const watchId = navigator.geolocation.watchPosition(
-      ({ coords }) => {
-        const { latitude, longitude } = coords;
-        const currentLatLng = L.latLng(latitude, longitude);
-
-        if (isNavigating) {
-          const reachedSucursalIds = sucursales
-            .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
-            .map(sucursal => Number(sucursal.id));
-          
-          if (reachedSucursalIds.length) {
-            const nuevasSucursales = sucursales.filter(s => !reachedSucursalIds.includes(Number(s.id)));
-            setSucursales(nuevasSucursales);
-            reachedSucursalIds.forEach(id => deleteSucursal(id));
-          } else {
-            generarRuta();
-          }
-        }
-
-        if (isNavigating && mapInstanceRef.current?.setBearing) {
-          let heading = 0;
-          if (prevLatLngRef.current) {
-            heading = bearing(
-              [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
-              [longitude, latitude]
-            );
-          }
-          smoothPanTo(currentLatLng, 20, -heading);
-        }
-
-        prevLatLngRef.current = currentLatLng;
-      },
-      (err) => {
-        console.error('Geolocation error:', err);
-        setError('No se pudo obtener la ubicación');
-      },
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
-    );
-
-    return () => {
-      navigator.geolocation.clearWatch(watchId);
-      if (routeMarkerRef.current?.control) {
-        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+      if (!navigator.geolocation) {
+        console.log('Geolocation not available');
+        return setError('Geolocalización no disponible');
       }
-      if (routeMarkerRef.current?.polyline) {
-        routeMarkerRef.current.polyline.remove();
+      console.log(isNavigating);
+      console.log(sucursales);
+      if (!isNavigating) {
+        generarRuta();
       }
-    };
-  }, [sucursales]);
+  
+      const watchId = navigator.geolocation.watchPosition(
+        ({ coords }) => {
+          const { latitude, longitude } = coords;
+          const currentLatLng = L.latLng(latitude, longitude);
+  
+          if (isNavigating) {
+            const reachedSucursalIds = sucursales
+              .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
+              .map(sucursal => Number(sucursal.id));
+            
+            if (reachedSucursalIds.length) {
+              const nuevasSucursales = sucursales.filter(s => !reachedSucursalIds.includes(Number(s.id)));
+              setSucursales(nuevasSucursales);
+              reachedSucursalIds.forEach(id => deleteSucursal(id));
+            } else {
+              generarRuta();
+            }
+          }
+  
+          if (isNavigating && mapInstanceRef.current?.setBearing) {
+            let heading = 0;
+            if (prevLatLngRef.current) {
+              heading = bearing(
+                [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
+                [longitude, latitude]
+              );
+            }
+            smoothPanTo(currentLatLng, 20, -heading);
+          }
+  
+          prevLatLngRef.current = currentLatLng;
+        },
+        (err) => {
+          console.error('Geolocation error:', err);
+          setError('No se pudo obtener la ubicación');
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 }
+      );
+  
+      return () => {
+        sucursalMarkersRef.current.forEach(marker => marker?.remove());
+        if (routeMarkerRef.current?.control) {
+          mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+        }
+        if (routeMarkerRef.current?.polyline) {
+          routeMarkerRef.current.polyline.remove();
+        }
+        navigator.geolocation.clearWatch(watchId);
+      };
+    }, [sucursales, isNavigating]);
 
   useEffect(() => {
     fetchData();
