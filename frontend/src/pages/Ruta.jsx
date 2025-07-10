@@ -66,7 +66,7 @@ const Ruta = () => {
         });
       }
       setSucursales(filteredSucursales);
-      generarRuta(filteredSucursales);
+      if (!isNavigating) generarRuta();
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Error al cargar datos');
@@ -151,10 +151,10 @@ const Ruta = () => {
     animationFrameRef.current = requestAnimationFrame(animate);
   };
 
-  const generarRuta = (selectedSucursales) => {
-    if (!selectedSucursales.length || !mapInstanceRef.current || (!prevLatLngRef.current && !userLocation)) {
+  const generarRuta = () => {
+    if (!sucursales.length || !mapInstanceRef.current || (!prevLatLngRef.current && !userLocation)) {
       console.log('Route generation skipped: missing data', {
-        sucursalesLength: selectedSucursales.length,
+        sucursalesLength: sucursales.length,
         mapInstanceExists: !!mapInstanceRef.current,
         userLocationExists: !!userLocation,
         prevLatLngExists: !!prevLatLngRef.current,
@@ -169,14 +169,14 @@ const Ruta = () => {
       return;
     }
 
-    const waypoints = selectedSucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
+    const waypoints = sucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
 
     if (routeMarkerRef.current?.control) {
       mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
     }
 
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
-    selectedSucursales.map(sucursal => {
+    sucursales.map(sucursal => {
       const marker = L.marker([sucursal.lat, sucursal.lng], {
         icon: L.divIcon({
           html: renderToString(<FaMapMarkerAlt style={{ color: 'rgb(22, 109, 196)', fontSize: '24px' }} />),
@@ -222,7 +222,6 @@ const Ruta = () => {
 
   const borrarRuta = () => {
     setSucursales([]);
-    generarRuta([]);
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
     if (routeMarkerRef.current?.control) {
       mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
@@ -286,6 +285,23 @@ const Ruta = () => {
         const { latitude, longitude } = coords;
         const currentLatLng = L.latLng(latitude, longitude);
 
+        if (isNavigating) {
+          const reachedSucursalIds = sucursales
+            .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
+            .map(sucursal => Number(sucursal.id));
+          
+          if (reachedSucursalIds.length) {
+            setSucursales(prev => {
+              const nuevas = prev.filter(s => !reachedSucursalIds.includes(Number(s.id)));
+              generarRuta();
+              return nuevas;
+            });
+            reachedSucursalIds.forEach(id => deleteSucursal(id));
+          } else {
+            generarRuta();
+          }
+        }
+
         if (isNavigating && mapInstanceRef.current?.setBearing) {
           let heading = 0;
           if (prevLatLngRef.current) {
@@ -298,20 +314,6 @@ const Ruta = () => {
         }
 
         prevLatLngRef.current = currentLatLng;
-
-        if (isNavigating) {
-          const currentLatLng = L.latLng(prevLatLngRef.current.lat || userLocation.lat, prevLatLngRef.current.lng || userLocation.lng);
-          const reachedSucursalIds = sucursales
-            .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
-            .map(sucursal => Number(sucursal.id));
-          if (reachedSucursalIds.length) {
-            setSucursales(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
-            generarRuta(prev => prev.filter(s => !reachedSucursalIds.includes(Number(s.id))));
-            reachedSucursalIds.forEach(id => deleteSucursal(id));
-          } else {
-            generarRuta(sucursales);
-          }
-        }
       },
       (err) => {
         console.error('Geolocation error:', err);
@@ -323,7 +325,7 @@ const Ruta = () => {
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [isNavigating]);
+  }, [isNavigating, sucursales]);
 
   useEffect(() => {
     fetchData();
