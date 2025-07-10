@@ -323,7 +323,7 @@ const Ruta = () => {
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [isNavigating, sucursales]);
+  }, [isNavigating]);
 
   useEffect(() => {
     fetchData();
