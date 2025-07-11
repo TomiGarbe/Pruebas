@@ -35,6 +35,8 @@ const Ruta = () => {
   const prevLatLngRef = useRef(null);
   const animationFrameRef = useRef(null);
   const sucursalMarkersRef = useRef([]);
+  const lastSucursalIdsRef = useRef([]);
+
 
   const fetchData = async () => {
     if (!currentEntity?.data?.id || !userLocation) return;
@@ -150,46 +152,9 @@ const Ruta = () => {
     animationFrameRef.current = requestAnimationFrame(animate);
   };
 
-  const generarRuta = () => {
-    if (!sucursales.length || !mapInstanceRef.current || (!prevLatLngRef.current && !userLocation)) {
-      console.log('Route generation skipped: missing data', {
-        sucursalesLength: sucursales.length,
-        mapInstanceExists: !!mapInstanceRef.current,
-        userLocationExists: !!userLocation,
-        prevLatLngExists: !!prevLatLngRef.current,
-      });
-      sucursalMarkersRef.current.forEach(marker => marker.remove());
-      if (routeMarkerRef.current?.control) {
-        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
-      }
-      if (routeMarkerRef.current?.polyline) {
-        routeMarkerRef.current.polyline.remove();
-      }
-      return;
-    }
-
-    const waypoints = sucursales.map((s) => L.latLng(s.lat, s.lng)).filter(Boolean);
-
-    if (routeMarkerRef.current?.control) {
-      mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
-    }
-
-    sucursalMarkersRef.current.forEach(marker => marker?.remove());
-    sucursales.map(sucursal => {
-      const marker = L.marker([sucursal.lat, sucursal.lng], {
-        icon: L.divIcon({
-          html: renderToString(<FaMapMarkerAlt style={{ color: 'rgb(22, 109, 196)', fontSize: '24px' }} />),
-          className: 'sucursal-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 20],
-        }),
-        title: sucursal.name
-      }).addTo(mapInstanceRef.current);
-      sucursalMarkersRef.current.push(marker);
-    });
-
+  const crearRoutingControl = (waypoints) => {
     const control = L.Routing.control({
-      waypoints: [prevLatLngRef.current || userLocation, ...waypoints],
+      waypoints,
       router: L.Routing.osrmv1({ serviceUrl: import.meta.env.VITE_OSRM_URL }),
       lineOptions: { styles: [{ color: '#3399FF', weight: 5 }] },
       createMarker: () => null,
@@ -198,25 +163,30 @@ const Ruta = () => {
       show: false
     }).addTo(mapInstanceRef.current);
 
-    control.on('routesfound', (e) => {
-      const route = e.routes[0];
-      const polyline = L.polyline(route.coordinates, { color: '#3399FF', weight: 5 });
-      polyline.addTo(mapInstanceRef.current);
-      if (routeMarkerRef.current?.polyline) {
-        routeMarkerRef.current.polyline.remove();
-      }
-      routeMarkerRef.current = {
-        control,
-        polyline
-      };
-      if (!isNavigating) mapInstanceRef.current.fitBounds(polyline.getBounds());
-      setRoutingControl(control);
+    control.on('routesfound', () => {
+      console.log('Ruta recalculada');
     });
 
     control.on('routingerror', (err) => {
       console.error('Routing error:', err);
       setError('Error al calcular la ruta');
     });
+
+    routeMarkerRef.current = { control };
+    setRoutingControl(control);
+  };
+
+  const actualizarWaypoints = (waypoints) => {
+    if (routeMarkerRef.current?.control) {
+      routeMarkerRef.current.control.setWaypoints(waypoints);
+    } else {
+      crearRoutingControl(waypoints);
+    }
+  };
+
+  const sucursalesSonIguales = (a, b) => {
+    if (a.length !== b.length) return false;
+    return a.every((s, i) => s.id === b[i]?.id);
   };
 
   const borrarRuta = () => {
@@ -224,9 +194,6 @@ const Ruta = () => {
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
     if (routeMarkerRef.current?.control) {
       mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
-    }
-    if (routeMarkerRef.current?.polyline) {
-      routeMarkerRef.current.polyline.remove();
     }
     deleteSelection();
   };
@@ -280,51 +247,48 @@ const Ruta = () => {
     }
 
     const watchId = navigator.geolocation.watchPosition(
-      ({ coords }) => {
-        const { latitude, longitude } = coords;
-        const currentLatLng = L.latLng(latitude, longitude);
+    ({ coords }) => {
+      const { latitude, longitude } = coords;
+      const currentLatLng = L.latLng(latitude, longitude);
 
-        if (isNavigating) {
-          const reachedSucursalIds = sucursales
-            .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
-            .map(sucursal => Number(sucursal.id));
-          
-          if (reachedSucursalIds.length) {
-            const nuevasSucursales = sucursales.filter(s => !reachedSucursalIds.includes(Number(s.id)));
-            setSucursales(nuevasSucursales);
-            reachedSucursalIds.forEach(id => deleteSucursal(id));
-          } else {
-            generarRuta();
-          }
+      if (isNavigating) {
+        const reachedSucursalIds = sucursales
+          .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
+          .map(sucursal => Number(sucursal.id));
+
+        if (reachedSucursalIds.length) {
+          const nuevasSucursales = sucursales.filter(s => !reachedSucursalIds.includes(Number(s.id)));
+          setSucursales(nuevasSucursales);
+          reachedSucursalIds.forEach(id => deleteSucursal(id));
         }
 
-        if (isNavigating && mapInstanceRef.current?.setBearing) {
-          let heading = 0;
-          if (prevLatLngRef.current) {
-            heading = bearing(
-              [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
-              [longitude, latitude]
-            );
-          }
-          smoothPanTo(currentLatLng, 20, -heading);
-        }
+        const nextWaypoints = [currentLatLng, ...sucursales.map(s => L.latLng(s.lat, s.lng))];
+        actualizarWaypoints(nextWaypoints);
 
-        prevLatLngRef.current = currentLatLng;
-      },
-      (err) => {
-        console.error('Geolocation error:', err);
-        setError('No se pudo obtener la ubicación');
-      },
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 }
-    );
+        // Movimiento suave
+        let heading = 0;
+        if (prevLatLngRef.current) {
+          heading = bearing(
+            [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
+            [longitude, latitude]
+          );
+        }
+        smoothPanTo(currentLatLng, 20, -heading);
+      }
+
+      prevLatLngRef.current = currentLatLng;
+    },
+    (err) => {
+      console.error('Geolocation error:', err);
+      setError('No se pudo obtener la ubicación');
+    },
+    { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+  );
 
     return () => {
       sucursalMarkersRef.current.forEach(marker => marker?.remove());
       if (routeMarkerRef.current?.control) {
         mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
-      }
-      if (routeMarkerRef.current?.polyline) {
-        routeMarkerRef.current.polyline.remove();
       }
       navigator.geolocation.clearWatch(watchId);
     };
@@ -335,17 +299,32 @@ const Ruta = () => {
   }, [currentEntity]);
 
   useEffect(() => {
-    generarRuta();
+    const currentLatLng = prevLatLngRef.current || userLocation;
+    if (!currentLatLng || !sucursales.length) return;
 
-    return () => {
+    const newIds = sucursales.map(s => s.id);
+    if (!sucursalesSonIguales(sucursales, lastSucursalIdsRef.current)) {
+      lastSucursalIdsRef.current = newIds;
+
+      const waypoints = [L.latLng(currentLatLng.lat, currentLatLng.lng), ...sucursales.map(s => L.latLng(s.lat, s.lng))];
+      actualizarWaypoints(waypoints);
+
+      // Limpiar y volver a agregar los marcadores
       sucursalMarkersRef.current.forEach(marker => marker?.remove());
-      if (routeMarkerRef.current?.control) {
-        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
-      }
-      if (routeMarkerRef.current?.polyline) {
-        routeMarkerRef.current.polyline.remove();
-      }
-    };
+      sucursalMarkersRef.current = [];
+      sucursales.forEach(sucursal => {
+        const marker = L.marker([sucursal.lat, sucursal.lng], {
+          icon: L.divIcon({
+            html: renderToString(<FaMapMarkerAlt style={{ color: 'rgb(22, 109, 196)', fontSize: '24px' }} />),
+            className: 'sucursal-marker',
+            iconSize: [20, 20],
+            iconAnchor: [10, 20],
+          }),
+          title: sucursal.name
+        }).addTo(mapInstanceRef.current);
+        sucursalMarkersRef.current.push(marker);
+      });
+    }
   }, [sucursales]);
 
   return (
