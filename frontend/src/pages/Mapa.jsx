@@ -88,6 +88,7 @@ const Mapa = () => {
             .filter(c => correctivoMantenimientoIds.includes(Number(c.id)))
             .map(c => ({
               id: c.id,
+              nombre_sucursal: filteredSucursales.find(s => Number(s.id) === Number(c.id_sucursal))?.name || 'Unknown',
               fecha_apertura: c.fecha_apertura || 'Sin fecha',
               numero_caso: c.numero_caso || 'Sin número',
               estado: c.estado || 'Sin estado'
@@ -96,6 +97,7 @@ const Mapa = () => {
             .filter(p => preventivoMantenimientoIds.includes(Number(p.id)))
             .map(p => ({
               id: p.id,
+              nombre_sucursal: filteredSucursales.find(s => Number(s.id) === Number(p.id_sucursal))?.name || 'Unknown',
               fecha_apertura: p.fecha_apertura || 'Sin fecha',
               frecuencia: p.frecuencia || 'Sin frecuencia'
             }));
@@ -209,20 +211,24 @@ const Mapa = () => {
               ${data.sucursales?.map(s => `<li>${s.name}</li>`).join('') || '<li>Sin sucursales seleccionadas</li>'}
             </ul>
             <h4>Mantenimientos</h4>
-            <h5>Correctivos</h5>
+            <h5>Correctivos Seleccionados</h5>
             <ul>
               ${(data.correctivos && Array.isArray(data.correctivos) ? data.correctivos : []).map(c => `
                 <li>
+                  Mantenimiento: ${c.id}<br/>
+                  Sucursal: ${c.nombre_sucursal}<br/>
                   Fecha Apertura: ${c.fecha_apertura}<br/>
                   Número de Caso: ${c.numero_caso}<br/>
                   Estado: ${c.estado}
                 </li>
               `).join('') || '<li>Sin correctivos seleccionados</li>'}
             </ul>
-            <h5>Preventivos</h5>
+            <h5>Preventivos Seleccionados</h5>
             <ul>
               ${(data.preventivos && Array.isArray(data.preventivos) ? data.preventivos : []).map(p => `
                 <li>
+                  Mantenimiento: ${p.id}<br/>
+                  Sucursal: ${p.nombre_sucursal}<br/>
                   Fecha Apertura: ${p.fecha_apertura}<br/>
                   Frecuencia: ${p.frecuencia}
                 </li>
@@ -238,6 +244,7 @@ const Mapa = () => {
             <ul>
               ${(data.Correctivos && Array.isArray(data.Correctivos) ? data.Correctivos : []).map(c => `
                 <li>
+                  Mantenimiento: ${c.id}<br/>
                   Cuadrilla: ${c.cuadrilla_name}<br/>
                   Fecha Apertura: ${c.fecha_apertura}<br/>
                   Número de Caso: ${c.numero_caso}<br/>
@@ -249,6 +256,7 @@ const Mapa = () => {
             <ul>
               ${(data.Preventivos && Array.isArray(data.Preventivos) ? data.Preventivos : []).map(p => `
                 <li>
+                  Mantenimiento: ${p.id}<br/>
                   Cuadrilla: ${p.cuadrilla_name}<br/>
                   Fecha Apertura: ${p.fecha_apertura}<br/>
                   Frecuencia: ${p.frecuencia}
@@ -278,8 +286,8 @@ const Mapa = () => {
     if (isDataLoaded) {
       fetchCuadrillaData();
       fetchSucursalData();
-      const cuadrillaIntervalId = setInterval(fetchCuadrillaData, 10000); // 10 seconds
-      const sucursalIntervalId = setInterval(fetchSucursalData, 60000); // 60 seconds
+      const cuadrillaIntervalId = setInterval(fetchCuadrillaData, 5000); // 5 seconds
+      const sucursalIntervalId = setInterval(fetchSucursalData, 350000); // 5 min
       return () => {
         clearInterval(cuadrillaIntervalId);
         clearInterval(sucursalIntervalId);

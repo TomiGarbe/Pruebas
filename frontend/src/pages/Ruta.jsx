@@ -85,7 +85,6 @@ const Ruta = () => {
       setIsNavigating(false);
     } else if (routingControl) {
       iniciarNavegacion(routingControl);
-      setSucursales(sucursales);
     } else {
       console.log('Cannot start navigation: no routing control');
     }
@@ -275,70 +274,79 @@ const Ruta = () => {
   }, [currentEntity, navigate]);
 
   useEffect(() => {
-      if (!navigator.geolocation) {
-        console.log('Geolocation not available');
-        return setError('Geolocalización no disponible');
-      }
-      console.log(isNavigating);
-      console.log(sucursales);
-      if (!isNavigating) {
-        generarRuta();
-      }
-  
-      const watchId = navigator.geolocation.watchPosition(
-        ({ coords }) => {
-          const { latitude, longitude } = coords;
-          const currentLatLng = L.latLng(latitude, longitude);
-  
-          if (isNavigating) {
-            const reachedSucursalIds = sucursales
-              .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
-              .map(sucursal => Number(sucursal.id));
-            
-            if (reachedSucursalIds.length) {
-              const nuevasSucursales = sucursales.filter(s => !reachedSucursalIds.includes(Number(s.id)));
-              setSucursales(nuevasSucursales);
-              reachedSucursalIds.forEach(id => deleteSucursal(id));
-            } else {
-              generarRuta();
-            }
+    if (!navigator.geolocation) {
+      console.log('Geolocation not available');
+      return setError('Geolocalización no disponible');
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      ({ coords }) => {
+        const { latitude, longitude } = coords;
+        const currentLatLng = L.latLng(latitude, longitude);
+
+        if (isNavigating) {
+          const reachedSucursalIds = sucursales
+            .filter(sucursal => currentLatLng.distanceTo(L.latLng(sucursal.lat, sucursal.lng)) <= ARRIVAL_RADIUS)
+            .map(sucursal => Number(sucursal.id));
+          
+          if (reachedSucursalIds.length) {
+            const nuevasSucursales = sucursales.filter(s => !reachedSucursalIds.includes(Number(s.id)));
+            setSucursales(nuevasSucursales);
+            reachedSucursalIds.forEach(id => deleteSucursal(id));
+          } else {
+            generarRuta();
           }
-  
-          if (isNavigating && mapInstanceRef.current?.setBearing) {
-            let heading = 0;
-            if (prevLatLngRef.current) {
-              heading = bearing(
-                [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
-                [longitude, latitude]
-              );
-            }
-            smoothPanTo(currentLatLng, 20, -heading);
+        }
+
+        if (isNavigating && mapInstanceRef.current?.setBearing) {
+          let heading = 0;
+          if (prevLatLngRef.current) {
+            heading = bearing(
+              [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
+              [longitude, latitude]
+            );
           }
-  
-          prevLatLngRef.current = currentLatLng;
-        },
-        (err) => {
-          console.error('Geolocation error:', err);
-          setError('No se pudo obtener la ubicación');
-        },
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 }
-      );
-  
-      return () => {
-        sucursalMarkersRef.current.forEach(marker => marker?.remove());
-        if (routeMarkerRef.current?.control) {
-          mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+          smoothPanTo(currentLatLng, 20, -heading);
         }
-        if (routeMarkerRef.current?.polyline) {
-          routeMarkerRef.current.polyline.remove();
-        }
-        navigator.geolocation.clearWatch(watchId);
-      };
-    }, [sucursales, isNavigating]);
+
+        prevLatLngRef.current = currentLatLng;
+      },
+      (err) => {
+        console.error('Geolocation error:', err);
+        setError('No se pudo obtener la ubicación');
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 }
+    );
+
+    return () => {
+      sucursalMarkersRef.current.forEach(marker => marker?.remove());
+      if (routeMarkerRef.current?.control) {
+        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+      }
+      if (routeMarkerRef.current?.polyline) {
+        routeMarkerRef.current.polyline.remove();
+      }
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [isNavigating]);
 
   useEffect(() => {
     fetchData();
   }, [currentEntity]);
+
+  useEffect(() => {
+    generarRuta();
+
+    return () => {
+      sucursalMarkersRef.current.forEach(marker => marker?.remove());
+      if (routeMarkerRef.current?.control) {
+        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+      }
+      if (routeMarkerRef.current?.polyline) {
+        routeMarkerRef.current.polyline.remove();
+      }
+    };
+  }, [sucursales]);
 
   return (
     <div className="map-container">
