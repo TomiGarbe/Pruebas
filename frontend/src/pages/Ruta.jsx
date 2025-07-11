@@ -92,18 +92,23 @@ const Ruta = () => {
     }
   };
 
-  const iniciarNavegacion = (route) => {
-    const waypoints = route.getPlan().getWaypoints();
-    if (!waypoints || waypoints.length < 2) {
-      console.log('Not enough waypoints to navigate');
-      return;
+  const iniciarNavegacion = () => {
+    const currentLatLng = prevLatLngRef.current || userLocation;
+    if (!currentLatLng || !sucursales.length) return;
+
+    const wp = [L.latLng(currentLatLng.lat, currentLatLng.lng), ...sucursales.map(s => L.latLng(s.lat, s.lng))];
+
+    if (routeMarkerRef.current?.control) {
+      try {
+        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+      } catch (e) {
+        console.warn('Error al eliminar control viejo:', e);
+      }
+      routeMarkerRef.current = null;
+      setRoutingControl(null);
     }
 
-    waypoints.slice(1).map((wp, i) => ({
-      start_location: [wp.latLng.lat, wp.latLng.lng],
-      instructions: route.getPlan().instructions?.find(inst => inst.waypointIndex === i + 1)?.text || `Waypoint ${i + 1}`,
-    }));
-
+    crearRoutingControl(wp);
     centerOnUser();
     setIsNavigating(true);
   };
@@ -177,9 +182,16 @@ const Ruta = () => {
   };
 
   const actualizarWaypoints = (waypoints) => {
-    if (routeMarkerRef.current?.control) {
-      routeMarkerRef.current.control.setWaypoints(waypoints);
-    } else {
+    const control = routeMarkerRef.current?.control;
+
+    try {
+      if (control && control._line) {
+        control.setWaypoints(waypoints);
+      } else {
+        crearRoutingControl(waypoints);
+      }
+    } catch (err) {
+      console.error("Error actualizando waypoints:", err);
       crearRoutingControl(waypoints);
     }
   };
@@ -193,7 +205,13 @@ const Ruta = () => {
     setSucursales([]);
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
     if (routeMarkerRef.current?.control) {
-      mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+      try {
+        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
+      } catch (e) {
+        console.warn('Error al eliminar routing control:', e);
+      }
+      routeMarkerRef.current = null;
+      setRoutingControl(null);
     }
     deleteSelection();
   };
@@ -286,10 +304,6 @@ const Ruta = () => {
   );
 
     return () => {
-      sucursalMarkersRef.current.forEach(marker => marker?.remove());
-      if (routeMarkerRef.current?.control) {
-        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
-      }
       navigator.geolocation.clearWatch(watchId);
     };
   }, [isNavigating]);
@@ -302,9 +316,8 @@ const Ruta = () => {
     const currentLatLng = prevLatLngRef.current || userLocation;
     if (!currentLatLng || !sucursales.length) return;
 
-    const newIds = sucursales.map(s => s.id);
     if (!sucursalesSonIguales(sucursales, lastSucursalIdsRef.current)) {
-      lastSucursalIdsRef.current = newIds;
+      lastSucursalIdsRef.current = sucursales;
 
       const waypoints = [L.latLng(currentLatLng.lat, currentLatLng.lng), ...sucursales.map(s => L.latLng(s.lat, s.lng))];
       actualizarWaypoints(waypoints);
@@ -325,7 +338,7 @@ const Ruta = () => {
         sucursalMarkersRef.current.push(marker);
       });
     }
-  }, [sucursales]);
+  }, [sucursales, isNavigating]);
 
   return (
     <div className="map-container">
