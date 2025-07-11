@@ -5,10 +5,6 @@ from pydantic import BaseModel
 from typing import List
 from firebase_admin import db
 from auth.firebase import initialize_firebase
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class Direccion(BaseModel):
     id: str

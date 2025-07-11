@@ -9,10 +9,6 @@ from init_admin import init_admin
 from dotenv import load_dotenv
 import os
 from starlette.responses import JSONResponse
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 load_dotenv(dotenv_path="./env.config")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
@@ -89,7 +85,6 @@ async def auth_middleware(request: Request, call_next):
         response = await call_next(request)
         return response
     except Exception as e:
-        logger.error(f"Middleware exception: {str(e)}")
         return JSONResponse(
             content={"detail": "Error interno en el procesamiento de la solicitud"},
             status_code=500
