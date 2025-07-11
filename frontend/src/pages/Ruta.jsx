@@ -92,25 +92,21 @@ const Ruta = () => {
     }
   };
 
-  const iniciarNavegacion = () => {
-    const currentLatLng = prevLatLngRef.current || userLocation;
-    if (!currentLatLng || !sucursales.length) return;
-
-    const wp = [L.latLng(currentLatLng.lat, currentLatLng.lng), ...sucursales.map(s => L.latLng(s.lat, s.lng))];
-
-    if (routeMarkerRef.current?.control) {
-      try {
-        mapInstanceRef.current.removeControl(routeMarkerRef.current.control);
-      } catch (e) {
-        console.warn('Error al eliminar control viejo:', e);
-      }
-      routeMarkerRef.current = null;
-      setRoutingControl(null);
+  const iniciarNavegacion = (route) => {
+    const waypoints = route.getPlan().getWaypoints();
+    if (!waypoints || waypoints.length < 2) {
+      console.log('Not enough waypoints to navigate');
+      return;
     }
 
-    crearRoutingControl(wp);
     centerOnUser();
     setIsNavigating(true);
+
+    const currentLatLng = prevLatLngRef.current || userLocation;
+    if (currentLatLng && sucursales.length) {
+      const wp = [L.latLng(currentLatLng.lat, currentLatLng.lng), ...sucursales.map(s => L.latLng(s.lat, s.lng))];
+      actualizarWaypoints(wp);
+    }
   };
 
   const smoothPanTo = (targetLatLng, zoom, targetBearing) => {
