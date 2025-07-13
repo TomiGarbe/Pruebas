@@ -22,6 +22,18 @@ const getFirebaseConfig = () => {
   return JSON.parse(config);
 };
 
+const getFirebaseVapidKey = () => {
+  const isProd = window.location.host.includes('nice-rock');
+  const config = import.meta.env[`VITE_FIREBASE_VAPID_KEY_${isProd ? 'PROD' : 'QA'}`];
+
+  if (!config) {
+    console.error('Missing Firebase vapid key in .env');
+    return null;
+  }
+
+  return config;
+};
+
 const getGoogleClient = () => {
   const isProd = window.location.host.includes('nice-rock');
   const clientId = import.meta.env[`VITE_GOOGLE_CLIENT_ID_${isProd ? 'PROD' : 'QA'}`];
@@ -36,4 +48,5 @@ const getGoogleClient = () => {
 
 export const API_URL = getApiUrl();
 export const firebaseConfig = getFirebaseConfig();
+export const firebaseVapidKey = getFirebaseVapidKey();
 export const googleClientId = getGoogleClient();

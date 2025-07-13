@@ -5,6 +5,7 @@ from datetime import date, datetime
 from typing import Optional, List
 from services.gcloud_storage import upload_file_to_gcloud, delete_file_in_folder
 from services.google_sheets import append_correctivo, update_correctivo, delete_correctivo
+from services.fcm import notify_user_token
 import os
 
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
@@ -48,6 +49,15 @@ def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla:
     db.add(db_mantenimiento)
     db.commit()
     db.refresh(db_mantenimiento)
+    # Notificar si es alta prioridad
+    if prioridad == "Alta":
+        notify_user_token(
+            db_session=db,
+            firebase_uid=cuadrilla.firebase_uid,
+            title="🚨 Nueva obra urgente asignada",
+            body=f"Sucursal: {sucursal.nombre}",
+            data={"Incidente": str(db_mantenimiento.incidente)}
+        )
     append_correctivo(db, db_mantenimiento)
     return db_mantenimiento
 
@@ -118,6 +128,15 @@ async def update_mantenimiento_correctivo(
         db_mantenimiento.extendido = extendido
     db.commit()
     db.refresh(db_mantenimiento)
+    # Notificar si es alta prioridad
+    if prioridad == "Alta":
+        notify_user_token(
+            db_session=db,
+            firebase_uid=cuadrilla.firebase_uid,
+            title="🚨 Nueva obra urgente asignada",
+            body=f"Sucursal: {sucursal.nombre}",
+            data={"Incidente": str(db_mantenimiento.incidente)}
+        )
     update_correctivo(db, db_mantenimiento)
     return db_mantenimiento
 

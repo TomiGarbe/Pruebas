@@ -1,0 +1,12 @@
+from fastapi import APIRouter, Depends, Request
+from sqlalchemy.orm import Session
+from config.database import get_db
+from services.fcm import save_token
+from api.schemas import FCMTokenCreate
+
+router = APIRouter(prefix="/fcm-token", tags=["fcm-token"])
+
+@router.post("/")
+def save_fcm_token(token_data: FCMTokenCreate, request: Request, db_session: Session = Depends(get_db)):
+    current_entity = request.state.current_entity
+    return save_token(db_session, token_data, current_entity)

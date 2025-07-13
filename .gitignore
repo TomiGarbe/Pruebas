@@ -11,3 +11,5 @@ dist
 *.xml
 coverage
 credentials
+osrm-data
+firebase-config.js

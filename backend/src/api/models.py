@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, Text, DateTime
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, Text, DateTime, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base
 
@@ -140,3 +140,12 @@ class PreventivoSeleccionado(Base):
     mantenimiento_preventivo = relationship("MantenimientoPreventivo", back_populates="preventivo_seleccionado")
     cuadrilla = relationship("Cuadrilla", back_populates="preventivo_seleccionado")
     sucursal = relationship("Sucursal", back_populates="preventivo_seleccionado")
+
+class FCMToken(Base):
+    __tablename__ = "fcm_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    firebase_uid = Column(String, nullable=False)
+    token = Column(String, nullable=False)
+    device_info = Column(String, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())

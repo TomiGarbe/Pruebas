@@ -117,3 +117,8 @@ class MantenimientoCorrectivoCreate(BaseModel):
     rubro: Rubro
     estado: Estado
     prioridad: Prioridad
+
+class FCMTokenCreate(BaseModel):
+    token: str
+    firebase_uid: str
+    device_info: Optional[str] = None

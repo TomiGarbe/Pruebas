@@ -125,6 +125,9 @@ jobs:
         with:
           name: frontend-artifact
           path: frontend/dist/
+      - name: Rename QA config
+        run: |
+          cp frontend/config.qa.json frontend/dist/config.json
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -183,6 +186,9 @@ jobs:
         with:
           name: frontend-artifact
           path: frontend/dist/
+      - name: Rename PROD config
+        run: |
+          cp frontend/config.prod.json frontend/dist/config.json
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
