@@ -65,16 +65,16 @@ jobs:
           echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env
           echo "VITE_FIREBASE_VAPID_KEY_QA=${{ secrets.FIREBASE_VAPID_KEY_QA }}" >> .env
           echo "VITE_FIREBASE_VAPID_KEY_PROD=${{ secrets.FIREBASE_VAPID_KEY_PROD }}" >> .env
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm run build
       - name: Crear archivos de configuración de Firebase
         run: |
           cd frontend/public
 
           echo "self.FIREBASE_CONFIG = ${{ secrets.FIREBASE_CONFIG_QA }};" > firebase-config-qa.js
           echo "self.FIREBASE_CONFIG = ${{ secrets.FIREBASE_CONFIG_PROD }};" > firebase-config-prod.js
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
       - name: Copy staticwebapp.config.json and firebase-configs to dist
         run: |
           cp frontend/staticwebapp.config.json frontend/dist/
