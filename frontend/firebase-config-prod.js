@@ -1,1 +1,0 @@
-self.FIREBASE_CONFIG = {};

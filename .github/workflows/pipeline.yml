@@ -69,12 +69,15 @@ jobs:
         run: |
           cd frontend
           npm run build
+      - name: Crear archivos de configuración de Firebase
+        run: |
+          cd frontend/public
+
+          echo "self.FIREBASE_CONFIG = ${{ secrets.FIREBASE_CONFIG_QA }};" > firebase-config-qa.js
+          echo "self.FIREBASE_CONFIG = ${{ secrets.FIREBASE_CONFIG_PROD }};" > firebase-config-prod.js
       - name: Copy staticwebapp.config.json and firebase-configs to dist
         run: |
           cp frontend/staticwebapp.config.json frontend/dist/
-          cp frontend/firebase-messaging-sw.js frontend/dist/
-          cp frontend/firebase-config-qa.js frontend/dist/
-          cp frontend/firebase-config-prod.js frontend/dist/
       - name: Upload Frontend Artifact
         uses: actions/upload-artifact@v4
         with:
