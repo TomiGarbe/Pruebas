@@ -7,6 +7,6 @@ from api.schemas import FCMTokenCreate
 router = APIRouter(prefix="/fcm-token", tags=["fcm-token"])
 
 @router.post("/")
-def save_fcm_token(token_data: FCMTokenCreate, request: Request, db_session: Session = Depends(get_db)):
+def save_fcm_token(request: Request, token_data: FCMTokenCreate, db_session: Session = Depends(get_db)):
     current_entity = request.state.current_entity
     return save_token(db_session, token_data, current_entity)
