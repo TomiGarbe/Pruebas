@@ -16,6 +16,7 @@ import Correctivo from './pages/Correctivo';
 import Login from './pages/Login';
 import Mapa from './pages/Mapa';
 import Ruta from './pages/Ruta';
+import { mapsApiKey } from './config';
 import { LoadScript } from '@react-google-maps/api';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'leaflet/dist/leaflet.css';
@@ -64,7 +65,7 @@ const AppContent = () => {
   }, [currentEntity, loading, verifying, isLoginPage, navigate]);
 
   return (
-    <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={googleMapsLibraries}>
+    <LoadScript googleMapsApiKey={mapsApiKey} libraries={googleMapsLibraries}>
       <div className="d-flex flex-column min-vh-100">
         {!isLoginPage && <Navbar />}
         <main className="flex-grow-1">

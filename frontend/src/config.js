@@ -22,6 +22,18 @@ const getFirebaseConfig = () => {
   return JSON.parse(config);
 };
 
+const getMapsApiKey = () => {
+  const isProd = window.location.host.includes('nice-rock');
+  const config = import.meta.env[`VITE_GOOGLE_MAPS_API_KEY_${isProd ? 'PROD' : 'QA'}`];
+
+  if (!config) {
+    console.error('Missing Maps api key in .env');
+    return null;
+  }
+
+  return config;
+};
+
 const getFirebaseVapidKey = () => {
   const isProd = window.location.host.includes('nice-rock');
   const config = import.meta.env[`VITE_FIREBASE_VAPID_KEY_${isProd ? 'PROD' : 'QA'}`];
@@ -48,5 +60,6 @@ const getGoogleClient = () => {
 
 export const API_URL = getApiUrl();
 export const firebaseConfig = getFirebaseConfig();
+export const mapsApiKey = getMapsApiKey();
 export const firebaseVapidKey = getFirebaseVapidKey();
 export const googleClientId = getGoogleClient();

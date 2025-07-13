@@ -75,9 +75,6 @@ jobs:
         run: |
           cd frontend
           npm run build
-      - name: Copy staticwebapp.config.json and firebase-configs to dist
-        run: |
-          cp frontend/staticwebapp.config.json frontend/dist/
       - name: Upload Frontend Artifact
         uses: actions/upload-artifact@v4
         with:
