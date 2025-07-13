@@ -63,6 +63,8 @@ jobs:
           echo "VITE_GOOGLE_CLIENT_ID_PROD=${{ secrets.GOOGLE_CLIENT_ID_PROD }}" >> .env
           echo "VITE_GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
           echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env
+          echo "VITE_FIREBASE_VAPID_KEY_QA=${{ secrets.FIREBASE_VAPID_KEY_QA }}" >> .env
+          echo "VITE_FIREBASE_VAPID_KEY_PROD=${{ secrets.FIREBASE_VAPID_KEY_PROD }}" >> .env
       - name: Build Frontend
         run: |
           cd frontend
