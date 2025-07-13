@@ -129,7 +129,7 @@ jobs:
           path: frontend/dist/
       - name: Rename QA config
         run: |
-          cp frontend/firebase-config-qa.js frontend/dist/firebase-config.js
+          cp frontend/dist/firebase-config-qa.js frontend/dist/firebase-config.js
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -190,7 +190,7 @@ jobs:
           path: frontend/dist/
       - name: Rename PROD config
         run: |
-          cp frontend/firebase-config-prod.js frontend/dist/firebase-config.js
+          cp frontend/dist/firebase-config-prod.js frontend/dist/firebase-config.js
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
