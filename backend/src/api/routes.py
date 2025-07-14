@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from contextlib import asynccontextmanager
 from controllers import users, cuadrillas, sucursales, zonas, auth, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, maps, fcm
 from config.database import get_db
@@ -17,16 +16,11 @@ EMAIL_ADMIN = os.getenv("EMAIL_ADMIN")
 NOMBRE_ADMIN = os.getenv("NOMBRE_ADMIN")
 PASSWORD_ADMIN = os.getenv("PASSWORD_ADMIN")
 
-FORCE_HTTPS = os.getenv("FORCE_HTTPS", "false").lower() == "true"
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
-
-if FORCE_HTTPS:
-    app.add_middleware(HTTPSRedirectMiddleware)
 
 initialize_firebase()
 init_admin(email=EMAIL_ADMIN, nombre=NOMBRE_ADMIN, password=PASSWORD_ADMIN)
