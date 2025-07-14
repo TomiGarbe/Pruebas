@@ -32,8 +32,8 @@ def send_push_notification_to_token(token: str, title: str, body: str, data: dic
     return response
 
 def notify_user_token(db_session: Session, firebase_uid: str, title: str, body: str, data: dict = None):
-    token = db_session.query(FCMToken).filter_by(firebase_uid=firebase_uid).first()
-    if token is not None:
+    tokens = db_session.query(FCMToken).filter(FCMToken.firebase_uid == firebase_uid).all()
+    for token in tokens:
         try:
             send_push_notification_to_token(token.token, title, body, data)
         except Exception as e:
