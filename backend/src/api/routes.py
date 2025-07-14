@@ -41,7 +41,6 @@ app.add_middleware(
 # Middleware de autenticación
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    print(f"Request URL: {request.url}")
     if request.url.path == "/auth/verify":
         return await call_next(request)
     

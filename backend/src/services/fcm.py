@@ -1,22 +1,21 @@
 from fastapi import HTTPException 
 from firebase_admin import messaging
 from api.models import FCMToken
-from api.schemas import FCMTokenCreate
 from sqlalchemy.orm import Session
 
-def save_token(db_session: Session, token_data: FCMTokenCreate, current_entity: dict):
+def save_token(db_session: Session, current_entity: dict, token: str, firebase_uid: str, device_info: str = None):
     if not current_entity:
         raise HTTPException(status_code=401, detail="Autenticación requerida")
     
-    existing = db_session.query(FCMToken).filter_by(token=token_data.token).first()
+    existing = db_session.query(FCMToken).filter(FCMToken.token == token).first()
     if existing:
         return {"message": "Token ya registrado"}
-    token = FCMToken(
-        firebase_uid=token_data.firebase_uid,
-        token=token_data.token,
-        device_info=token_data.device_info
+    db_token = FCMToken(
+        firebase_uid=firebase_uid,
+        token=token,
+        device_info=device_info
     )
-    db_session.add(token)
+    db_session.add(db_token)
     db_session.commit()
     return {"message": "Token guardado"}
 
