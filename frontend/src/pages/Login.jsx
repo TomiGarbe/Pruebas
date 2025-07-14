@@ -29,7 +29,7 @@ const Login = () => {
         if (fcmToken) {
           const token_data = {token: fcmToken, firebase_uid: result.user.uid, device_info: navigator.userAgent}
           try {
-            saveToken(token_data);
+            await saveToken(token_data);
           } catch (err) {
             console.error('Error al registrar el token de notificación:', err);
           }
