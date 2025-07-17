@@ -7,6 +7,14 @@ from services.gcloud_storage import upload_file_to_gcloud, delete_file_in_folder
 from services.google_sheets import append_correctivo, update_correctivo, delete_correctivo
 from services.fcm import notify_user_token
 import os
+import logging
+
+# Configure logger for console output
+logger = logging.getLogger("mantenimientos_correctivos")
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+logger.addHandler(handler)
 
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
 
@@ -55,8 +63,8 @@ def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla:
             db_session=db,
             firebase_uid=cuadrilla.firebase_uid,
             title="🚨 Nueva obra urgente asignada",
-            body=f"Sucursal: {sucursal.nombre}",
-            data={"Incidente": str(db_mantenimiento.incidente)}
+            body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}",
+            data={}
         )
     append_correctivo(db, db_mantenimiento)
     return db_mantenimiento
@@ -128,15 +136,18 @@ async def update_mantenimiento_correctivo(
         db_mantenimiento.extendido = extendido
     db.commit()
     db.refresh(db_mantenimiento)
+    logger.info(f"Mantenimiento correctivo ID {mantenimiento_id} updated successfully")
     # Notificar si es alta prioridad
     if prioridad == "Alta":
+        logger.debug(f"Sending notification for high-priority mantenimiento ID {mantenimiento_id}, cuadrilla ID {id_cuadrilla}")
         notify_user_token(
             db_session=db,
             firebase_uid=cuadrilla.firebase_uid,
             title="🚨 Nueva obra urgente asignada",
-            body=f"Sucursal: {sucursal.nombre}",
-            data={"Incidente": str(db_mantenimiento.incidente)}
+            body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}",
+            data={}
         )
+        logger.info(f"Notification triggered for firebase_uid: {cuadrilla.firebase_uid}")
     update_correctivo(db, db_mantenimiento)
     return db_mantenimiento
 

@@ -7,9 +7,11 @@ firebase.initializeApp(self.FIREBASE_CONFIG);
 
 const messaging = firebase.messaging();
 
+console.log('Service Worker registered for FCM at:', self.location.href);
 messaging.onBackgroundMessage(function(payload) {
-  self.registration.showNotification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: '/favicon.ico'
-  });
+    console.log('Background message:', payload);
+    self.registration.showNotification(payload.notification.title, {
+        body: payload.notification.body,
+        icon: '/favicon.ico'
+    });
 });
