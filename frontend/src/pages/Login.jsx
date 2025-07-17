@@ -2,8 +2,7 @@ import { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithPopup, getDeviceToken } from '../services/firebase';
-import { saveToken } from '../services/notificaciones';
+import { auth, GoogleAuthProvider, signInWithPopup } from '../services/firebase';
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
@@ -25,16 +24,6 @@ const Login = () => {
       localStorage.setItem('authToken', idToken);
       const verificationResult = await verifyUser(result.user, idToken);
       if (verificationResult.success) {
-        const fcmToken = await getDeviceToken();
-        if (fcmToken) {
-          const token_data = {token: fcmToken, firebase_uid: result.user.uid, device_info: navigator.userAgent}
-          try {
-            await saveToken(token_data);
-          } catch (err) {
-            console.error('Error al registrar el token de notificación:', err);
-          }
-        }
-
         navigate('/');
       } else {
         setError('Error al verificar el usuario');

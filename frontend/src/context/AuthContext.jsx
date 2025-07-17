@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
-import { auth, onAuthStateChanged, signOut } from '../services/firebase';
+import { auth, onAuthStateChanged, signOut, getDeviceToken } from '../services/firebase';
+import { saveToken } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { googleClientId } from '../config';
@@ -34,6 +35,17 @@ const AuthProvider = ({ children }) => {
         isVerifiedRef.current = true;
         setCurrentUser(user);
         setCurrentEntity(response.data);
+        const fcmToken = await getDeviceToken();
+        console.log('FCM Token generated for:', window.location.host, fcmToken, 'URL:', `${api.defaults.baseURL}/fcm-token`);
+        if (fcmToken) {
+          const token_data = {token: fcmToken, firebase_uid: response.data.uid, device_info: navigator.userAgent}
+          try {
+            await saveToken(token_data);
+            console.log('Token saved successfully');
+          } catch (err) {
+            console.error('Error al registrar el token de notificación:', err);
+          }
+        }
         return { success: true, data: response.data };
       } catch (error) {
         attempts++;

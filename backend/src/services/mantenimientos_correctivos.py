@@ -138,7 +138,7 @@ async def update_mantenimiento_correctivo(
     db.refresh(db_mantenimiento)
     logger.info(f"Mantenimiento correctivo ID {mantenimiento_id} updated successfully")
     # Notificar si es alta prioridad
-    if prioridad == "Alta":
+    if prioridad is not None and prioridad == "Alta":
         logger.debug(f"Sending notification for high-priority mantenimiento ID {mantenimiento_id}, cuadrilla ID {id_cuadrilla}")
         notify_user_token(
             db_session=db,
