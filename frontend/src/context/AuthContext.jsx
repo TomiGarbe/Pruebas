@@ -38,7 +38,7 @@ const AuthProvider = ({ children }) => {
         const fcmToken = await getDeviceToken();
         console.log('FCM Token generated for:', window.location.host, fcmToken, 'URL:', `${api.defaults.baseURL}/fcm-token`);
         if (fcmToken) {
-          const token_data = {token: fcmToken, firebase_uid: response.data.uid, device_info: navigator.userAgent}
+          const token_data = {token: fcmToken, firebase_uid: response.data.data.uid, device_info: navigator.userAgent}
           try {
             await saveToken(token_data);
             console.log('Token saved successfully');
