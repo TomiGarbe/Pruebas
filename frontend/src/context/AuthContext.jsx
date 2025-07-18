@@ -15,6 +15,7 @@ const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const isVerifyingRef = useRef(false);
   const isVerifiedRef = useRef(false);
+  const fcmSentRef = useRef(false);
 
   const verifyUser = async (user, idToken) => {
     isVerifyingRef.current = true;
@@ -37,8 +38,13 @@ const AuthProvider = ({ children }) => {
         setCurrentEntity(response.data);
         const fcmToken = await getDeviceToken();
         console.log('FCM Token generated for:', window.location.host, fcmToken, 'URL:', `${api.defaults.baseURL}/fcm-token`);
-        if (fcmToken) {
-          const token_data = {token: fcmToken, firebase_uid: response.data.data.uid, device_info: navigator.userAgent}
+        if (fcmToken && !fcmSentRef.current) {
+          fcmSentRef.current = true;
+          const token_data = {
+            token: fcmToken,
+            firebase_uid: response.data.data.uid,
+            device_info: navigator.userAgent
+          };
           try {
             await saveToken(token_data);
             console.log('Token saved successfully');
