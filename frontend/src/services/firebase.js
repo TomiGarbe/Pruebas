@@ -35,7 +35,7 @@ onMessage(messaging, (payload) => {
     const notificationTitle = payload.notification.title || 'Notification';
     const notificationOptions = {
       body: payload.notification.body,
-      icon: '/favicon.ico'
+      icon: '/icons/icon-192x192.png'
     };
     // Display notification for foreground messages
     if (Notification.permission === 'granted') {
