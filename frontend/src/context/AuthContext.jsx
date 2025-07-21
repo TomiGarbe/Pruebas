@@ -24,6 +24,7 @@ const AuthProvider = ({ children }) => {
       setVerifying(true);
 
       try {
+        alert('Verifying user with idToken: Starting verification');
         const response = await api.post(
           '/auth/verify',
           {},
@@ -35,6 +36,7 @@ const AuthProvider = ({ children }) => {
         isVerifiedRef.current = true;
         setCurrentUser(user);
         setCurrentEntity(response.data);
+        alert('User verified successfully');
         
         fcmSentRef.current = false;
         const fcmToken = await getDeviceToken();
@@ -46,21 +48,21 @@ const AuthProvider = ({ children }) => {
             device_info: navigator.userAgent
           };
           await saveToken(token_data);
-          console.log('FCM token saved:', fcmToken);
+          alert(`Saving FCM token: ${JSON.stringify(token_data)}`);
         }
 
         return { success: true, data: response.data };
       } catch (error) {
         attempts++;
         const errorDetail = error.response?.data?.detail || error.message;
-        console.error(`Verification attempt ${attempts} failed:`, errorDetail);
+        alert(`Verification attempt ${attempts} failed:`, errorDetail);
         if (attempts === maxAttempts) {
           throw error;
         }
       }
     } catch (error) {
       const errorDetail = error.response?.data?.detail || error.message;
-      console.error('Final verification error:', errorDetail);
+      alert('Final verification error:', errorDetail);
       try {
         await signOut(auth);
         localStorage.removeItem('authToken');

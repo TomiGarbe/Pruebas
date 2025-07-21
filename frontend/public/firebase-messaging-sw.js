@@ -57,3 +57,10 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
+// Allow network requests for login
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        fetch(event.request).catch(() => caches.match(event.request))
+    );
+});
