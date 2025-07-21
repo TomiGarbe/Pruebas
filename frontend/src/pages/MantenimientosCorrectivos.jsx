@@ -133,8 +133,8 @@ const MantenimientosCorrectivos = () => {
     setShowForm(true);
   };
 
-  const handleRowClick = (mantenimiento) => {
-    navigate('/correctivo', { state: { mantenimiento } });
+  const handleRowClick = (mantenimientoId) => {
+    navigate('/correctivo', { state: { mantenimientoId } });
   };
 
   const handleFormClose = () => {
@@ -308,7 +308,7 @@ const MantenimientosCorrectivos = () => {
                 {filteredMantenimientos.map((mantenimiento) => (
                   <tr 
                     key={mantenimiento.id}
-                    onClick={() => handleRowClick(mantenimiento)}
+                    onClick={() => handleRowClick(mantenimiento.id)}
                     style={{ cursor: 'pointer' }}
                   >
                     <td>{mantenimiento.id}</td>

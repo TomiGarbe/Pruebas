@@ -32,12 +32,10 @@ const AuthProvider = ({ children }) => {
         
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        console.log('Verification succeeded:', response.data);
         isVerifiedRef.current = true;
         setCurrentUser(user);
         setCurrentEntity(response.data);
         const fcmToken = await getDeviceToken();
-        console.log('FCM Token generated for:', window.location.host, fcmToken, 'URL:', `${api.defaults.baseURL}/fcm-token`);
         if (fcmToken && !fcmSentRef.current) {
           fcmSentRef.current = true;
           const token_data = {
@@ -47,7 +45,6 @@ const AuthProvider = ({ children }) => {
           };
           try {
             await saveToken(token_data);
-            console.log('Token saved successfully');
           } catch (err) {
             console.error('Error al registrar el token de notificación:', err);
           }

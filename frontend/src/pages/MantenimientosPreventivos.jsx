@@ -121,8 +121,8 @@ const MantenimientosPreventivos = () => {
     setShowForm(true);
   };
 
-  const handleRowClick = (mantenimiento) => {
-    navigate('/preventivo', { state: { mantenimiento } });
+  const handleRowClick = (mantenimientoId) => {
+    navigate('/preventivo', { state: { mantenimientoId } });
   };
 
   const handleFormClose = () => {
@@ -242,7 +242,7 @@ const MantenimientosPreventivos = () => {
                 {filteredMantenimientos.map((mantenimiento) => (
                   <tr 
                     key={mantenimiento.id} 
-                    onClick={() => handleRowClick(mantenimiento)}
+                    onClick={() => handleRowClick(mantenimiento.id)}
                     style={{ cursor: 'pointer' }}
                   >
                     <td>{mantenimiento.id}</td>
