@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 import { getAuth, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup } from 'firebase/auth';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
 import { firebaseConfig, firebaseVapidKey } from '../config';
 
 const app = initializeApp(firebaseConfig);
@@ -21,7 +21,7 @@ const getDeviceToken = async () => {
     const currentToken = await getToken(messaging, {
       vapidKey: firebaseVapidKey
     });
-
+    console.log('FCM Token:', currentToken); // Debug log
     return currentToken;
   } catch (err) {
     console.error('Error al obtener token de dispositivo:', err);
@@ -29,4 +29,24 @@ const getDeviceToken = async () => {
   }
 };
 
-export { database, auth, messaging, getDeviceToken, onMessage, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup };
+onMessage(messaging, (payload) => {
+  console.log('Foreground message received:', JSON.stringify(payload));
+  try {
+    const notificationTitle = payload.notification.title || 'Notification';
+    const notificationOptions = {
+      body: payload.notification.body,
+      icon: '/favicon.ico'
+    };
+    // Display notification for foreground messages
+    if (Notification.permission === 'granted') {
+      new Notification(notificationTitle, notificationOptions);
+      console.log('Foreground notification displayed:', notificationTitle, notificationOptions);
+    } else {
+      console.warn('Notification permission not granted');
+    }
+  } catch (error) {
+    console.error('Error displaying foreground notification:', error);
+  }
+});
+
+export { database, auth, messaging, getDeviceToken, onMessage, deleteToken, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup };

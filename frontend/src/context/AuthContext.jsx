@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
-import { auth, onAuthStateChanged, signOut, getDeviceToken } from '../services/firebase';
+import { auth, onAuthStateChanged, signOut, getDeviceToken, messaging, deleteToken } from '../services/firebase';
 import { saveToken } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -35,20 +35,20 @@ const AuthProvider = ({ children }) => {
         isVerifiedRef.current = true;
         setCurrentUser(user);
         setCurrentEntity(response.data);
+        
+        fcmSentRef.current = false;
         const fcmToken = await getDeviceToken();
-        if (fcmToken && !fcmSentRef.current) {
+        if (fcmToken) {
           fcmSentRef.current = true;
           const token_data = {
             token: fcmToken,
             firebase_uid: response.data.data.uid,
             device_info: navigator.userAgent
           };
-          try {
-            await saveToken(token_data);
-          } catch (err) {
-            console.error('Error al registrar el token de notificación:', err);
-          }
+          await saveToken(token_data);
+          console.log('FCM token saved:', fcmToken);
         }
+
         return { success: true, data: response.data };
       } catch (error) {
         attempts++;
@@ -86,6 +86,16 @@ const AuthProvider = ({ children }) => {
   };
 
   const logOut = async () => {
+    try {
+      // Delete FCM token
+      const fcmToken = await getDeviceToken();
+      if (fcmToken) {
+        await deleteToken(messaging);
+        console.log('FCM token deleted on logout');
+      }
+    } catch (err) {
+      console.error('Error deleting FCM token:', err);
+    }
     await signOut(auth);
     localStorage.removeItem('authToken');
     setCurrentUser(null);

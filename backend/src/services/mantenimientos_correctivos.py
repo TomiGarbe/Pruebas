@@ -8,6 +8,16 @@ from services.google_sheets import append_correctivo, update_correctivo, delete_
 from services.notificaciones import notify_user_token, notify_users_correctivo
 import os
 
+import logging
+
+# Configure logger for console output
+logger = logging.getLogger("fcm")
+logger.setLevel(logging.DEBUG)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    logger.addHandler(handler)
+
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
 
 def get_mantenimientos_correctivos(db: Session):
@@ -61,7 +71,7 @@ def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla:
         notify_user_token(
             db_session=db,
             firebase_uid=cuadrilla.firebase_uid,
-            title="🚨 Nuevo correctivo urgente asignado",
+            title="Nuevo correctivo urgente asignado",
             body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}"
         )
     return db_mantenimiento
@@ -153,10 +163,11 @@ async def update_mantenimiento_correctivo(
     update_correctivo(db, db_mantenimiento)
     # Notify only once after all updates
     if prioridad == "Alta":
+        logger.info("Notificando de prioridad alta")
         notify_user_token(
             db_session=db,
             firebase_uid=cuadrilla.firebase_uid,
-            title="🚨 Nuevo correctivo urgente asignado",
+            title="Nuevo correctivo urgente asignado",
             body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}"
         )
     return db_mantenimiento
