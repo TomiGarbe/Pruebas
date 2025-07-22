@@ -1,10 +1,9 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
-import { auth, onAuthStateChanged, signOut, getDeviceToken, messaging, deleteToken } from '../services/firebase';
+import { auth, onAuthStateChanged, signOut, getDeviceToken, messaging, deleteToken, getRedirectResult } from '../services/firebase';
 import { saveToken } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { googleClientId } from '../config';
-import { getRedirectResult } from 'firebase/auth';
 
 const AuthContext = createContext();
 
