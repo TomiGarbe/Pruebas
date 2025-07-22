@@ -28,7 +28,7 @@
         window.addEventListener('unhandledrejection', (event) => {
             alert(`Unhandled promise rejection: ${event.reason.message || event.reason}`);
         });
-        
+
         // Force reload if service worker is ready in standalone mode
         if ('serviceWorker' in navigator && window.matchMedia('(display-mode: standalone)').matches) {
             navigator.serviceWorker.ready.then(() => {
