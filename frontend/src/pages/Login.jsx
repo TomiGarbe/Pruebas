@@ -2,7 +2,7 @@ import { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from '../services/firebase';
+import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from '../services/firebase';
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
@@ -22,18 +22,6 @@ const Login = () => {
 
       if (isIOS() && isInStandaloneMode()) {
         await signInWithRedirect(auth, googleProvider);
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          const idToken = await result.user.getIdToken(true);
-          localStorage.setItem('authToken', idToken);
-          const verificationResult = await verifyUser(result.user, idToken);
-          if (verificationResult.success) {
-            navigate('/');
-          } else {
-            setError('Error al verificar el usuario');
-            await logOut();
-          }
-        }
       } else {
         const result = await signInWithPopup(auth, googleProvider);
         const idToken = await result.user.getIdToken(true);

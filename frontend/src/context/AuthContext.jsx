@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
-import { auth, onAuthStateChanged, signOut, getDeviceToken, messaging, deleteToken } from '../services/firebase';
+import { auth, onAuthStateChanged, signOut, getDeviceToken, messaging, deleteToken, getRedirectResult } from '../services/firebase';
 import { saveToken } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,21 @@ const AuthProvider = ({ children }) => {
   const isVerifyingRef = useRef(false);
   const isVerifiedRef = useRef(false);
   const fcmSentRef = useRef(false);
+
+  useEffect(() => {
+    const result = getRedirectResult(auth);
+    if (result && result.user) {
+      const idToken = result.user.getIdToken(true);
+      localStorage.setItem('authToken', idToken);
+      const verificationResult = verifyUser(result.user, idToken);
+      if (verificationResult.success) {
+        navigate('/');
+      } else {
+        setError('Error al verificar el usuario');
+        logOut();
+      }
+    }
+  }, []);
 
   const verifyUser = async (user, idToken) => {
     isVerifyingRef.current = true;
