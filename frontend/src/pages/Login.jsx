@@ -20,20 +20,28 @@ const Login = () => {
     try {
       await logOut();
 
-      const result = Null;
       if (isIOS() && isInStandaloneMode()) {
-        result = await signInWithRedirect(auth, googleProvider);
+        const result = await signInWithRedirect(auth, googleProvider);
+        const idToken = await result.user.getIdToken(true);
+        localStorage.setItem('authToken', idToken);
+        const verificationResult = await verifyUser(result.user, idToken);
+        if (verificationResult.success) {
+          navigate('/');
+        } else {
+          setError('Error al verificar el usuario');
+          await logOut();
+        }
       } else {
-        result = await signInWithPopup(auth, googleProvider);
-      }
-      const idToken = await result.user.getIdToken(true);
-      localStorage.setItem('authToken', idToken);
-      const verificationResult = await verifyUser(result.user, idToken);
-      if (verificationResult.success) {
-        navigate('/');
-      } else {
-        setError('Error al verificar el usuario');
-        await logOut();
+        const result = await signInWithPopup(auth, googleProvider);
+        const idToken = await result.user.getIdToken(true);
+        localStorage.setItem('authToken', idToken);
+        const verificationResult = await verifyUser(result.user, idToken);
+        if (verificationResult.success) {
+          navigate('/');
+        } else {
+          setError('Error al verificar el usuario');
+          await logOut();
+        }
       }
     } catch (err) {
       console.error("Error en inicio de sesión con Google:", err);
