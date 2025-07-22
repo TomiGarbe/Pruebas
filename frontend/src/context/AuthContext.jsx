@@ -4,6 +4,7 @@ import { saveToken } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { googleClientId } from '../config';
+import { getRedirectResult } from 'firebase/auth';
 
 const AuthContext = createContext();
 
@@ -19,6 +20,26 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     alert('AuthProvider initialized in ' + (window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser') + ' mode');
+  }, []);
+
+  useEffect(() => {
+    const checkRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          const idToken = await result.user.getIdToken(true);
+          sessionStorage.setItem('authToken', idToken);
+          localStorage.setItem('authToken', idToken);
+          await verifyUser(result.user, idToken);
+          navigate('/');
+        }
+      } catch (error) {
+        console.error("Redirect error:", error);
+        setError(error.message || "Error en redirección de inicio de sesión.");
+      }
+    };
+
+    checkRedirect();
   }, []);
 
   const verifyUser = async (user, idToken) => {

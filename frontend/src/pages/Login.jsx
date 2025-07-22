@@ -6,6 +6,7 @@ import { auth, GoogleAuthProvider, signInWithPopup } from '../services/firebase'
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
+import { isIOS, isInStandaloneMode } from '../utils/platform';
 
 const Login = () => {
   const [error, setError] = useState(null);
@@ -19,15 +20,20 @@ const Login = () => {
     try {
       await logOut();
 
-      const result = await signInWithPopup(auth, googleProvider);
-      const idToken = await result.user.getIdToken(true);
-      localStorage.setItem('authToken', idToken);
-      const verificationResult = await verifyUser(result.user, idToken);
-      if (verificationResult.success) {
-        navigate('/');
+      if (isIOS() && isInStandaloneMode()) {
+        await signInWithRedirect(auth, googleProvider);
       } else {
-        setError('Error al verificar el usuario');
-        await logOut();
+        const result = await signInWithPopup(auth, googleProvider);
+        const idToken = await result.user.getIdToken(true);
+        sessionStorage.setItem('authToken', idToken);
+        localStorage.setItem('authToken', idToken);
+        const verificationResult = await verifyUser(result.user, idToken);
+        if (verificationResult.success) {
+          navigate('/');
+        } else {
+          setError('Error al verificar el usuario');
+          await logOut();
+        }
       }
     } catch (err) {
       console.error("Error en inicio de sesión con Google:", err);
