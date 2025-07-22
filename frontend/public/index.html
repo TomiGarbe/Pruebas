@@ -5,9 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inversur</title>
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#2c2c2c">
+    <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
     <div id="root"></div>
+    <script>
+        // Check display mode and initialize
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            alert('App running in standalone mode on iOS');
+        } else {
+            alert('App running in browser mode');
+        }
+
+        // Global error handler
+        window.addEventListener('error', (event) => {
+            alert(`Global error: ${event.message} at ${event.filename}:${event.lineno}`);
+        });
+
+        // Unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', (event) => {
+            alert(`Unhandled promise rejection: ${event.reason.message || event.reason}`);
+        });
+
+        // Force reload if service worker is ready in standalone mode
+        if ('serviceWorker' in navigator && window.matchMedia('(display-mode: standalone)').matches) {
+            navigator.serviceWorker.ready.then(() => {
+                window.location.reload();
+            });
+        }
+    </script>
 </body>
 </html>

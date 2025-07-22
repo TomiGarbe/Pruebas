@@ -91,15 +91,6 @@ const AppContent = () => {
 };
 
 function App() {
-  useEffect(() => {
-    const promptAddToHomeScreen = () => {
-      if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !window.matchMedia('(display-mode: standalone)').matches) {
-        alert('To install this app, tap the Share button in Safari, then select "Add to Home Screen".');
-      }
-    };
-    promptAddToHomeScreen();
-  }, []);
-
   return (
     <Router>
       <AuthProvider>
