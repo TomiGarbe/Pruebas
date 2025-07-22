@@ -18,8 +18,27 @@ const getDeviceToken = async () => {
       return null;
     }
 
+    // Eliminar SWs previos y registrar uno nuevo
+    if ('serviceWorker' in navigator) {
+      await navigator.serviceWorker.getRegistrations().then(async (registrations) => {
+        for (let registration of registrations) {
+          await registration.unregister();
+          console.log('Service worker unregistered:', registration);
+        }
+      });
+
+      await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(registration => {
+          console.log('Nuevo service worker registrado:', registration);
+        })
+        .catch(error => {
+          console.error('Error al registrar service worker:', error);
+        });
+    }
+
     const currentToken = await getToken(messaging, {
-      vapidKey: firebaseVapidKey
+      vapidKey: firebaseVapidKey,
+      serviceWorkerRegistration: await navigator.serviceWorker.ready
     });
     console.log('FCM Token:', currentToken); // Debug log
     return currentToken;
