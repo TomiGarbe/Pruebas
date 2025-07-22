@@ -29,10 +29,12 @@
             alert(`Unhandled promise rejection: ${event.reason.message || event.reason}`);
         });
 
-        // Force reload if service worker is ready in standalone mode
-        if ('serviceWorker' in navigator && window.matchMedia('(display-mode: standalone)').matches) {
-            navigator.serviceWorker.ready.then(() => {
-                window.location.reload();
+        // Wait for service worker and Google SDK
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js').then(() => {
+                if (window.google && window.matchMedia('(display-mode: standalone)').matches) {
+                    window.location.reload();
+                }
             });
         }
     </script>

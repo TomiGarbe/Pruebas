@@ -8,66 +8,80 @@ import { googleClientId } from '../config';
 const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [currentEntity, setCurrentEntity] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => JSON.parse(sessionStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('currentUser')) || null);
+  const [currentEntity, setCurrentEntity] = useState(() => JSON.parse(sessionStorage.getItem('currentEntity')) || JSON.parse(localStorage.getItem('currentEntity')) || null);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(true);
   const navigate = useNavigate();
   const isVerifyingRef = useRef(false);
-  const isVerifiedRef = useRef(false);
-  const fcmSentRef = useRef(false);
+  const isVerifiedRef = useRef(!!sessionStorage.getItem('isVerified') || !!localStorage.getItem('isVerified'));
+  const fcmSentRef = useRef(!!sessionStorage.getItem('fcmSent') || !!localStorage.getItem('fcmSent'));
+
+  useEffect(() => {
+    alert('AuthProvider initialized in ' + (window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser') + ' mode');
+  }, []);
 
   const verifyUser = async (user, idToken) => {
     isVerifyingRef.current = true;
+    let attempts = 0;
+    const maxAttempts = 3; // Define max attempts
     try {
       setLoading(true);
       setVerifying(true);
+      alert('Verifying user with idToken: Starting verification');
 
-      try {
-        alert('Verifying user with idToken: Starting verification');
-        const response = await api.post(
-          '/auth/verify',
-          {},
-          { headers: { Authorization: `Bearer ${idToken}` } }
-        );
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        isVerifiedRef.current = true;
-        setCurrentUser(user);
-        setCurrentEntity(response.data);
-        alert('User verified successfully');
-        
-        fcmSentRef.current = false;
-        const fcmToken = await getDeviceToken();
-        if (fcmToken) {
-          fcmSentRef.current = true;
-          const token_data = {
-            token: fcmToken,
-            firebase_uid: response.data.data.uid,
-            device_info: navigator.userAgent
-          };
-          await saveToken(token_data);
-          alert(`Saving FCM token: ${JSON.stringify(token_data)}`);
+      let response;
+      do {
+        try {
+          response = await api.post('/auth/verify', {}, { headers: { Authorization: `Bearer ${idToken}` }, credentials: 'include' });
+          break;
+        } catch (error) {
+          attempts++;
+          const errorDetail = error.response?.data?.detail || error.message;
+          alert(`Verification attempt ${attempts} failed: ${errorDetail}`);
+          if (attempts === maxAttempts) throw error;
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Retry delay
         }
+      } while (attempts < maxAttempts);
 
-        return { success: true, data: response.data };
-      } catch (error) {
-        attempts++;
-        const errorDetail = error.response?.data?.detail || error.message;
-        alert(`Verification attempt ${attempts} failed:`, errorDetail);
-        if (attempts === maxAttempts) {
-          throw error;
-        }
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Initial delay
+
+      isVerifiedRef.current = true;
+      setCurrentUser(user);
+      setCurrentEntity(response.data);
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      sessionStorage.setItem('currentEntity', JSON.stringify(response.data));
+      sessionStorage.setItem('isVerified', 'true');
+      localStorage.setItem('currentUser', JSON.stringify(user)); // Persistent backup
+      localStorage.setItem('currentEntity', JSON.stringify(response.data)); // Persistent backup
+      localStorage.setItem('isVerified', 'true'); // Persistent backup
+      alert('User verified successfully');
+
+      fcmSentRef.current = false;
+      const fcmToken = await getDeviceToken();
+      if (fcmToken) {
+        fcmSentRef.current = true;
+        const token_data = {
+          token: fcmToken,
+          firebase_uid: response.data.data.uid,
+          device_info: navigator.userAgent
+        };
+        await saveToken(token_data);
+        alert(`Saving FCM token: ${JSON.stringify(token_data)}`);
+        sessionStorage.setItem('fcmSent', 'true');
+        localStorage.setItem('fcmSent', 'true'); // Persistent backup
       }
+
+      return { success: true, data: response.data };
     } catch (error) {
       const errorDetail = error.response?.data?.detail || error.message;
-      alert('Final verification error:', errorDetail);
+      alert('Final verification error: ' + errorDetail);
       try {
         await signOut(auth);
-        localStorage.removeItem('authToken');
+        sessionStorage.clear();
+        localStorage.clear(); // Clear both on failure
       } catch (signOutError) {
-        console.error('Sign-out failed:', signOutError);
+        alert('Sign-out failed: ' + signOutError.message);
       }
       setCurrentUser(null);
       setCurrentEntity(null);
@@ -99,7 +113,8 @@ const AuthProvider = ({ children }) => {
       console.error('Error deleting FCM token:', err);
     }
     await signOut(auth);
-    localStorage.removeItem('authToken');
+    sessionStorage.clear();
+    localStorage.clear();
     setCurrentUser(null);
     setCurrentEntity(null);
     setLoading(false);
@@ -125,6 +140,8 @@ const AuthProvider = ({ children }) => {
               );
               const tokenInfo = await emailResponse.json();
               if (tokenInfo.email) {
+                const user = { uid: tokenInfo.sub, email: tokenInfo.email };
+                await verifyUser(user, idToken);
                 resolve({ idToken, email: tokenInfo.email });
               } else {
                 reject(new Error('Failed to retrieve email from Google ID token'));
@@ -147,12 +164,14 @@ const AuthProvider = ({ children }) => {
       if (user && !isVerifyingRef.current && !isVerifiedRef.current) {
         try {
           const idToken = await user.getIdToken(true);
+          sessionStorage.setItem('authToken', idToken);
           localStorage.setItem('authToken', idToken);
           await verifyUser(user, idToken);
         } catch (error) {
           console.error('Error getting ID token:', error);
           await signOut(auth);
-          localStorage.removeItem('authToken');
+          sessionStorage.clear();
+          localStorage.clear();
           setCurrentUser(null);
           setCurrentEntity(null);
           setLoading(false);
@@ -161,7 +180,8 @@ const AuthProvider = ({ children }) => {
           navigate('/login', { state: { error: 'Error al obtener el token de autenticación.' } });
         }
       } else if (!user) {
-        localStorage.removeItem('authToken');
+        sessionStorage.clear();
+        localStorage.clear();
         setCurrentUser(null);
         setCurrentEntity(null);
         setLoading(false);
