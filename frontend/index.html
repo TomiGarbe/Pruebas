@@ -29,12 +29,21 @@
             alert(`Unhandled promise rejection: ${event.reason.message || event.reason}`);
         });
 
-        // Wait for service worker and Google SDK
+        // Eliminar SWs previos y registrar uno nuevo
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js').then(() => {
-                if (window.google && window.matchMedia('(display-mode: standalone)').matches) {
-                    window.location.reload();
-                }
+        await navigator.serviceWorker.getRegistrations().then(async (registrations) => {
+            for (let registration of registrations) {
+            await registration.unregister();
+            console.log('Service worker unregistered:', registration);
+            }
+        });
+
+        await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            .then(registration => {
+            console.log('Nuevo service worker registrado:', registration);
+            })
+            .catch(error => {
+            console.error('Error al registrar service worker:', error);
             });
         }
     </script>

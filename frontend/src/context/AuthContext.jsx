@@ -135,17 +135,17 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("onAuthStateChanged:", user);
+      alert("onAuthStateChanged:", user);
       if (user && !isVerifyingRef.current && !isVerifiedRef.current) {
         try {
           const idToken = await user.getIdToken(true);
-          console.log("ID Token desde onAuthStateChanged:", idToken);
+          alert("ID Token desde onAuthStateChanged:", idToken);
           localStorage.setItem('authToken', idToken);
           sessionStorage.setItem('authToken', idToken);
           await verifyUser(user, idToken);
           navigate('/');
         } catch (error) {
-          console.error('Error getting ID token:', error);
+          alert('Error getting ID token:', error);
           await signOut(auth);
           localStorage.removeItem('authToken');
           sessionStorage.removeItem('authToken');
@@ -157,7 +157,7 @@ const AuthProvider = ({ children }) => {
           navigate('/login', { state: { error: 'Error al obtener el token de autenticación.' } });
         }
       } else if (!user) {
-        console.log("No hay usuario logueado");
+        alert("No hay usuario logueado");
         localStorage.removeItem('authToken');
         sessionStorage.removeItem('authToken');
         setCurrentUser(null);

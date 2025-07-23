@@ -20,11 +20,15 @@ const Login = () => {
     setError(null);
     try {
       await logOut();
+      alert("abriendo ventana emergente");
       const result = await signInWithPopup(auth, googleProvider);
+      alert("resultado: ", result);
       const idToken = await result.user.getIdToken(true);
+      alert("token: ", idToken);
       localStorage.setItem('authToken', idToken);
       sessionStorage.setItem('authToken', idToken);
       const verificationResult = await verifyUser(result.user, idToken);
+      alert("verificacion: ", verificationResult);
       if (verificationResult.success) {
         navigate('/');
       } else {
