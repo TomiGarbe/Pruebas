@@ -1,8 +1,8 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from '../services/firebase';
+import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from '../services/firebase';
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
@@ -20,27 +20,72 @@ const Login = () => {
     setError(null);
     try {
       await logOut();
-      alert("abriendo ventana emergente");
-      const result = await signInWithPopup(auth, googleProvider);
-      alert("resultado: ", result);
-      const idToken = await result.user.getIdToken(true);
-      alert("token: ", idToken);
-      localStorage.setItem('authToken', idToken);
-      sessionStorage.setItem('authToken', idToken);
-      const verificationResult = await verifyUser(result.user, idToken);
-      alert("verificacion: ", verificationResult);
-      if (verificationResult.success) {
-        navigate('/');
+      alert("inicio con redirect");
+      await signInWithRedirect(auth, googleProvider);
+
+      /*if (isIOS() && isInStandaloneMode()) {
+        alert('PWA con ios, intento con redirect');
+        await signInWithRedirect(auth, googleProvider);
       } else {
-        setError('Error al verificar el usuario');
-        await logOut();
-      }
+        const result = await signInWithPopup(auth, googleProvider);
+        const idToken = await result.user.getIdToken(true);
+        localStorage.setItem('authToken', idToken);
+        sessionStorage.setItem('authToken', idToken);
+        const verificationResult = await verifyUser(result.user, idToken);
+        if (verificationResult.success) {
+          navigate('/');
+        } else {
+          setError('Error al verificar el usuario');
+          await logOut();
+        }
+      }*/
     } catch (err) {
       console.error("Error en inicio de sesión con Google:", err);
       setError(err.message || 'Error al iniciar sesión con Google');
       await logOut();
     }
   };
+
+  useEffect(() => {
+    let isMounted = true; // Prevent state updates after unmount
+
+    const checkRedirectResult = async () => {
+      if (!isMounted) return; // Exit if unmounted
+      try {
+        const result = await getRedirectResult(auth);
+        console.log('getRedirectResult result:', result);
+
+        if (result?.user) {
+          const idToken = await result.user.getIdToken(true);
+          console.log('ID Token desde getRedirectResult:', idToken);
+          localStorage.setItem('authToken', idToken);
+          sessionStorage.setItem('authToken', idToken);
+          const verificationResult = await verifyUser(result.user, idToken);
+          console.log('Resultado de verifyUser:', verificationResult);
+          if (verificationResult.success && isMounted) {
+            navigate('/');
+          } else if (isMounted) {
+            setError('Error al verificar el usuario después del redirect.');
+            await logOut();
+          }
+        } else {
+          console.log('No se obtuvo usuario desde getRedirectResult');
+        }
+      } catch (err) {
+        console.error('Error al manejar getRedirectResult:', err);
+        if (isMounted) {
+          setError(err.message || 'Error al procesar el resultado del login con redirect');
+          await logOut();
+        }
+      }
+    };
+
+    checkRedirectResult();
+
+    return () => {
+      isMounted = false; // Cleanup on unmount
+    };
+  }, [verifyUser, navigate, logOut]);
 
   if (verifying) {
     return (
