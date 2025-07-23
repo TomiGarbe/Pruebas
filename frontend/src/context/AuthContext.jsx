@@ -23,6 +23,7 @@ const AuthProvider = ({ children }) => {
       try {
         alert('Intento obtener redirect');
         const result = await getRedirectResult(auth);
+        alert('redirect resultado: ', result);
         if (result?.user) {
           alert('redirect detectado');
           alert(result.user);
