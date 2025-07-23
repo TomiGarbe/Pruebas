@@ -18,14 +18,20 @@ const AuthProvider = ({ children }) => {
   const fcmSentRef = useRef(false);
 
   useEffect(() => {
+    debugLog('UseEffect de authcontext para redirect');
     const handleRedirect = async () => {
       try {
+        debugLog('Intento obtener redirect');
         const result = await getRedirectResult(auth);
         if (result?.user) {
+          debugLog('redirect detectado');
+          debugLog(result.user);
           const idToken = await result.user.getIdToken(true);
+          debugLog('token: ', idToken);
           sessionStorage.setItem('authToken', idToken);
           localStorage.setItem('authToken', idToken);
           const verificationResult = await verifyUser(result.user, idToken);
+          debugLog('verificacion: ', verificationResult);
           if (verificationResult.success) {
             navigate('/');
           } else {
