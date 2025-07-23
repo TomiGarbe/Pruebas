@@ -17,36 +17,6 @@ const AuthProvider = ({ children }) => {
   const isVerifiedRef = useRef(false);
   const fcmSentRef = useRef(false);
 
-  useEffect(() => {
-    alert('UseEffect de authcontext para redirect');
-    const handleRedirect = async () => {
-      try {
-        alert('Intento obtener redirect');
-        const result = await getRedirectResult(auth);
-        alert('redirect resultado: ', result);
-        if (result?.user) {
-          alert('redirect detectado');
-          alert(result.user);
-          const idToken = await result.user.getIdToken(true);
-          alert('token: ', idToken);
-          sessionStorage.setItem('authToken', idToken);
-          localStorage.setItem('authToken', idToken);
-          const verificationResult = await verifyUser(result.user, idToken);
-          alert('verificacion: ', verificationResult);
-          if (verificationResult.success) {
-            navigate('/');
-          } else {
-            console.error('Error verificando al usuario después del redirect');
-            await logOut();
-          }
-        }
-      } catch (err) {
-        console.error('Error en getRedirectResult:', err);
-      }
-    };
-    handleRedirect();
-  }, []);
-
   const verifyUser = async (user, idToken) => {
     isVerifyingRef.current = true;
     try {
@@ -165,12 +135,15 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log("onAuthStateChanged:", user);
       if (user && !isVerifyingRef.current && !isVerifiedRef.current) {
         try {
           const idToken = await user.getIdToken(true);
+          console.log("ID Token desde onAuthStateChanged:", idToken);
           localStorage.setItem('authToken', idToken);
           sessionStorage.setItem('authToken', idToken);
           await verifyUser(user, idToken);
+          navigate('/');
         } catch (error) {
           console.error('Error getting ID token:', error);
           await signOut(auth);
@@ -184,6 +157,7 @@ const AuthProvider = ({ children }) => {
           navigate('/login', { state: { error: 'Error al obtener el token de autenticación.' } });
         }
       } else if (!user) {
+        console.log("No hay usuario logueado");
         localStorage.removeItem('authToken');
         sessionStorage.removeItem('authToken');
         setCurrentUser(null);

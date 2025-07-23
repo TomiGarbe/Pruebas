@@ -16,26 +16,20 @@ const Login = () => {
   const { verifyUser, verifying, logOut } = useContext(AuthContext);
 
   const handleGoogleSignIn = async () => {
-    alert('Intento de iniciar sesion');
+    console.log('Intento de iniciar sesion');
     setError(null);
     try {
       await logOut();
-
-      if (isIOS() && isInStandaloneMode()) {
-        alert('PWA con ios, intento con redirect');
-        await signInWithRedirect(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken(true);
+      localStorage.setItem('authToken', idToken);
+      sessionStorage.setItem('authToken', idToken);
+      const verificationResult = await verifyUser(result.user, idToken);
+      if (verificationResult.success) {
+        navigate('/');
       } else {
-        const result = await signInWithPopup(auth, googleProvider);
-        const idToken = await result.user.getIdToken(true);
-        localStorage.setItem('authToken', idToken);
-        sessionStorage.setItem('authToken', idToken);
-        const verificationResult = await verifyUser(result.user, idToken);
-        if (verificationResult.success) {
-          navigate('/');
-        } else {
-          setError('Error al verificar el usuario');
-          await logOut();
-        }
+        setError('Error al verificar el usuario');
+        await logOut();
       }
     } catch (err) {
       console.error("Error en inicio de sesión con Google:", err);
