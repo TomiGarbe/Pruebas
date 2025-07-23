@@ -21,7 +21,6 @@ import { LoadScript } from '@react-google-maps/api';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
-import DebugLogger from './utils/DebugLogger';
 
 const googleMapsLibraries = ['places'];
 
@@ -97,7 +96,6 @@ function App() {
       <AuthProvider>
           <LocationProvider>
             <AppContent />
-            {import.meta.env.MODE === 'development' && <DebugLogger />}
           </LocationProvider>
       </AuthProvider>
     </Router>

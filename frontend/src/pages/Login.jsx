@@ -16,13 +16,13 @@ const Login = () => {
   const { verifyUser, verifying, logOut } = useContext(AuthContext);
 
   const handleGoogleSignIn = async () => {
-    debugLog('Intento de iniciar sesion');
+    alert('Intento de iniciar sesion');
     setError(null);
     try {
       await logOut();
 
       if (isIOS() && isInStandaloneMode()) {
-        debugLog('PWA con ios, intento con redirect');
+        alert('PWA con ios, intento con redirect');
         await signInWithRedirect(auth, googleProvider);
       } else {
         const result = await signInWithPopup(auth, googleProvider);
