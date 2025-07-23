@@ -26,6 +26,7 @@ const Login = () => {
         const result = await signInWithPopup(auth, googleProvider);
         const idToken = await result.user.getIdToken(true);
         localStorage.setItem('authToken', idToken);
+        sessionStorage.setItem('authToken', idToken);
         const verificationResult = await verifyUser(result.user, idToken);
         if (verificationResult.success) {
           navigate('/');

@@ -18,18 +18,26 @@ const AuthProvider = ({ children }) => {
   const fcmSentRef = useRef(false);
 
   useEffect(() => {
-    const result = getRedirectResult(auth);
-    if (result && result.user) {
-      const idToken = result.user.getIdToken(true);
-      localStorage.setItem('authToken', idToken);
-      const verificationResult = verifyUser(result.user, idToken);
-      if (verificationResult.success) {
-        navigate('/');
-      } else {
-        setError('Error al verificar el usuario');
-        logOut();
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          const idToken = await result.user.getIdToken(true);
+          sessionStorage.setItem('authToken', idToken);
+          localStorage.setItem('authToken', idToken);
+          const verificationResult = await verifyUser(result.user, idToken);
+          if (verificationResult.success) {
+            navigate('/');
+          } else {
+            console.error('Error verificando al usuario después del redirect');
+            await logOut();
+          }
+        }
+      } catch (err) {
+        console.error('Error en getRedirectResult:', err);
       }
-    }
+    };
+    handleRedirect();
   }, []);
 
   const verifyUser = async (user, idToken) => {
@@ -70,6 +78,7 @@ const AuthProvider = ({ children }) => {
       try {
         await signOut(auth);
         localStorage.removeItem('authToken');
+        sessionStorage.removeItem('authToken');
       } catch (signOutError) {
         console.error('Sign-out failed:', signOutError);
       }
@@ -104,6 +113,7 @@ const AuthProvider = ({ children }) => {
     }
     await signOut(auth);
     localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
     setCurrentUser(null);
     setCurrentEntity(null);
     setLoading(false);
@@ -152,11 +162,13 @@ const AuthProvider = ({ children }) => {
         try {
           const idToken = await user.getIdToken(true);
           localStorage.setItem('authToken', idToken);
+          sessionStorage.setItem('authToken', idToken);
           await verifyUser(user, idToken);
         } catch (error) {
           console.error('Error getting ID token:', error);
           await signOut(auth);
           localStorage.removeItem('authToken');
+          sessionStorage.removeItem('authToken');
           setCurrentUser(null);
           setCurrentEntity(null);
           setLoading(false);
@@ -166,6 +178,7 @@ const AuthProvider = ({ children }) => {
         }
       } else if (!user) {
         localStorage.removeItem('authToken');
+        sessionStorage.removeItem('authToken');
         setCurrentUser(null);
         setCurrentEntity(null);
         setLoading(false);
