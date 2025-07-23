@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
@@ -14,6 +14,7 @@ const Login = () => {
   const location = useLocation();
   const googleProvider = new GoogleAuthProvider();
   const { verifyUser, verifying, logOut } = useContext(AuthContext);
+  const handledRedirect = useRef(false);
 
   const handleGoogleSignIn = async () => {
     console.log('Intento de iniciar sesion');
@@ -47,6 +48,10 @@ const Login = () => {
   };
 
   useEffect(() => {
+    if (handledRedirect.current) {
+      return;
+    }
+    handledRedirect.current = true;
     let isMounted = true; // Prevent state updates after unmount
 
     const checkRedirectResult = async () => {
@@ -85,7 +90,7 @@ const Login = () => {
     return () => {
       isMounted = false; // Cleanup on unmount
     };
-  }, [verifyUser, navigate, logOut]);
+  }, []);
 
   if (verifying) {
     return (
