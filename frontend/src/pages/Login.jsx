@@ -23,7 +23,7 @@ const Login = () => {
       localStorage.removeItem('authToken');
       sessionStorage.removeItem('authToken');
 
-      if (isIOS() && isInStandaloneMode()) {
+      /*if (isIOS() && isInStandaloneMode()) {
         alert('PWA con ios');
         const { idToken } = await signInWithGoogleForRegistration();
         const credential = googleProvider.credential(idToken);
@@ -38,7 +38,7 @@ const Login = () => {
           setError('Error al verificar el usuario');
           await logOut();
         }
-      } else {
+      } else {*/
         const result = await signInWithPopup(auth, googleProvider);
         const idToken = await result.user.getIdToken(true);
         localStorage.setItem('authToken', idToken);
@@ -50,7 +50,7 @@ const Login = () => {
           setError('Error al verificar el usuario');
           await logOut();
         }
-      }
+      //}
     } catch (err) {
       console.error("Error en inicio de sesión con Google:", err);
       setError(err.message || 'Error al iniciar sesión con Google');
