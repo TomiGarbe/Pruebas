@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
-import { auth, onAuthStateChanged, signOut, getDeviceToken, messaging, deleteToken } from '../services/firebase';
+import { auth, onAuthStateChanged, signOut, getDeviceToken, messaging, deleteToken, getRedirectResult } from '../services/firebase';
 import { saveToken } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -135,6 +135,8 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      const result = await getRedirectResult(auth);
+      console.log(result);
       alert('onAuthStateChanged: ' + JSON.stringify(user));
       if (user && !isVerifyingRef.current && !isVerifiedRef.current) {
         try {
@@ -146,11 +148,11 @@ const AuthProvider = ({ children }) => {
           navigate('/');
         } catch (error) {
           alert('Error getting ID token:' + JSON.stringify(error));
-          await signOut(auth);
-          localStorage.removeItem('authToken');
-          sessionStorage.removeItem('authToken');
-          setCurrentUser(null);
-          setCurrentEntity(null);
+          //await signOut(auth);
+          //localStorage.removeItem('authToken');
+          //sessionStorage.removeItem('authToken');
+          //setCurrentUser(null);
+          //setCurrentEntity(null);
           setLoading(false);
           setVerifying(false);
           isVerifiedRef.current = false;
@@ -158,10 +160,10 @@ const AuthProvider = ({ children }) => {
         }
       } else if (!user) {
         alert("No hay usuario logueado");
-        localStorage.removeItem('authToken');
-        sessionStorage.removeItem('authToken');
-        setCurrentUser(null);
-        setCurrentEntity(null);
+        //localStorage.removeItem('authToken');
+        //sessionStorage.removeItem('authToken');
+        //setCurrentUser(null);
+        //setCurrentEntity(null);
         setLoading(false);
         setVerifying(false);
         isVerifiedRef.current = false;

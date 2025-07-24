@@ -1,18 +1,19 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithPopup } from '../services/firebase';
+import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from '../services/firebase';
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
+import { isIOS, isInStandaloneMode } from '../utils/platform';
 
 const Login = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const googleProvider = new GoogleAuthProvider();
-  const { verifyUser, verifying, logOut, signInWithGoogleForRegistration } = useContext(AuthContext);
+  const { verifyUser, verifying, logOut } = useContext(AuthContext);
 
   const handleGoogleSignIn = async () => {
     console.log('Intento de iniciar sesion');
@@ -21,16 +22,23 @@ const Login = () => {
       await logOut();
       localStorage.removeItem('authToken');
       sessionStorage.removeItem('authToken');
-      const result = await signInWithPopup(auth, googleProvider);
-      const idToken = await result.user.getIdToken(true);
-      localStorage.setItem('authToken', idToken);
-      sessionStorage.setItem('authToken', idToken);
-      const verificationResult = await verifyUser(result.user, idToken);
-      if (verificationResult.success) {
-        navigate('/');
+
+      if (isIOS() && isInStandaloneMode()) {
+        alert('PWA con ios');
+        await signInWithRedirect(auth, googleProvider);
       } else {
-        setError('Error al verificar el usuario');
-        await logOut();
+        await signInWithRedirect(auth, googleProvider);
+        /*const result = await signInWithPopup(auth, googleProvider);
+        const idToken = await result.user.getIdToken(true);
+        localStorage.setItem('authToken', idToken);
+        sessionStorage.setItem('authToken', idToken);
+        const verificationResult = await verifyUser(result.user, idToken);
+        if (verificationResult.success) {
+          navigate('/');
+        } else {
+          setError('Error al verificar el usuario');
+          await logOut();
+        }*/
       }
     } catch (err) {
       console.error("Error en inicio de sesión con Google:", err);
@@ -38,6 +46,33 @@ const Login = () => {
       await logOut();
     }
   };
+
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        console.log(result);
+        if (result) {
+          const idToken = await result.user.getIdToken(true);
+          localStorage.setItem('authToken', idToken);
+          sessionStorage.setItem('authToken', idToken);
+          const verificationResult = await verifyUser(result.user, idToken);
+          if (verificationResult.success) {
+            navigate('/');
+          } else {
+            setError('Error al verificar el usuario');
+            await logOut();
+          }
+        }
+      } catch (err) {
+        console.error('Error al recuperar resultado del redirect:', err);
+        setError(err.message || 'Error al recuperar resultado del redirect');
+        await logOut();
+      }
+    };
+
+    checkRedirectResult();
+  }, []);
 
   if (verifying) {
     return (
