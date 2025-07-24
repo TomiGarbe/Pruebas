@@ -1,22 +1,12 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
-import { getAuth, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithCredential, setPersistence, browserSessionPersistence, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { getAuth, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup } from 'firebase/auth';
 import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
 import { firebaseConfig, firebaseVapidKey } from '../config';
 
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 const auth = getAuth(app);
-
-// Enable persistence
-setPersistence(auth, browserSessionPersistence)
-  .then(() => {
-    console.log('Persistence enabled');
-  })
-  .catch((error) => {
-    console.error('Error setting persistence:', error);
-  });
-
 const messaging = getMessaging(app);
 
 // Solicita permiso y obtiene el token FCM del dispositivo
@@ -60,4 +50,4 @@ onMessage(messaging, (payload) => {
   }
 });
 
-export { database, auth, messaging, getDeviceToken, onMessage, deleteToken, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithCredential, signInWithRedirect, getRedirectResult };
+export { database, auth, messaging, getDeviceToken, onMessage, deleteToken, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup };

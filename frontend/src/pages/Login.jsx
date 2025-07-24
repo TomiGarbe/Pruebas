@@ -1,12 +1,11 @@
-/*import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from '../services/firebase';
+import { auth, GoogleAuthProvider, signInWithPopup } from '../services/firebase';
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
-import { isIOS, isInStandaloneMode } from '../utils/platform';
 
 const Login = () => {
   const [error, setError] = useState(null);
@@ -22,36 +21,16 @@ const Login = () => {
       await logOut();
       localStorage.removeItem('authToken');
       sessionStorage.removeItem('authToken');
-
-      await signInWithRedirect(auth, googleProvider);
-
-      if (isIOS() && isInStandaloneMode()) {
-        alert('PWA con ios');
-        const { idToken } = await signInWithGoogleForRegistration();
-        const credential = googleProvider.credential(idToken);
-        const result = await signInWithCredential(auth, credential);
-        const firebaseToken = await result.user.getIdToken(true);
-        localStorage.setItem('authToken', firebaseToken);
-        sessionStorage.setItem('authToken', firebaseToken);
-        const verificationResult = await verifyUser(result.user, firebaseToken);
-        if (verificationResult.success) {
-          navigate('/');
-        } else {
-          setError('Error al verificar el usuario');
-          await logOut();
-        }
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken(true);
+      localStorage.setItem('authToken', idToken);
+      sessionStorage.setItem('authToken', idToken);
+      const verificationResult = await verifyUser(result.user, idToken);
+      if (verificationResult.success) {
+        navigate('/');
       } else {
-        const result = await signInWithPopup(auth, googleProvider);
-        const idToken = await result.user.getIdToken(true);
-        localStorage.setItem('authToken', idToken);
-        sessionStorage.setItem('authToken', idToken);
-        const verificationResult = await verifyUser(result.user, idToken);
-        if (verificationResult.success) {
-          navigate('/');
-        } else {
-          setError('Error al verificar el usuario');
-          await logOut();
-        }
+        setError('Error al verificar el usuario');
+        await logOut();
       }
     } catch (err) {
       console.error("Error en inicio de sesión con Google:", err);
@@ -59,16 +38,6 @@ const Login = () => {
       await logOut();
     }
   };
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      console.log('onAuthStateChanged:', user);
-      const result = await getRedirectResult(auth);
-      console.log('result:', result);
-    });
-
-    return () => unsubscribe();
-  }, [navigate, verifyUser, logOut, verifying]);
 
   if (verifying) {
     return (
@@ -114,143 +83,123 @@ const Login = () => {
   );
 };
 
-export default Login;*/
+export default Login;
 
-import { useState, useContext, useEffect, useRef } from 'react';
+
+
+
+/*import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Button, Alert, Spinner } from 'react-bootstrap';
-import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithCredential } from '../services/firebase';
-import { FcGoogle } from 'react-icons/fc';
+import { Button, Alert } from 'react-bootstrap';
+import { auth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from '../services/firebase';
 import '../styles/login.css';
-import logoInversur from '../assets/logo_inversur.png';
-import { isIOS, isInStandaloneMode } from '../utils/platform';
-import { googleClientId } from '../config';
 
 const Login = () => {
   const [error, setError] = useState(null);
-  const [btnWithImg, setBtnWithImg] = useState(null);
-  const [userIsLoggedIn, setUserIsLoggedIn] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyUser, verifying, logOut } = useContext(AuthContext);
-  const isInitializedRef = useRef(false);
+  const handledRedirect = useRef(false);
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setError(null);
-    if (!isInitializedRef.current) {
-      try {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: async (response) => {
-            try {
-              const idToken = response.credential;
-              const credential = GoogleAuthProvider.credential(idToken);
-              const result = await signInWithCredential(auth, credential);
-              const firebaseToken = await result.user.getIdToken(true);
-              localStorage.setItem('authToken', firebaseToken);
-              sessionStorage.setItem('authToken', firebaseToken);
-              const verificationResult = await verifyUser(result.user, firebaseToken);
-              if (verificationResult.success) {
-                navigate('/');
-              } else {
-                setError('Error al verificar el usuario');
-                await logOut();
-              }
-            } catch (err) {
-              console.error('Error processing Google Sign-In:', err);
-              setError(err.message || 'Error al iniciar sesión con Google');
-              await logOut();
-            }
-          },
-        });
-        const container = document.getElementById('google-signin-button');
-        if (container) {
-          window.google.accounts.id.renderButton(container, { theme: 'outline', size: 'large' });
-        }
-        isInitializedRef.current = true;
-      } catch (err) {
-        console.error('Error initializing Google Sign-In:', err);
-        setError(err.message || 'Error al iniciar sesión con Google');
-      }
+    try {
+      const googleProvider = new GoogleAuthProvider();
+      googleProvider.addScope('profile');
+      googleProvider.addScope('email');
+      console.log('Initiating signInWithRedirect on localhost');
+      await signInWithRedirect(auth, googleProvider);
+    } catch (err) {
+      console.error('Error in signInWithRedirect:', err);
+      setError(err.message || 'Error initiating Google Sign-In');
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    try {
+      const googleProvider = new GoogleAuthProvider();
+      googleProvider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      localStorage.setItem('redirectAttempt', 'true');
+      await signInWithRedirect(auth, googleProvider);
+    } catch (err) {
+      console.error('Error in signInWithRedirect:', err);
+      setError(err.message || 'Error initiating Google Sign-In');
     }
   };
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      console.log('onAuthStateChanged:', user);
-      setBtnWithImg(user);
-      if (user && !verifying) {
-        setUserIsLoggedIn(true);
-        const idToken = await user.getIdToken(true);
-        localStorage.setItem('authToken', idToken);
-        sessionStorage.setItem('authToken', idToken);
-        const verificationResult = await verifyUser(user, idToken);
-        if (verificationResult.success) {
-          navigate('/');
+    if (handledRedirect.current) return;
+    handledRedirect.current = true;
+
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        console.log('getRedirectResult result:', result);
+        if (result?.user) {
+          const idToken = await result.user.getIdToken(true);
+          console.log('User ID Token:', idToken);
+          localStorage.setItem('authToken', idToken);
+          navigate('/home');
         } else {
-          setError('Error al verificar el usuario');
-          await logOut();
+          console.log('No user from getRedirectResult');
         }
-      } else if (!user) {
-        setUserIsLoggedIn(false);
-        localStorage.removeItem('authToken');
-        sessionStorage.removeItem('authToken');
+      } catch (err) {
+        console.error('Error in getRedirectResult:', err);
+        setError(err.message || 'Error processing redirect result');
+      }
+    };
+
+    handleRedirectResult();
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      console.log('onAuthStateChanged:', user);
+      if (user) {
+        console.log('User detected post-redirect:', user);
       }
     });
 
-    // Check for stored token on reload
-    const storedToken = localStorage.getItem('authToken');
-    if (storedToken && !verifying) {
-      auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          const verificationResult = await verifyUser(user, storedToken);
-          if (verificationResult.success) {
-            navigate('/');
-          } else {
-            await logOut();
-          }
+    return () => unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    if (localStorage.getItem('redirectAttempt') === 'true') {
+      localStorage.removeItem('redirectAttempt');
+      getRedirectResult(auth).then((result) => {
+        console.log('Custom redirect result:', result);
+        if (result?.user) {
+          const idToken = result.user.getIdToken(true);
+          console.log('ID Token:', idToken);
+          navigate('/home');
         }
+      }).catch((err) => {
+        console.error('Error in custom redirect:', err);
+        setError(err.message);
       });
     }
-
-    return () => unsubscribe();
-  }, [navigate, verifyUser, logOut, verifying]);
-
-  if (verifying) {
-    return (
-      <div className="main-bg">
-        <div className="login-container text-c animated flipInX">
-          <div><img src={logoInversur} alt="Inversur Logo" className="logo" /></div>
-          <div className="container-content d-flex justify-content-center align-items-center min-vh-50">
-            <Spinner animation="border" role="status" style={{ color: 'white' }}>
-              <span className="visually-hidden">Verificando...</span>
-            </Spinner>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  }, [navigate]);
 
   return (
     <div className="main-bg">
       <div className="login-container text-c animated flipInX">
-        <div><img src={logoInversur} alt="Inversur Logo" className="logo" /></div>
+        <div>
+          <h2>Login Test</h2>
+        </div>
         <div className="container-content">
-          {(error || location.state?.error) && <Alert variant="danger">{error || location.state.error}</Alert>}
-          <div id="google-signin-button" style={{ marginBottom: '10px' }}></div>
+          {error && <Alert variant="danger">{error}</Alert>}
           <Button
-            className="form-button button-l margin-b d-flex align-items-center justify-content-center gap-2 custom-login-btn"
+            className="form-button button-l margin-b d-flex align-items-center justify-content-center gap-2"
             onClick={handleGoogleSignIn}
-            disabled={verifying}
           >
-            <FcGoogle size={20} /> Iniciar Sesión con Google
+            Iniciar Sesión con Google
           </Button>
-          <p className="margin-t text-whitesmoke"><small>Inversur © 2025</small></p>
         </div>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default Login;*/
