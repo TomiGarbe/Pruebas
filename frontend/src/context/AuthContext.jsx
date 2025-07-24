@@ -135,17 +135,17 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      alert("onAuthStateChanged:", user);
+      alert('onAuthStateChanged: ' + JSON.stringify(user));
       if (user && !isVerifyingRef.current && !isVerifiedRef.current) {
         try {
           const idToken = await user.getIdToken(true);
-          alert("ID Token desde onAuthStateChanged:", idToken);
+          alert('ID Token desde onAuthStateChanged: ' + JSON.stringify(idToken));
           localStorage.setItem('authToken', idToken);
           sessionStorage.setItem('authToken', idToken);
           await verifyUser(user, idToken);
           navigate('/');
         } catch (error) {
-          alert('Error getting ID token:', error);
+          alert('Error getting ID token:' + JSON.stringify(error));
           await signOut(auth);
           localStorage.removeItem('authToken');
           sessionStorage.removeItem('authToken');

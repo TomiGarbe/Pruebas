@@ -2,7 +2,7 @@ import { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from '../services/firebase';
+import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from '../services/firebase';
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
@@ -20,7 +20,9 @@ const Login = () => {
     console.log('Intento de iniciar sesion');
     setError(null);
     try {
-      await logOut();
+      await signOut(auth);
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
       alert("inicio con redirect");
       await signInWithRedirect(auth, googleProvider);
 
