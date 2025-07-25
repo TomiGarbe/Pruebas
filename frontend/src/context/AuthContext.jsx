@@ -136,7 +136,9 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkRedirectResult = async () => {
       try {
+        alert("checkRedirectResult auth: ", auth);
         const result = await getRedirectResult(auth);
+        alert("checkRedirectResult result: ", JSON.stringify(result));
         if (result?.user && !isVerifiedRef.current) {
           const idToken = await result.user.getIdToken(true);
           localStorage.setItem('authToken', idToken);

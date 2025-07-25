@@ -19,9 +19,9 @@ const Login = () => {
     console.log('Intento de iniciar sesion');
     setError(null);
     try {
-      await logOut();
+      /*await logOut();
       localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');*/
       console.log('Auth instance:', auth);
       await signInWithRedirect(auth, googleProvider);
 
