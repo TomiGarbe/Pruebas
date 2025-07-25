@@ -1,78 +1,58 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from '../services/firebase';
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  setPersistence,
+  browserLocalPersistence,
+} from 'firebase/auth';
+import { auth } from '../services/firebase'; //auth desde tu servicio
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
-import { isIOS, isInStandaloneMode } from '../utils/platform';
 
 const Login = () => {
   const [error, setError] = useState(null);
+  const { verifyUser, verifying, logOut } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const googleProvider = new GoogleAuthProvider();
-  const { verifyUser, verifying, logOut } = useContext(AuthContext);
 
   const handleGoogleSignIn = async () => {
-    console.log('Intento de iniciar sesion');
-    setError(null);
-    try {
-      await logOut();
-      localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
+  setError(null);
+  try {
+    await logOut();
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
 
-      if (isIOS() && isInStandaloneMode()) {
-        alert('PWA con ios');
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        await signInWithRedirect(auth, googleProvider);
-        /*const result = await signInWithPopup(auth, googleProvider);
-        const idToken = await result.user.getIdToken(true);
-        localStorage.setItem('authToken', idToken);
-        sessionStorage.setItem('authToken', idToken);
-        const verificationResult = await verifyUser(result.user, idToken);
-        if (verificationResult.success) {
-          navigate('/');
-        } else {
-          setError('Error al verificar el usuario');
-          await logOut();
-        }*/
-      }
-    } catch (err) {
-      console.error("Error en inicio de sesión con Google:", err);
-      setError(err.message || 'Error al iniciar sesión con Google');
+    await setPersistence(auth, browserLocalPersistence);
+    console.log('Persistencia configurada');
+
+    // ✅ Sin abrir ventana manual
+    const result = await signInWithPopup(auth, googleProvider);
+
+    const idToken = await result.user.getIdToken(true);
+    localStorage.setItem('authToken', idToken);
+    sessionStorage.setItem('authToken', idToken);
+
+    const verificationResult = await verifyUser(result.user, idToken);
+
+    if (verificationResult.success) {
+      navigate('/');
+    } else {
+      setError('Error al verificar el usuario');
       await logOut();
     }
-  };
 
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        console.log(result);
-        if (result) {
-          const idToken = await result.user.getIdToken(true);
-          localStorage.setItem('authToken', idToken);
-          sessionStorage.setItem('authToken', idToken);
-          const verificationResult = await verifyUser(result.user, idToken);
-          if (verificationResult.success) {
-            navigate('/');
-          } else {
-            setError('Error al verificar el usuario');
-            await logOut();
-          }
-        }
-      } catch (err) {
-        console.error('Error al recuperar resultado del redirect:', err);
-        setError(err.message || 'Error al recuperar resultado del redirect');
-        await logOut();
-      }
-    };
+  } catch (err) {
+    console.error('Error en login:', err);
+    setError(err.message || 'Error al iniciar sesión con Google');
+    await logOut();
+  }
+};
 
-    checkRedirectResult();
-  }, []);
 
   if (verifying) {
     return (
@@ -119,7 +99,6 @@ const Login = () => {
 };
 
 export default Login;
-
 
 
 

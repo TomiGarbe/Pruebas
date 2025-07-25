@@ -9,13 +9,13 @@ const database = getDatabase(app);
 const auth = getAuth(app);
 
 // Enable persistence for better state recovery
-setPersistence(auth, browserSessionPersistence)
+/*setPersistence(auth, browserSessionPersistence)
   .then(() => {
     console.log('Persistence enabled');
   })
   .catch((error) => {
     console.error('Error setting persistence:', error);
-  });
+  });*/
 
 const messaging = getMessaging(app);
 
