@@ -19,17 +19,18 @@ const Login = () => {
     console.log('Intento de iniciar sesion');
     setError(null);
     try {
-      /*await logOut();
+      await logOut();
       localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');*/
+      sessionStorage.removeItem('authToken');
       console.log('Auth instance:', auth);
+      await signInWithPopup(auth, googleProvider);
 
-      if (isIOS() && isInStandaloneMode()) {
+      /*if (isIOS() && isInStandaloneMode()) {
         alert('PWA con ios');
         await signInWithRedirect(auth, googleProvider);
       } else {
-        await signInWithRedirect(auth, googleProvider);
-        /*const result = await signInWithPopup(auth, googleProvider);
+        await signInWithPopup(auth, googleProvider);
+        const result = await signInWithPopup(auth, googleProvider);
         const idToken = await result.user.getIdToken(true);
         localStorage.setItem('authToken', idToken);
         sessionStorage.setItem('authToken', idToken);
@@ -39,42 +40,14 @@ const Login = () => {
         } else {
           setError('Error al verificar el usuario');
           await logOut();
-        }*/
-      }
+        }
+      }*/
     } catch (err) {
       console.error("Error en inicio de sesión con Google:", err);
       setError(err.message || 'Error al iniciar sesión con Google');
       await logOut();
     }
   };
-
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      try {
-        console.log('Auth instance:', auth);
-        const result = await getRedirectResult(auth);
-        console.log(result);
-        if (result) {
-          const idToken = await result.user.getIdToken(true);
-          localStorage.setItem('authToken', idToken);
-          sessionStorage.setItem('authToken', idToken);
-          const verificationResult = await verifyUser(result.user, idToken);
-          if (verificationResult.success) {
-            navigate('/');
-          } else {
-            setError('Error al verificar el usuario');
-            await logOut();
-          }
-        }
-      } catch (err) {
-        console.error('Error al recuperar resultado del redirect:', err);
-        setError(err.message || 'Error al recuperar resultado del redirect');
-        await logOut();
-      }
-    };
-
-    checkRedirectResult();
-  }, []);
 
   if (verifying) {
     return (
