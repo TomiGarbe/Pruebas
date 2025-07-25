@@ -13,7 +13,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const googleProvider = new GoogleAuthProvider();
-  const { verifyUser, verifying, logOut } = useContext(AuthContext);
+  const { verifyUser, verifying, logOut, signInWithGoogleForRegistration } = useContext(AuthContext);
 
   const handleGoogleSignIn = async () => {
     console.log('Intento de iniciar sesion');
@@ -23,7 +23,7 @@ const Login = () => {
       localStorage.removeItem('authToken');
       sessionStorage.removeItem('authToken');*/
       console.log('Auth instance:', auth);
-      await signInWithRedirect(auth, googleProvider);
+      signInWithGoogleForRegistration();
 
       /*if (isIOS() && isInStandaloneMode()) {
         alert('PWA con ios');

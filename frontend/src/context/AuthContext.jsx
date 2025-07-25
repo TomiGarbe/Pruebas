@@ -4,6 +4,7 @@ import { saveToken } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { googleClientId } from '../config';
+import { isIOS, isInStandaloneMode } from '../utils/platform';
 
 const AuthContext = createContext();
 
@@ -101,12 +102,25 @@ const AuthProvider = ({ children }) => {
   }
 
   const signInWithGoogleForRegistration = async () => {
+    const existingParams = new URLSearchParams(window.location.hash.substring(1));
+    const existingToken = existingParams.get('credential');
+    if (existingToken) {
+      const emailResponse = await fetch(
+        `https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${existingToken}`
+      );
+      const tokenInfo = await emailResponse.json();
+      window.location.hash = '';
+      if (tokenInfo.email) {
+        return { idToken: existingToken, email: tokenInfo.email };
+      }
+      throw new Error('Failed to retrieve email from Google ID token');
+    }
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.onload = () => {
-        window.google.accounts.id.initialize({
+        const config = {
           client_id: googleClientId,
           callback: async (response) => {
             try {
@@ -124,8 +138,15 @@ const AuthProvider = ({ children }) => {
               console.error('Error processing Google ID token:', error);
               reject(error);
             }
-          },
-        });
+          }
+        };
+
+        //if (isIOS() && isInStandaloneMode()) {
+        config.ux_mode = 'redirect';
+        config.login_uri = window.location.href;
+        //}
+
+        window.google.accounts.id.initialize(config);
         window.google.accounts.id.prompt();
       };
       script.onerror = () => reject(new Error('Failed to load Google Sign-In SDK'));
