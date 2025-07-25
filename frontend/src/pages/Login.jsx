@@ -19,9 +19,10 @@ const Login = () => {
     console.log('Intento de iniciar sesion');
     setError(null);
     try {
-      await logOut();
+      /*await logOut();
       localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');*/
+      console.log('Auth instance:', auth);
 
       if (isIOS() && isInStandaloneMode()) {
         alert('PWA con ios');
@@ -50,6 +51,7 @@ const Login = () => {
   useEffect(() => {
     const checkRedirectResult = async () => {
       try {
+        console.log('Auth instance:', auth);
         const result = await getRedirectResult(auth);
         console.log(result);
         if (result) {
