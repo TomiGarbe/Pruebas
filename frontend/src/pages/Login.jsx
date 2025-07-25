@@ -2,7 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from '../services/firebase';
+import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from '../services/firebase';
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
@@ -23,7 +23,7 @@ const Login = () => {
       localStorage.removeItem('authToken');
       sessionStorage.removeItem('authToken');
       console.log('Auth instance:', auth);
-      await signInWithPopup(auth, googleProvider);
+      await signInWithRedirect(auth, googleProvider);
 
       /*if (isIOS() && isInStandaloneMode()) {
         alert('PWA con ios');
