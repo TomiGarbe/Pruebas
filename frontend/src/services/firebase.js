@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
-import { initializeAuth, indexedDBLocalPersistence, browserPopupRedirectResolver, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { initializeAuth, indexedDBLocalPersistence, browserPopupRedirectResolver, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential } from 'firebase/auth';
 import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
 import { firebaseConfig, firebaseVapidKey } from '../config';
 
@@ -53,4 +53,4 @@ onMessage(messaging, (payload) => {
   }
 });
 
-export { database, auth, messaging, getDeviceToken, onMessage, deleteToken, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult };
+export { database, auth, messaging, getDeviceToken, onMessage, deleteToken, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential };

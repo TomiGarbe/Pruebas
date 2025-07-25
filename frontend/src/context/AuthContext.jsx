@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
-import { auth, onAuthStateChanged, signOut, getDeviceToken, messaging, deleteToken, getRedirectResult } from '../services/firebase';
+import { auth, onAuthStateChanged, signOut, getDeviceToken, messaging, deleteToken, getRedirectResult, signInWithCredential, GoogleAuthProvider } from '../services/firebase';
 import { saveToken } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -155,6 +155,33 @@ const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    const handleHashCredential = async () => {
+      const params = new URLSearchParams(window.location.hash.substring(1));
+      alert(params);
+      const idToken = params.get('credential');
+      alert(idToken);
+      if (idToken) {
+        try {
+          localStorage.setItem('authToken', idToken);
+          sessionStorage.setItem('authToken', idToken);
+          const result = await signInWithCredential(
+            auth,
+            GoogleAuthProvider.credential(idToken)
+          );
+          const verificationResult = await verifyUser(result.user, idToken);
+          if (verificationResult.success) {
+            navigate('/');
+          }
+        } catch (err) {
+          console.error('Error signing in with credential:', err);
+        } finally {
+          window.location.hash = '';
+        }
+      }
+    };
+
+    handleHashCredential();
+
     const checkRedirectResult = async () => {
       try {
         alert("checkRedirectResult auth: ", auth);
