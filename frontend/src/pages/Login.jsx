@@ -1,19 +1,24 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Alert, Spinner } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { auth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from '../services/firebase';
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  setPersistence,
+  browserLocalPersistence,
+} from 'firebase/auth';
+import { auth } from '../services/firebase'; //auth desde tu servicio
 import { FcGoogle } from 'react-icons/fc';
 import '../styles/login.css';
 import logoInversur from '../assets/logo_inversur.png';
-import { isIOS, isInStandaloneMode } from '../utils/platform';
 
 const Login = () => {
   const [error, setError] = useState(null);
+  const { verifyUser, verifying, logOut } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const googleProvider = new GoogleAuthProvider();
-  const { verifyUser, verifying, logOut } = useContext(AuthContext);
 
   const handleGoogleSignIn = async () => {
     console.log('Intento de iniciar sesion');
@@ -73,8 +78,6 @@ const Login = () => {
       }
     };
 
-    checkRedirectResult();
-  }, []);
 
   if (verifying) {
     return (
@@ -121,7 +124,6 @@ const Login = () => {
 };
 
 export default Login;
-
 
 
 
