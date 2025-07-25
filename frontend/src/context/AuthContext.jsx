@@ -134,10 +134,28 @@ const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user && !isVerifiedRef.current) {
+          const idToken = await result.user.getIdToken(true);
+          localStorage.setItem('authToken', idToken);
+          sessionStorage.setItem('authToken', idToken);
+          const verificationResult = await verifyUser(result.user, idToken);
+          if (verificationResult.success) {
+            navigate('/');
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Error processing redirect result:', err);
+      }
+    };
+
+    checkRedirectResult();
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log(JSON.stringify(user));
-      const result = await getRedirectResult(auth);
-      console.log(JSON.stringify(result));
       if (user && !isVerifyingRef.current && !isVerifiedRef.current) {
         try {
           const idToken = await user.getIdToken(true);
