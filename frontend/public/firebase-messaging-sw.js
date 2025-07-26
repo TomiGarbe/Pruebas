@@ -36,10 +36,16 @@ messaging.onBackgroundMessage((payload) => {
     }
 });
 
-// Network-first fetch handler for same-origin requests
 self.addEventListener('fetch', (event) => {
-    const url = new URL(event.request.url);
-    if (url.origin !== self.location.origin) return;
+    event.respondWith(
+        caches.match(event.request).then(response => {
+            return response || fetch(event.request);
+        })
+    );
+});
+
+// Allow network requests for login
+self.addEventListener('fetch', (event) => {
     event.respondWith(
         fetch(event.request).catch(() => caches.match(event.request))
     );

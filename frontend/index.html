@@ -15,13 +15,6 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-        // Check display mode and initialize
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            alert('App running in standalone mode on iOS');
-        } else {
-            alert('App running in browser mode');
-        }
-
         // Global error handler
         window.addEventListener('error', (event) => {
             alert(`Global error: ${event.message} at ${event.filename}:${event.lineno}`);
