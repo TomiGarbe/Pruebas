@@ -36,8 +36,10 @@ messaging.onBackgroundMessage((payload) => {
     }
 });
 
-// Network-first fetch handler
+// Network-first fetch handler for same-origin requests
 self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
+    if (url.origin !== self.location.origin) return;
     event.respondWith(
         fetch(event.request).catch(() => caches.match(event.request))
     );

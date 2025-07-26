@@ -104,14 +104,10 @@ const AuthProvider = ({ children }) => {
           callback: async (response) => {
             try {
               const idToken = response.credential;
-              if (idToken) {
-                localStorage.setItem('googleIdToken', idToken);
-                sessionStorage.setItem('googleIdToken', idToken);
-                setSingingIn(true);
-                resolve(idToken);
-              } else {
-                reject(new Error('Error en la autenticación del servidor'));
-              }
+              localStorage.setItem('googleIdToken', idToken);
+              sessionStorage.setItem('googleIdToken', idToken);
+              setSingingIn(true);
+              resolve(idToken);
             } catch (error) {
               console.error('Error processing Google ID token:', error);
               reject(error);
