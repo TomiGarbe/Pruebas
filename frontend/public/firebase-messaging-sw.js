@@ -36,15 +36,7 @@ messaging.onBackgroundMessage((payload) => {
     }
 });
 
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then(response => {
-            return response || fetch(event.request);
-        })
-    );
-});
-
-// Allow network requests for login
+// Network-first fetch handler
 self.addEventListener('fetch', (event) => {
     event.respondWith(
         fetch(event.request).catch(() => caches.match(event.request))

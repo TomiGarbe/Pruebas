@@ -1,12 +1,15 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
-import { getAuth, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential } from 'firebase/auth';
+import { initializeAuth, indexedDBLocalPersistence, browserPopupRedirectResolver, signOut, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential } from 'firebase/auth';
 import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
 import { firebaseConfig, firebaseVapidKey } from '../config';
 
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
-const auth = getAuth(app);
+const auth = initializeAuth(app, {
+  persistence: indexedDBLocalPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver
+});
 const messaging = getMessaging(app);
 
 // Solicita permiso y obtiene el token FCM del dispositivo
@@ -22,7 +25,7 @@ const getDeviceToken = async () => {
       vapidKey: firebaseVapidKey,
       serviceWorkerRegistration: await navigator.serviceWorker.ready
     });
-    console.log('FCM Token:', currentToken); // Debug log
+
     return currentToken;
   } catch (err) {
     console.error('Error al obtener token de dispositivo:', err);
@@ -31,7 +34,6 @@ const getDeviceToken = async () => {
 };
 
 onMessage(messaging, (payload) => {
-  console.log('Foreground message received:', JSON.stringify(payload));
   try {
     const notificationTitle = payload.notification.title || 'Notification';
     const notificationOptions = {
@@ -41,7 +43,6 @@ onMessage(messaging, (payload) => {
     // Display notification for foreground messages
     if (Notification.permission === 'granted') {
       new Notification(notificationTitle, notificationOptions);
-      console.log('Foreground notification displayed:', notificationTitle, notificationOptions);
     } else {
       console.warn('Notification permission not granted');
     }
@@ -50,4 +51,4 @@ onMessage(messaging, (payload) => {
   }
 });
 
-export { database, auth, messaging, getDeviceToken, onMessage, deleteToken, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential };
+export { database, auth, messaging, getDeviceToken, onMessage, deleteToken, signOut, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential };
