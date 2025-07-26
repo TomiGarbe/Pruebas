@@ -1,15 +1,12 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
-import { initializeAuth, indexedDBLocalPersistence, browserPopupRedirectResolver, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential } from 'firebase/auth';
+import { getAuth, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential } from 'firebase/auth';
 import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
 import { firebaseConfig, firebaseVapidKey } from '../config';
 
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
-const auth = initializeAuth(app, {
-  persistence: indexedDBLocalPersistence,
-  popupRedirectResolver: browserPopupRedirectResolver,
-});
+const auth = getAuth(app);
 const messaging = getMessaging(app);
 
 // Solicita permiso y obtiene el token FCM del dispositivo

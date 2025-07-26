@@ -4,7 +4,6 @@ import { saveToken } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { googleClientId } from '../config';
-import { isIOS, isInStandaloneMode } from '../utils/platform';
 
 const AuthContext = createContext();
 
@@ -17,7 +16,6 @@ const AuthProvider = ({ children }) => {
   const isVerifyingRef = useRef(false);
   const isVerifiedRef = useRef(false);
   const fcmSentRef = useRef(false);
-  const isInitializedRef = useRef(false);
 
   const verifyUser = async (user, idToken) => {
     isVerifyingRef.current = true;
@@ -50,25 +48,17 @@ const AuthProvider = ({ children }) => {
         console.log('FCM token saved:', fcmToken);
       }
 
-      return { success: true, data: response.data };
+      return navigate('/');
     } catch (error) {
       const errorDetail = error.response?.data?.detail || error.message;
       console.error('Final verification error:', errorDetail);
-      try {
-        await logOut(auth);
-      } catch (signOutError) {
-        console.error('Sign-out failed:', signOutError);
-      }
-      setCurrentUser(null);
-      setCurrentEntity(null);
-      isVerifiedRef.current = false;
       const errorMessage =
         error.response?.status === 403
           ? 'Usuario no registrado. Por favor, crea una cuenta.'
           : error.response?.status === 401
           ? `Token de autenticación inválido: ${errorDetail}`
           : 'Error al verificar el usuario.';
-      navigate('/login', { state: { error: errorMessage } });
+      await logOut(errorMessage);
       return { success: false, data: null };
     } finally {
       isVerifyingRef.current = false;
@@ -77,7 +67,7 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  const logOut = async () => {
+  const logOut = async (error) => {
     try {
       // Delete FCM token
       const fcmToken = await getDeviceToken();
@@ -91,16 +81,22 @@ const AuthProvider = ({ children }) => {
     await signOut(auth);
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('authToken');
+    localStorage.removeItem('googleIdToken');
+    sessionStorage.removeItem('googleIdToken');
     setCurrentUser(null);
     setCurrentEntity(null);
     setLoading(false);
     setVerifying(false);
     isVerifyingRef.current = false;
     isVerifiedRef.current = false;
-    navigate('/login');
+    if (error) {
+      navigate('/login', { state: { error: error } });
+    } else {
+      navigate('/login');
+    }
   }
 
-  const signInWithGoogleForRegistration = async () => {
+  const signInWithGoogle = async () => {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
@@ -111,6 +107,8 @@ const AuthProvider = ({ children }) => {
           callback: async (response) => {
             try {
               const idToken = response.credential;
+              localStorage.setItem('googleIdToken', idToken);
+              sessionStorage.setItem('googleIdToken', idToken);
               const emailResponse = await fetch(
                 `https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${idToken}`
               );
@@ -137,99 +135,41 @@ const AuthProvider = ({ children }) => {
     });
   };
 
-  const signInWithGoogle = async () => {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.onload = () => {
-        const config = {
-          client_id: googleClientId,
-          callback: async (response) => {
-            try {
-              const idToken = response.credential;
-              console.log('Storing idToken:', idToken);
-              localStorage.setItem('googleIdToken', idToken);
-              resolve({ idToken });
-            } catch (error) {
-              console.error('Error processing Google ID token:', error);
-              reject(error);
-            }
-          },
-          ux_mode: 'redirect', // Force redirect mode
-          login_uri: window.location.href, // Return to the same page
-        };
-
-        window.google.accounts.id.initialize(config);
-        window.google.accounts.id.prompt();
-      };
-      script.onerror = () => reject(new Error('Failed to load Google Sign-In SDK'));
-      document.body.appendChild(script);
-    });
-  };
-
   const handleStoredToken = async () => {
-    const idToken = localStorage.getItem('googleIdToken');
-    alert('Checking stored token on load:'+ idToken);
-    console.log('Checking stored token on load:', idToken);
+    const idToken = sessionStorage.getItem('googleIdToken') || localStorage.getItem('googleIdToken');
     if (idToken) {
       try {
         const credential = GoogleAuthProvider.credential(idToken);
-        alert('credential:'+ credential);
-        console.log('credential:', credential);
-        const result = await signInWithCredential(auth, credential);
-        alert('Sign-in result:', result);
-        console.log('Sign-in result:', result);
-        //const verificationResult = await verifyUser(result.user, idToken);
-        setLoading(false);
-        setVerifying(false);
-        isVerifiedRef.current = false;
-        /*if (verificationResult.success) {
-          navigate('/');
-        } else {
-          localStorage.removeItem('googleIdToken');
-        }*/
+        await signInWithCredential(auth, credential);
       } catch (err) {
         console.error('Error signing in with stored credential:', err);
         localStorage.removeItem('googleIdToken');
+        sessionStorage.removeItem('googleIdToken');
+        await logOut();
       }
+    } else {
+      await logOut();
     }
-    setLoading(false);
-    setVerifying(false);
-    isVerifiedRef.current = false;
   };
 
   useEffect(() => {
-    if (isInitializedRef.current) return; // Prevent multiple runs
-    isInitializedRef.current = true;
-
     handleStoredToken();
+  }, []);
 
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('onAuthStateChanged:', JSON.stringify(user));
       if (user && !isVerifyingRef.current && !isVerifiedRef.current) {
         try {
           const idToken = await user.getIdToken(true);
-          console.log('ID Token from onAuthStateChanged:', idToken);
           localStorage.setItem('authToken', idToken);
           sessionStorage.setItem('authToken', idToken);
-          const verificationResult = await verifyUser(user, idToken);
-          if (verificationResult.success) {
-            navigate('/');
-          } else {
-            await logOut();
-          }
+          await verifyUser(user, idToken);
         } catch (error) {
           console.error('Error getting ID token:', error);
-          setLoading(false);
-          setVerifying(false);
-          isVerifiedRef.current = false;
-          navigate('/login', { state: { error: 'Error al obtener el token de autenticación.' } });
+          await logOut(error);
         }
       } else if (!user) {
-        setLoading(false);
-        setVerifying(false);
-        isVerifiedRef.current = false;
+        await logOut();
       }
     });
 
@@ -239,7 +179,7 @@ const AuthProvider = ({ children }) => {
   }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ currentUser, currentEntity, loading, verifying, verifyUser, signInWithGoogleForRegistration, logOut, signInWithGoogle }}>
+    <AuthContext.Provider value={{ currentUser, currentEntity, loading, verifying, signInWithGoogle, logOut, handleStoredToken }}>
       {children}
     </AuthContext.Provider>
   );
