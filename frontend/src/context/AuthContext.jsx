@@ -121,7 +121,7 @@ const AuthProvider = ({ children }) => {
               reject(error);
             }
           },
-          ux_mode: 'redirect', // Force redirect mode
+          ux_mode: 'popup',
           login_uri: window.location.href, // Return to the same page
         };
 
