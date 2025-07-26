@@ -99,22 +99,18 @@ const AuthProvider = ({ children }) => {
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.onload = () => {
-        const config = {
+        window.google.accounts.id.initialize({
           client_id: googleClientId,
           callback: async (response) => {
             try {
               const idToken = response.credential;
-              localStorage.setItem('googleIdToken', idToken);
-              sessionStorage.setItem('googleIdToken', idToken);
-              setSingingIn(true);
-              const emailResponse = await fetch(
-                `https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${idToken}`
-              );
-              const tokenInfo = await emailResponse.json();
-              if (tokenInfo.email) {
-                resolve({ idToken, email: tokenInfo.email });
+              if (idToken) {
+                localStorage.setItem('googleIdToken', idToken);
+                sessionStorage.setItem('googleIdToken', idToken);
+                setSingingIn(true);
+                resolve(idToken);
               } else {
-                reject(new Error('Failed to retrieve email from Google ID token'));
+                reject(new Error('Error en la autenticación del servidor'));
               }
             } catch (error) {
               console.error('Error processing Google ID token:', error);
@@ -122,10 +118,7 @@ const AuthProvider = ({ children }) => {
             }
           },
           ux_mode: 'popup',
-          login_uri: window.location.href, // Return to the same page
-        };
-
-        window.google.accounts.id.initialize(config);
+        });
         window.google.accounts.id.prompt();
       };
       script.onerror = () => reject(new Error('Failed to load Google Sign-In SDK'));
