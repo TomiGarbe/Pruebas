@@ -75,13 +75,13 @@ async def auth_middleware(request: Request, call_next):
                 current_entity = verify_user_token(token, db)
                 request.state.current_entity = current_entity
             except HTTPException as e:
-                logger.info("1",e)
+                logger.info("1 %s", e)
                 return JSONResponse(
                     content={"detail": e.detail},
                     status_code=e.status_code
                 )
             except Exception as e:
-                logger.info("2",e)
+                logger.info("2 %s", e)
                 return JSONResponse(
                     content={"detail": f"Error interno en la verificación del token: {str(e)}"},
                     status_code=500
@@ -95,7 +95,7 @@ async def auth_middleware(request: Request, call_next):
         response = await call_next(request)
         return response
     except Exception as e:
-        logger.info("3",e)
+        logger.info("3 %s", e)
         return JSONResponse(
             content={"detail": "Error interno en el procesamiento de la solicitud"},
             status_code=500
