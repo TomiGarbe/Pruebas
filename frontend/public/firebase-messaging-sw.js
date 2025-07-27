@@ -37,16 +37,12 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then(response => {
-            return response || fetch(event.request);
-        })
-    );
-});
-
-// Allow network requests for login
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        fetch(event.request).catch(() => caches.match(event.request))
-    );
+  const url = new URL(event.request.url);
+  // Skip Firebase Auth and Google APIs
+  if (url.hostname.includes('identitytoolkit.googleapis.com') || url.hostname.includes('accounts.google.com')) {
+    return;
+  }
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
 });
