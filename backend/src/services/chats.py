@@ -21,16 +21,12 @@ def get_chat_correctivo(db_session: Session, mantenimiento_id: int, current_enti
     if not current_entity:
         raise HTTPException(status_code=401, detail="Autenticación requerida")
     chat = db_session.query(MensajeCorrectivo).filter(MensajeCorrectivo.id_mantenimiento == mantenimiento_id).all()
-    if not chat:
-        raise HTTPException(status_code=404, detail="No hay mensajes")
     return chat
 
 def get_chat_preventivo(db_session: Session, mantenimiento_id: int, current_entity: dict):
     if not current_entity:
         raise HTTPException(status_code=401, detail="Autenticación requerida")
     chat = db_session.query(MensajePreventivo).filter(MensajePreventivo.id_mantenimiento == mantenimiento_id).all()
-    if not chat:
-        raise HTTPException(status_code=404, detail="No hay mensajes")
     return chat
 
 async def send_message_correctivo(
