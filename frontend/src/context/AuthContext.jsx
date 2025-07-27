@@ -123,6 +123,7 @@ const AuthProvider = ({ children }) => {
   };
 
   const handleGoogleSignIn = async () => {
+    alert("handleGoogleSignIn");
     try {
       const idToken = sessionStorage.getItem('googleIdToken') || localStorage.getItem('googleIdToken');
       if (!idToken) {
@@ -131,6 +132,10 @@ const AuthProvider = ({ children }) => {
       const credential = GoogleAuthProvider.credential(idToken);
       const result = await signInWithCredential(auth, credential);
       const user = result.user;
+      alert("idToken: " + idToken);
+      alert("credential: " + JSON.stringify(credential));
+      alert("result: " + JSON.stringify(result));
+      alert("user: " + JSON.stringify(user));
       if (user) {
         const firebaseToken = await user.getIdToken();
         localStorage.setItem('authToken', firebaseToken);
