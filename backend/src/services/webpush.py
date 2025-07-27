@@ -16,14 +16,13 @@ if not logger.handlers:
     logger.addHandler(handler)
 
 load_dotenv(dotenv_path="./env.config")
-VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
 
 
 def send_webpush_notification(db_session: Session, firebase_uid: str, title: str, body: str):
     logger.info("Notificacion push a usuario: %s", firebase_uid)
     
-    if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
+    if not VAPID_PRIVATE_KEY:
         logger.error("VAPID keys not configured; skipping webpush")
         return {"message": "Web push not configured"}
     
@@ -40,7 +39,6 @@ def send_webpush_notification(db_session: Session, firebase_uid: str, title: str
                 subscription_info,
                 payload,
                 vapid_private_key=VAPID_PRIVATE_KEY,
-                vapid_public_key=VAPID_PUBLIC_KEY,
                 vapid_claims={"sub": "mailto:admin@example.com"}
             )
             logger.info("webpush enviado")
