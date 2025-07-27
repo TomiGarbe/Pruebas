@@ -5,13 +5,13 @@ from datetime import date, datetime
 from typing import Optional, List
 from services.gcloud_storage import upload_file_to_gcloud, delete_file_in_folder
 from services.google_sheets import append_correctivo, update_correctivo, delete_correctivo
-from services.notificaciones import notify_user_token, notify_users_correctivo
+from services.notificaciones import notify_user, notify_users_correctivo
 import os
 
 import logging
 
 # Configure logger for console output
-logger = logging.getLogger("fcm")
+logger = logging.getLogger("notifications")
 logger.setLevel(logging.DEBUG)
 if not logger.handlers:
     handler = logging.StreamHandler()
@@ -68,7 +68,7 @@ def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla:
     )
     # Notificar si es alta prioridad
     if prioridad == "Alta":
-        notify_user_token(
+        notify_user(
             db_session=db,
             firebase_uid=cuadrilla.firebase_uid,
             title="Nuevo correctivo urgente asignado",
@@ -164,7 +164,7 @@ async def update_mantenimiento_correctivo(
     # Notify only once after all updates
     if prioridad == "Alta":
         logger.info("Notificando de prioridad alta")
-        notify_user_token(
+        notify_user(
             db_session=db,
             firebase_uid=cuadrilla.firebase_uid,
             title="Nuevo correctivo urgente asignado",

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
-import { auth, signOut, getDeviceToken, messaging, deleteToken, signInWithCredential, GoogleAuthProvider } from '../services/firebase';
-import { saveToken } from '../services/notificaciones';
+import { auth, signOut, getPushSubscription, signInWithCredential, GoogleAuthProvider } from '../services/firebase';
+import { saveSubscription } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { googleClientId } from '../config';
@@ -16,7 +16,6 @@ const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const isVerifyingRef = useRef(false);
   const isVerifiedRef = useRef(false);
-  const fcmSentRef = useRef(false);
 
   const verifyUser = async (user, idToken) => {
     isVerifyingRef.current = true;
@@ -35,20 +34,13 @@ const AuthProvider = ({ children }) => {
       setCurrentUser(user);
       setCurrentEntity(response.data);
 
-      fcmSentRef.current = false;
-      alert("fcmToken");
-      const fcmToken = await getDeviceToken();
-      alert("getDeviceToken ok");
-      if (fcmToken) {
-        alert("hay token");
-        fcmSentRef.current = true;
-        const token_data = {
-          token: fcmToken,
+      const subscription = await getPushSubscription();
+      if (subscription) {
+        await saveSubscription({
+          ...subscription.toJSON(),
           firebase_uid: response.data.data.uid,
           device_info: navigator.userAgent
-        };
-        await saveToken(token_data);
-        alert("token guardado");
+        });
       }
     } catch (error) {
       const errorDetail = error.response?.data?.detail || error.message;
@@ -80,16 +72,6 @@ const AuthProvider = ({ children }) => {
     isVerifyingRef.current = false;
     isVerifiedRef.current = false;
     await signOut(auth);
-    try {
-      // Delete FCM token
-      const fcmToken = await getDeviceToken();
-      if (fcmToken) {
-        await deleteToken(messaging);
-        console.log('FCM token deleted on logout');
-      }
-    } catch (err) {
-      console.error('Error deleting FCM token:', err);
-    }
     if (error) {
       navigate('/login', { state: { error: error } });
     } else {

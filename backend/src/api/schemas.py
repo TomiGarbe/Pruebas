@@ -118,7 +118,13 @@ class MantenimientoCorrectivoCreate(BaseModel):
     estado: Estado
     prioridad: Prioridad
 
-class FCMTokenCreate(BaseModel):
-    token: str
+
+class PushSubscriptionKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+class PushSubscriptionCreate(BaseModel):
+    endpoint: str
+    keys: PushSubscriptionKeys
     firebase_uid: str
     device_info: Optional[str] = None

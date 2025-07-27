@@ -34,16 +34,16 @@ const getMapsApiKey = () => {
   return config;
 };
 
-const getFirebaseVapidKey = () => {
+const getWebPushPublicKey = () => {
   const isProd = window.location.host.includes('nice-rock');
-  const config = import.meta.env[`VITE_FIREBASE_VAPID_KEY_${isProd ? 'PROD' : 'QA'}`];
+  const key = import.meta.env[`VITE_WEB_PUSH_PUBLIC_KEY_${isProd ? 'PROD' : 'QA'}`];
 
-  if (!config) {
-    console.error('Missing Firebase vapid key in .env');
+  if (!key) {
+    console.error('Missing web push public key in .env');
     return null;
   }
 
-  return config;
+  return key;
 };
 
 const getGoogleClient = () => {
@@ -61,5 +61,5 @@ const getGoogleClient = () => {
 export const API_URL = getApiUrl();
 export const firebaseConfig = getFirebaseConfig();
 export const mapsApiKey = getMapsApiKey();
-export const firebaseVapidKey = getFirebaseVapidKey();
 export const googleClientId = getGoogleClient();
+export const webPushPublicKey = getWebPushPublicKey();

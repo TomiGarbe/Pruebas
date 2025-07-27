@@ -19,3 +19,8 @@ Sistema de gestión de cuadrillas para obras de mantenimiento.
 1. Backend: cd backend && pytest -v --cov=src --cov-report=xml --junitxml=pytest-report.xml
 2. Frontend: cd frontend && npm test -- --coverage --ci
 3. Cypress (Necesita estar corriendo el backend y frontend en local): cd frontend && npx cypress run --reporter mocha-junit-reporter --reporter-options "mochaFile=cypress/results.xml"
+
+## Notificaciones web
+1. Genera claves VAPID con `npx web-push generate-vapid-keys`.
+2. Coloca las claves en `backend/src/env.config` y `frontend/.env` (variables `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VITE_WEB_PUSH_PUBLIC_KEY_*`).
+3. Habilita el servicio worker en el navegador y acepta las notificaciones cuando la aplicación lo solicite.

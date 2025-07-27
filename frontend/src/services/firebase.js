@@ -1,8 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 import { initializeAuth, indexedDBLocalPersistence, browserPopupRedirectResolver, signOut, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
-import { firebaseConfig, firebaseVapidKey } from '../config';
+import { firebaseConfig, webPushPublicKey } from '../config';
 
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
@@ -10,45 +9,27 @@ const auth = initializeAuth(app, {
   persistence: indexedDBLocalPersistence,
   popupRedirectResolver: browserPopupRedirectResolver
 });
-const messaging = getMessaging(app);
+// We rely on the standard Push API for notifications
 
-// Solicita permiso y obtiene el token FCM del dispositivo
-const getDeviceToken = async () => {
+const urlBase64ToUint8Array = (base64String) => {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+};
+
+const getPushSubscription = async () => {
   try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      console.warn('Permiso de notificaciones denegado');
-      return null;
-    }
-
-    const currentToken = await getToken(messaging, {
-      vapidKey: firebaseVapidKey,
-      serviceWorkerRegistration: await navigator.serviceWorker.ready
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(webPushPublicKey)
     });
-
-    return currentToken;
+    return subscription;
   } catch (err) {
-    console.error('Error al obtener token de dispositivo:', err);
+    console.error('Error subscribing for web push:', err);
     return null;
   }
 };
 
-onMessage(messaging, (payload) => {
-  try {
-    const notificationTitle = payload.notification.title || 'Notification';
-    const notificationOptions = {
-      body: payload.notification.body,
-      icon: '/icons/icon-192x192.png'
-    };
-    // Display notification for foreground messages
-    if (Notification.permission === 'granted') {
-      new Notification(notificationTitle, notificationOptions);
-    } else {
-      console.warn('Notification permission not granted');
-    }
-  } catch (error) {
-    console.error('Error displaying foreground notification:', error);
-  }
-});
-
-export { database, auth, messaging, getDeviceToken, onMessage, deleteToken, signOut, GoogleAuthProvider, signInWithCredential };
+export { database, auth, getPushSubscription, signOut, GoogleAuthProvider, signInWithCredential };

@@ -1,42 +1,20 @@
 from sqlalchemy.orm import Session
-from api.models import FCMToken, Notificacion_Correctivo, Notificacion_Preventivo, Usuario
-from firebase_admin import messaging
+from api.models import Notificacion_Correctivo, Notificacion_Preventivo, Usuario
+from .webpush import send_webpush_notification
 
 import logging
 
 # Configure logger for console output
-logger = logging.getLogger("fcm")
+logger = logging.getLogger("notifications")
 logger.setLevel(logging.DEBUG)
 if not logger.handlers:
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
     logger.addHandler(handler)
     
-def send_push_notification_to_token(token: str, title: str, body: str):
-    logger.info("Enviando notificacion push")
-    message = messaging.Message(
-        notification=messaging.Notification(
-            title=title,
-            body=body
-        ),
-        data={
-            'title': title,
-            'body': body,
-        },
-        token=token
-    )
-    logger.info(f"Mensaje a enviar: {message}")
-    response = messaging.send(message)
-    logger.info(f"Mensaje enviado, respuesta: {response}")
-    return response
-
-def notify_user_token(db_session: Session, firebase_uid: str, title: str, body: str):
-    logger.info(f"Buscando token de usuario: {firebase_uid}")
-    token = db_session.query(FCMToken).filter(FCMToken.firebase_uid == firebase_uid).first()
-    if token is not None:
-        logger.info(f"Token encontrado: {token}")
-        send_push_notification_to_token(token.token, title, body)
-        
+def notify_user(db_session: Session, firebase_uid: str, title: str, body: str):
+    """Send a web push notification to the given firebase uid"""
+    send_webpush_notification(db_session, firebase_uid, title, body)
     return {"Notification sent"}
 
 def get_notification_correctivo(db_session: Session, firebase_uid: str):
