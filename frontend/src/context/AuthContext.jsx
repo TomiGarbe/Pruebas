@@ -126,13 +126,13 @@ const AuthProvider = ({ children }) => {
     alert("handleGoogleSignIn");
     try {
       const idToken = sessionStorage.getItem('googleIdToken') || localStorage.getItem('googleIdToken');
+      alert("idToken: " + idToken);
       if (!idToken) {
         return; // No token, no action
       }
       const credential = GoogleAuthProvider.credential(idToken);
       const result = await signInWithCredential(auth, credential);
       const user = result.user;
-      alert("idToken: " + idToken);
       alert("credential: " + JSON.stringify(credential));
       alert("result: " + JSON.stringify(result));
       alert("user: " + JSON.stringify(user));
