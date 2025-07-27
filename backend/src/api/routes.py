@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from controllers import users, cuadrillas, sucursales, zonas, auth, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, maps, notificaciones, push
+from controllers import users, cuadrillas, sucursales, zonas, auth, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, maps, chats
 from config.database import get_db
 from services.auth import verify_user_token
 from auth.firebase import initialize_firebase
@@ -9,6 +9,14 @@ from init_admin import init_admin
 from dotenv import load_dotenv
 import os
 from starlette.responses import JSONResponse
+import logging
+
+logger = logging.getLogger("notifications")
+logger.setLevel(logging.DEBUG)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    logger.addHandler(handler)
 
 load_dotenv(dotenv_path="./env.config")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
@@ -67,11 +75,13 @@ async def auth_middleware(request: Request, call_next):
                 current_entity = verify_user_token(token, db)
                 request.state.current_entity = current_entity
             except HTTPException as e:
+                logger.info("1",e)
                 return JSONResponse(
                     content={"detail": e.detail},
                     status_code=e.status_code
                 )
             except Exception as e:
+                logger.info("2",e)
                 return JSONResponse(
                     content={"detail": f"Error interno en la verificación del token: {str(e)}"},
                     status_code=500
@@ -85,6 +95,7 @@ async def auth_middleware(request: Request, call_next):
         response = await call_next(request)
         return response
     except Exception as e:
+        logger.info("3",e)
         return JSONResponse(
             content={"detail": "Error interno en el procesamiento de la solicitud"},
             status_code=500
@@ -99,5 +110,4 @@ app.include_router(preventivos.router)
 app.include_router(mantenimientos_preventivos.router)
 app.include_router(mantenimientos_correctivos.router)
 app.include_router(maps.router)
-app.include_router(notificaciones.router)
-app.include_router(push.router)
+app.include_router(chats.router)
