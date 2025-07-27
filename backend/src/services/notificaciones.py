@@ -13,7 +13,7 @@ if not logger.handlers:
     logger.addHandler(handler)
     
 def notify_user(db_session: Session, firebase_uid: str, title: str, body: str):
-    """Send a web push notification to the given firebase uid"""
+    logger.info("")
     send_webpush_notification(db_session, firebase_uid, title, body)
     return {"Notification sent"}
 
