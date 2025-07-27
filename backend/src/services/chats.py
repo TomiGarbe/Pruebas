@@ -90,13 +90,12 @@ async def send_message_preventivo(
         raise HTTPException(status_code=500, detail="Google Cloud Bucket name not configured")
     base_folder = f"mantenimientos_preventivos/{id_mantenimiento}"
     
-    db_message = MensajePreventivo
-    
-    if id_mantenimiento and firebase_uid and nombre_usuario and fecha:
-        db_message.id_mantenimiento = id_mantenimiento
-        db_message.firebase_uid = firebase_uid
-        db_message.nombre_usuario = nombre_usuario
-        db_message.fecha = fecha
+    db_message = MensajePreventivo(
+        id_mantenimiento=id_mantenimiento,
+        firebase_uid=firebase_uid,
+        nombre_usuario=nombre_usuario,
+        fecha=fecha,
+    )
     if texto is not None:
         db_message.texto = texto
     if archivo is not None:
