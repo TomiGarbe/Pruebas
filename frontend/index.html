@@ -25,61 +25,25 @@
           alert(`Unhandled promise rejection: ${event.reason.message || event.reason}`);
         });
 
-        // Gestionar Service Worker para Firebase Messaging
+        // Registrar Service Worker para notificaciones web
         if ('serviceWorker' in navigator) {
-          (async () => {
-            try {
-              const registrations = await navigator.serviceWorker.getRegistrations();
-              let hasMessagingSW = false;
-
-              for (const registration of registrations) {
-                const swUrl = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL;
-
-                if (swUrl) {
-                  let scriptOk = true;
-                  try {
-                    const resp = await fetch(swUrl, { cache: 'no-store' });
-                    if (!resp.ok) scriptOk = false;
-                  } catch (_) {
-                    scriptOk = false;
-                  }
-
-                  if (swUrl.includes('/firebase-messaging-sw.js')) {
-                    if (scriptOk) {
-                      hasMessagingSW = true;
-                      continue; // Mantener el SW válido
-                    }
-
-                    await registration.unregister();
-                    console.warn('Firebase service worker desactualizado, se vuelve a registrar');
-                    const newReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-                    console.log('Service worker actualizado:', newReg);
-                    hasMessagingSW = true;
-                    continue;
-                  }
-
-                  if (!scriptOk) {
-                    await registration.unregister();
-                    console.log('Service worker obsoleto eliminado:', swUrl);
-                    continue;
-                  }
-                }
-
-                await registration.unregister();
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            let hasPushSW = false;
+            registrations.forEach(registration => {
+              const swUrl = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL;
+              if (swUrl && !swUrl.includes('/push-sw.js')) {
+                registration.unregister();
                 console.log('Service worker obsoleto eliminado:', swUrl);
+              } else if (swUrl && swUrl.includes('/push-sw.js')) {
+                hasPushSW = true;
               }
-
-              if (!hasMessagingSW) {
-                const newRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-                console.log('Nuevo service worker registrado:', newRegistration);
-              }
-
-              const readyRegistration = await navigator.serviceWorker.ready;
-              console.log('Service worker listo:', readyRegistration);
-            } catch (error) {
-              console.error('Error gestionando service workers:', error);
+              });
+            if (!hasPushSW) {
+              navigator.serviceWorker.register('/push-sw.js').then(reg => {
+                console.log('Nuevo service worker registrado:', reg);
+              }).catch(err => console.error('Error registrando service worker:', err));
             }
-          })();
+          });
         }
     </script>
   </body>

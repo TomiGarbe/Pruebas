@@ -64,12 +64,8 @@ jobs:
           echo "VITE_GOOGLE_MAPS_API_KEY_QA=${{ secrets.GOOGLE_MAPS_API_KEY_QA }}" >> .env
           echo "VITE_GOOGLE_MAPS_API_KEY_PROD=${{ secrets.GOOGLE_MAPS_API_KEY_PROD }}" >> .env
           echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env
-      - name: Crear archivos de configuración de Firebase
-        run: |
-          cd frontend/public
-
-          echo "self.FIREBASE_CONFIG = ${{ secrets.FIREBASE_CONFIG_QA }};" > firebase-config-qa.js
-          echo "self.FIREBASE_CONFIG = ${{ secrets.FIREBASE_CONFIG_PROD }};" > firebase-config-prod.js
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_QA=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_PROD=${{ secrets.VAPID_PRIVATE_KEY }}" >> .env
       - name: Build Frontend
         run: |
           cd frontend
@@ -105,7 +101,8 @@ jobs:
           echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
-          echo "FORCE_HTTPS=true" >> env.config
+          echo "VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> env.config
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -130,9 +127,6 @@ jobs:
         with:
           name: frontend-artifact
           path: frontend/dist/
-      - name: Rename QA config
-        run: |
-          cp frontend/dist/firebase-config-qa.js frontend/dist/firebase-config.js
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -166,7 +160,8 @@ jobs:
           echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_PROD }}" >> env.config
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_PROD }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
-          echo "FORCE_HTTPS=true" >> env.config
+          echo "VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> env.config
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -192,9 +187,6 @@ jobs:
         with:
           name: frontend-artifact
           path: frontend/dist/
-      - name: Rename PROD config
-        run: |
-          cp frontend/dist/firebase-config-prod.js frontend/dist/firebase-config.js
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
