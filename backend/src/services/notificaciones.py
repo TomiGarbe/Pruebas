@@ -13,9 +13,9 @@ if not logger.handlers:
     logger.addHandler(handler)
     
 def notify_user(db_session: Session, firebase_uid: str, title: str, body: str):
-    logger.info("")
+    logger.info("Sending web push to %s", firebase_uid)
     send_webpush_notification(db_session, firebase_uid, title, body)
-    return {"Notification sent"}
+    return {"message": "Notification sent"}
 
 def get_notification_correctivo(db_session: Session, firebase_uid: str):
     return db_session.query(Notificacion_Correctivo).filter(Notificacion_Correctivo.firebase_uid == firebase_uid).all()

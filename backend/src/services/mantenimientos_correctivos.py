@@ -60,20 +60,23 @@ def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla:
     db.commit()
     db.refresh(db_mantenimiento)
     append_correctivo(db, db_mantenimiento)
-    notify_users_correctivo(
-        db_session=db,
-        id_mantenimiento=db_mantenimiento.id,
-        mensaje=f"Nuevo correctivo asignado - Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)} | Prioridad: {str(db_mantenimiento.prioridad)}",
-        firebase_uid=cuadrilla.firebase_uid
-    )
-    # Notificar si es alta prioridad
-    if prioridad == "Alta":
-        notify_user(
+    if cuadrilla is not None:
+        notify_users_correctivo(
             db_session=db,
-            firebase_uid=cuadrilla.firebase_uid,
-            title="Nuevo correctivo urgente asignado",
-            body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}"
+            id_mantenimiento=db_mantenimiento.id,
+            mensaje=f"Nuevo correctivo asignado - Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)} | Prioridad: {str(db_mantenimiento.prioridad)}",
+            firebase_uid=cuadrilla.firebase_uid
         )
+        # Notificar si es alta prioridad
+        if prioridad == "Alta":
+            notify_user(
+                db_session=db,
+                firebase_uid=cuadrilla.firebase_uid,
+                title="Nuevo correctivo urgente asignado",
+                body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}"
+            )
+    else:
+        logger.warning("Mantenimiento creado sin cuadrilla, notificación omitida")
     return db_mantenimiento
 
 async def update_mantenimiento_correctivo(
@@ -161,15 +164,18 @@ async def update_mantenimiento_correctivo(
     db.commit()
     db.refresh(db_mantenimiento)
     update_correctivo(db, db_mantenimiento)
-    # Notify only once after all updates
-    if prioridad == "Alta":
-        logger.info("Notificando de prioridad alta")
-        notify_user(
-            db_session=db,
-            firebase_uid=cuadrilla.firebase_uid,
-            title="Nuevo correctivo urgente asignado",
-            body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}"
-        )
+    if cuadrilla is not None:
+        # Notify only once after all updates
+        if prioridad == "Alta":
+            logger.info("Notificando de prioridad alta")
+            notify_user(
+                db_session=db,
+                firebase_uid=cuadrilla.firebase_uid,
+                title="Nuevo correctivo urgente asignado",
+                body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}"
+            )
+    else:
+        logger.warning("No cuadrilla asignada, notificación de prioridad alta omitida")
     return db_mantenimiento
 
 def delete_mantenimiento_correctivo(db: Session, mantenimiento_id: int, current_entity: dict):
