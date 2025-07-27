@@ -15,6 +15,17 @@ Sistema de gestión de cuadrillas para obras de mantenimiento.
 4. Backend: cd backend && pip install -r requirements.txt && cd src && uvicorn main:app --host 0.0.0.0 --port 8000
 5. Frontend: cd frontend && npm install && npm run dev
 
+## Migraciones de base de datos
+Para alinear el esquema de la base de datos con los modelos se proporciona un
+script de migración sencillo:
+
+```bash
+cd backend && python -m migrations.002_add_firebase_uid
+```
+
+Ejecuta este comando durante el despliegue para añadir las columnas
+`firebase_uid` en `mensaje_correctivo` y `mensaje_preventivo`.
+
 ## Tests con code coverage
 1. Backend: cd backend && pytest -v --cov=src --cov-report=xml --junitxml=pytest-report.xml
 2. Frontend: cd frontend && npm test -- --coverage --ci
