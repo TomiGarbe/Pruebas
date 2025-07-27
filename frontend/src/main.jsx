@@ -7,7 +7,7 @@ import './styles/custom.css';
 // Function to prompt adding to home screen
 const promptAddToHomeScreen = () => {
   if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !window.matchMedia('(display-mode: standalone)').matches) {
-    alert('To install this app, tap the Share button in Safari, then select "Add to Home Screen".');
+    alert('Para instalar la app, apreta el boton de compartir en Safari y selecciona la opcion "Agregar a inicio".');
   }
 };
 

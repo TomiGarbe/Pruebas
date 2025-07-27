@@ -131,10 +131,10 @@ const AuthProvider = ({ children }) => {
         return; // No token, no action
       }
       const credential = GoogleAuthProvider.credential(idToken);
-      const result = await signInWithCredential(auth, credential);
-      const user = result.user;
       alert("credential: " + JSON.stringify(credential));
+      const result = await signInWithCredential(auth, credential);
       alert("result: " + JSON.stringify(result));
+      const user = result.user;
       alert("user: " + JSON.stringify(user));
       if (user) {
         const firebaseToken = await user.getIdToken();
