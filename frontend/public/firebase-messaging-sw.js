@@ -36,13 +36,9 @@ messaging.onBackgroundMessage((payload) => {
     }
 });
 
+// Network-first fetch handler
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  // Skip Firebase Auth and Google APIs
-  if (url.hostname.includes('identitytoolkit.googleapis.com') || url.hostname.includes('accounts.google.com')) {
-    return;
-  }
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
-  );
+    event.respondWith(
+        fetch(event.request).catch(() => caches.match(event.request))
+    );
 });
