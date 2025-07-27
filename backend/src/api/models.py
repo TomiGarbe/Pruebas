@@ -145,12 +145,15 @@ class PreventivoSeleccionado(Base):
     cuadrilla = relationship("Cuadrilla", back_populates="preventivo_seleccionado")
     sucursal = relationship("Sucursal", back_populates="preventivo_seleccionado")
 
-class FCMToken(Base):
-    __tablename__ = "fcm_tokens"
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscription"
 
     id = Column(Integer, primary_key=True, index=True)
     firebase_uid = Column(String, nullable=False)
-    token = Column(String, nullable=False)
+    endpoint = Column(String, nullable=False)
+    p256dh = Column(String, nullable=False)
+    auth = Column(String, nullable=False)
     device_info = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     
