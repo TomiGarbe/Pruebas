@@ -24,3 +24,14 @@ Sistema de gestión de cuadrillas para obras de mantenimiento.
 1. Genera claves VAPID con `npx web-push generate-vapid-keys`.
 2. Coloca las claves en `backend/src/env.config` y `frontend/.env` (variables `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VITE_WEB_PUSH_PUBLIC_KEY_*`).
 3. Habilita el servicio worker en el navegador y acepta las notificaciones cuando la aplicación lo solicite.
+
+## Actualización de la base de datos
+Si al enviar o recibir mensajes en los chats se obtiene un error similar a:
+`psycopg2.errors.UndefinedColumn: column "firebase_uid" of relation "mensaje_correctivo" does not exist`
+es necesario agregar la columna faltante en la base de datos. Ejecuta el script:
+
+```bash
+python backend/scripts/add_firebase_uid_column.py
+```
+
+El script comprueba si la columna existe y, de no existir, la crea.

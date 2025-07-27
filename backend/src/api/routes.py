@@ -81,7 +81,8 @@ async def auth_middleware(request: Request, call_next):
                     status_code=e.status_code
                 )
             except Exception as e:
-                logger.info("2",e)
+                # Log the exception details instead of using string formatting
+                logger.error("Token verification error: %s", e)
                 return JSONResponse(
                     content={"detail": f"Error interno en la verificación del token: {str(e)}"},
                     status_code=500
@@ -95,7 +96,8 @@ async def auth_middleware(request: Request, call_next):
         response = await call_next(request)
         return response
     except Exception as e:
-        logger.info("3",e)
+        # Log unexpected errors when processing the request
+        logger.error("Unhandled request error: %s", e)
         return JSONResponse(
             content={"detail": "Error interno en el procesamiento de la solicitud"},
             status_code=500
