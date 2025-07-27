@@ -34,10 +34,13 @@ const AuthProvider = ({ children }) => {
       isVerifiedRef.current = true;
       setCurrentUser(user);
       setCurrentEntity(response.data);
-      
+
       fcmSentRef.current = false;
+      alert("fcmToken");
       const fcmToken = await getDeviceToken();
+      alert("getDeviceToken ok");
       if (fcmToken) {
+        alert("hay token");
         fcmSentRef.current = true;
         const token_data = {
           token: fcmToken,
@@ -45,6 +48,7 @@ const AuthProvider = ({ children }) => {
           device_info: navigator.userAgent
         };
         await saveToken(token_data);
+        alert("token guardado");
       }
     } catch (error) {
       const errorDetail = error.response?.data?.detail || error.message;
