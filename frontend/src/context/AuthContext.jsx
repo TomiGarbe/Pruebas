@@ -122,6 +122,21 @@ const AuthProvider = ({ children }) => {
     });
   };
 
+  const retrySignIn = async (credential, retries = 3, delay = 1000) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const result = await signInWithCredential(auth, credential);
+        return result;
+      } catch (error) {
+        if (error.code === 'auth/network-request-failed' && i < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        throw error;
+      }
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     alert("handleGoogleSignIn");
     try {
@@ -132,7 +147,7 @@ const AuthProvider = ({ children }) => {
       }
       const credential = GoogleAuthProvider.credential(idToken);
       alert("credential: " + JSON.stringify(credential));
-      const result = await signInWithCredential(auth, credential);
+      const result = await retrySignIn(credential);
       alert("result: " + JSON.stringify(result));
       const user = result.user;
       alert("user: " + JSON.stringify(user));
