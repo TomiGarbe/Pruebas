@@ -165,13 +165,19 @@ async def update_mantenimiento_correctivo(
     db.refresh(db_mantenimiento)
     update_correctivo(db, db_mantenimiento)
     if cuadrilla is not None:
+        notify_users_correctivo(
+            db_session=db,
+            id_mantenimiento=db_mantenimiento.id,
+            mensaje=f"Correctivo urgente asignado - Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)} | Prioridad: {str(db_mantenimiento.prioridad)}",
+            firebase_uid=cuadrilla.firebase_uid
+        )
         # Notify only once after all updates
         if prioridad == "Alta":
             logger.info("Notificando de prioridad alta")
             notify_user(
                 db_session=db,
                 firebase_uid=cuadrilla.firebase_uid,
-                title="Nuevo correctivo urgente asignado",
+                title="Correctivo urgente asignado",
                 body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}"
             )
     else:

@@ -94,9 +94,13 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    if (currentEntity) {
-      fetchNotifications();
-    }
+    const interval = setInterval(() => {
+      if (currentEntity) {
+        fetchNotifications();
+      }
+    }, 60000);
+  
+    return () => clearInterval(interval);
   }, [currentEntity]);
 
   const handleClick = async (notification) => {
