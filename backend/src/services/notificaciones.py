@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from api.models import Notificacion_Correctivo, Notificacion_Preventivo, Usuario
 from .webpush import send_webpush_notification
@@ -52,6 +53,18 @@ def notify_users_preventivo(db_session: Session, id_mantenimiento: int, mensaje:
         encargados = db_session.query(Usuario).filter(Usuario.rol == "Encargado de Mantenimiento").all()
         for encargado in encargados:
             send_notification_preventivo(db_session, encargado.firebase_uid, id_mantenimiento, mensaje)
+
+def notify_nearby_maintenances(db_session: Session, current_entity: dict, mantenimientos: list[dict]):
+    if not current_entity:
+        raise HTTPException(status_code=401, detail="Autenticación requerida")
+    firebase_uid = current_entity["data"]["uid"]
+    for m in mantenimientos:
+        if m.get('tipo') == 'correctivo':
+            send_notification_correctivo(db_session, firebase_uid, m['id'], m.get('mensaje', ''))
+        else:
+            send_notification_preventivo(db_session, firebase_uid, m['id'], m.get('mensaje', ''))
+        send_webpush_notification(db_session, firebase_uid, 'Mantenimiento cercano', m.get('mensaje', ''))
+    return {"message": "Notificaciones enviadas"}
 
 def delete_notificaciones(db_session: Session, firebase_uid: str):
     db_session.query(Notificacion_Correctivo).filter(Notificacion_Correctivo.firebase_uid == firebase_uid).delete()

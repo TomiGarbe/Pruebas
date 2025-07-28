@@ -128,3 +128,11 @@ class PushSubscriptionCreate(BaseModel):
     keys: PushSubscriptionKeys
     firebase_uid: str
     device_info: Optional[str] = None
+    
+class MaintenanceNearInfo(BaseModel):
+    id: int
+    tipo: str
+    mensaje: str
+
+class NearbyNotificationCreate(BaseModel):
+    mantenimientos: list[MaintenanceNearInfo]

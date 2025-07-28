@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from config.database import get_db
-from services.notificaciones import get_notification_correctivo, get_notification_preventivo, notificacion_correctivo_leida, notificacion_preventivo_leida, delete_notificaciones
+from services.notificaciones import get_notification_correctivo, get_notification_preventivo, notificacion_correctivo_leida, notificacion_preventivo_leida, delete_notificaciones, notify_nearby_maintenances
 from typing import List
+from api.schemas import NearbyNotificationCreate
 
 router = APIRouter(prefix="/notificaciones", tags=["notificaciones"])
 
@@ -29,3 +30,8 @@ def notificacion_preventivo_put(id_notificacion: int, db: Session = Depends(get_
 @router.delete("/{firebase_uid}", response_model=dict)
 def notificaciones_delete(firebase_uid: str, db: Session = Depends(get_db)):
     return delete_notificaciones(db, firebase_uid)
+
+@router.post("/nearby", response_model=dict)
+def notificaciones_nearby(payload: NearbyNotificationCreate, request: Request, db: Session = Depends(get_db)):
+    current = request.state.current_entity
+    return notify_nearby_maintenances(db, current, [m.dict() for m in payload.mantenimientos])

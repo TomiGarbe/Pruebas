@@ -6,3 +6,4 @@ export const get_notificaciones_preventivos = (firebase_uid) => api.get(`/notifi
 export const correctivo_leido = (id_notificacion) => api.put(`/notificaciones/correctivos/${id_notificacion}`);
 export const preventivo_leido = (id_notificacion) => api.put(`/notificaciones/preventivos/${id_notificacion}`);
 export const delete_notificaciones = (firebase_uid) => api.delete(`/notificaciones/${firebase_uid}`);
+export const notify_nearby_maintenances = (payload) => api.post('/notificaciones/nearby', payload);

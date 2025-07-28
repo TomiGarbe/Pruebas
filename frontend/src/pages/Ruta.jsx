@@ -6,6 +6,7 @@ import { LocationContext } from '../context/LocationContext';
 import { getSucursalesLocations, getCorrectivos, getPreventivos, deleteSucursal, deleteSelection } from '../services/maps';
 import { getMantenimientosCorrectivos } from '../services/mantenimientoCorrectivoService';
 import { getMantenimientosPreventivos } from '../services/mantenimientoPreventivoService';
+import { notify_nearby_maintenances } from '../services/notificaciones';
 import { renderToString } from 'react-dom/server';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 import { bearing } from '@turf/turf';
@@ -115,18 +116,18 @@ const Ruta = () => {
         !selectedIds.has(m.id)
       );
       console.log("nearMaintenances", nearMaintenances);
+      const payload = [];
       nearMaintenances.forEach(m => {
         const key = `${m.tipo}-${m.id}`;
         if (notifiedMaintenancesRef.current.has(key)) return;
         const suc = sucursalesResponse.data.find(s => Number(s.id) === m.id_sucursal);
-        navigator.serviceWorker.ready.then(reg => {
-          console.log("Notificacion");
-          reg.showNotification('Mantenimiento cercano', {
-            body: `Sucursal: ${suc ? suc.name : m.id_sucursal}`
-          });
-        });
+        payload.push({ id: m.id, tipo: m.tipo, mensaje: `Sucursal: ${suc ? suc.name : m.id_sucursal}` });
         notifiedMaintenancesRef.current.add(key);
       });
+
+      if (payload.length) {
+        await notify_nearby_maintenances({ mantenimientos: payload });
+      }
     } catch (err) {
       console.error('Error checking nearby maintenances:', err);
     }
