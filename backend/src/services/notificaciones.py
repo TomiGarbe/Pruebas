@@ -1,16 +1,6 @@
 from sqlalchemy.orm import Session
 from api.models import Notificacion_Correctivo, Notificacion_Preventivo, Usuario
 from .webpush import send_webpush_notification
-
-import logging
-
-# Configure logger for console output
-logger = logging.getLogger("notifications")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-    logger.addHandler(handler)
     
 def notify_user(db_session: Session, firebase_uid: str, title: str, body: str):
     send_webpush_notification(db_session, firebase_uid, title, body)
@@ -37,7 +27,6 @@ def notificacion_preventivo_leida(db_session: Session, id_notificacion: int):
     return db_notificacion
 
 def send_notification_correctivo(db_session: Session, firebase_uid: str, id_mantenimiento: int, mensaje: str):
-    logger.info("Notificacion a: %s", firebase_uid)
     db_notificacion = Notificacion_Correctivo(firebase_uid=firebase_uid, id_mantenimiento=id_mantenimiento, mensaje=mensaje)
     db_session.add(db_notificacion)
     db_session.commit()
@@ -49,7 +38,6 @@ def send_notification_preventivo(db_session: Session, firebase_uid: str, id_mant
 
 def notify_users_correctivo(db_session: Session, id_mantenimiento: int, mensaje: str, firebase_uid: str = None):
     if firebase_uid is not None:
-        logger.info("Notificacion de cuadrilla: %s", firebase_uid)
         send_notification_correctivo(db_session, firebase_uid, id_mantenimiento, mensaje)
     else:
         encargados = db_session.query(Usuario).filter(Usuario.rol == "Encargado de Mantenimiento").all()

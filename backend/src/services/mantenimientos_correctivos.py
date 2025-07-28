@@ -8,16 +8,6 @@ from services.google_sheets import append_correctivo, update_correctivo, delete_
 from services.notificaciones import notify_user, notify_users_correctivo
 import os
 
-import logging
-
-# Configure logger for console output
-logger = logging.getLogger("notifications")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-    logger.addHandler(handler)
-
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
 
 def get_mantenimientos_correctivos(db: Session):
@@ -75,8 +65,6 @@ def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuadrilla:
                 title="Nuevo correctivo urgente asignado",
                 body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}"
             )
-    else:
-        logger.warning("Mantenimiento creado sin cuadrilla, notificación omitida")
     return db_mantenimiento
 
 async def update_mantenimiento_correctivo(
@@ -165,23 +153,20 @@ async def update_mantenimiento_correctivo(
     db.refresh(db_mantenimiento)
     update_correctivo(db, db_mantenimiento)
     if cuadrilla is not None:
-        notify_users_correctivo(
-            db_session=db,
-            id_mantenimiento=db_mantenimiento.id,
-            mensaje=f"Correctivo urgente asignado - Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)} | Prioridad: {str(db_mantenimiento.prioridad)}",
-            firebase_uid=cuadrilla.firebase_uid
-        )
         # Notify only once after all updates
         if prioridad == "Alta":
-            logger.info("Notificando de prioridad alta")
+            notify_users_correctivo(
+                db_session=db,
+                id_mantenimiento=db_mantenimiento.id,
+                mensaje=f"Correctivo urgente asignado - Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)} | Prioridad: {str(db_mantenimiento.prioridad)}",
+                firebase_uid=cuadrilla.firebase_uid
+            )
             notify_user(
                 db_session=db,
                 firebase_uid=cuadrilla.firebase_uid,
                 title="Correctivo urgente asignado",
                 body=f"Sucursal: {sucursal.nombre} | Incidente: {str(db_mantenimiento.incidente)}"
             )
-    else:
-        logger.warning("No cuadrilla asignada, notificación de prioridad alta omitida")
     return db_mantenimiento
 
 def delete_mantenimiento_correctivo(db: Session, mantenimiento_id: int, current_entity: dict):
