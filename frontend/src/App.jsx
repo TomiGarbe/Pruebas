@@ -26,6 +26,7 @@ const googleMapsLibraries = ['places'];
 
 const ProtectedRoute = ({ children, adminOnly, usersOnly }) => {
   const { currentEntity, loading, verifying } = useContext(AuthContext);
+  const location = useLocation();
 
   if (loading || verifying) {
     return (
@@ -38,7 +39,7 @@ const ProtectedRoute = ({ children, adminOnly, usersOnly }) => {
   }
 
   if (!currentEntity) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
   if (adminOnly && (currentEntity.type !== 'usuario' || currentEntity.data.rol !== 'Administrador')) {
@@ -60,9 +61,10 @@ const AppContent = () => {
 
   useEffect(() => {
     if (currentEntity && !loading && !verifying && isLoginPage) {
-      navigate('/', { replace: true });
+      const redirectTo = location.state?.from || '/';
+      navigate(redirectTo, { replace: true });
     }
-  }, [currentEntity, loading, verifying, isLoginPage, navigate]);
+  }, [currentEntity, loading, verifying, isLoginPage, navigate, location]);
 
   return (
     <LoadScript googleMapsApiKey={mapsApiKey} libraries={googleMapsLibraries}>

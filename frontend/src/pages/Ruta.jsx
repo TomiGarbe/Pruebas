@@ -121,7 +121,7 @@ const Ruta = () => {
         const key = `${m.tipo}-${m.id}`;
         if (notifiedMaintenancesRef.current.has(key)) return;
         const suc = sucursalesResponse.data.find(s => Number(s.id) === m.id_sucursal);
-        payload.push({ id: m.id, tipo: m.tipo, mensaje: `Sucursal: ${suc ? suc.name : m.id_sucursal}` });
+        payload.push({ id: m.id, tipo: m.tipo, mensaje: `Mantenimiento ${m.tipo} pendiente cercano en la sucursal: ${suc ? suc.name : m.id_sucursal}` });
         notifiedMaintenancesRef.current.add(key);
       });
 
@@ -301,17 +301,6 @@ const Ruta = () => {
       map.remove();
     };
   }, []);
-
-  useEffect(() => {
-    if (!currentEntity) {
-      navigate('/login');
-      return;
-    }
-    if (currentEntity.type !== 'cuadrilla') {
-      navigate('/');
-      return;
-    }
-  }, [currentEntity, navigate]);
 
   useEffect(() => {
     if (!navigator.geolocation) {

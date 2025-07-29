@@ -137,7 +137,6 @@ const AuthProvider = ({ children }) => {
         localStorage.setItem('authToken', firebaseToken);
         sessionStorage.setItem('authToken', firebaseToken);
         await verifyUser(user, firebaseToken);
-        navigate('/');
       } else {
         await logOut('No se pudo obtener el usuario');
       }

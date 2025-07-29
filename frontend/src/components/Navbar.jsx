@@ -94,6 +94,13 @@ const Navbar = () => {
   };
 
   useEffect(() => {
+    if (currentEntity) {
+      fetchNotifications();
+    }
+
+  }, []);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       if (currentEntity) {
         fetchNotifications();

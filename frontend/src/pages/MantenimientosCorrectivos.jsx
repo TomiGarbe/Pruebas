@@ -68,14 +68,9 @@ const MantenimientosCorrectivos = () => {
   };
 
   useEffect(() => {
-    if (currentEntity) {
-      fetchMantenimientos();
-      fetchData();
-    }
-    else {
-      navigate('/login');
-    }
-  }, [currentEntity, navigate]);
+    fetchMantenimientos();
+    fetchData();
+  }, []);
 
   const handleFilterChange = (e) => {
     const newFilters = { ...filters, [e.target.name]: e.target.value };

@@ -74,13 +74,9 @@ const Preventivo = () => {
   };
 
   useEffect(() => {
-    if (!currentEntity) {
-      navigate('/login');
-    } else {
-      fetchMantenimiento();
-      fetchData();
-    }
-  }, [currentEntity, navigate]);
+    fetchMantenimiento();
+    fetchData();
+  }, []);
 
   const handleFileChange = (e, field) => {
     const files = Array.from(e.target.files);

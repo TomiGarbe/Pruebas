@@ -76,13 +76,9 @@ const Correctivo = () => {
   };
 
   useEffect(() => {
-    if (!currentEntity) {
-      navigate('/login');
-    } else {
-      fetchMantenimiento();
-      fetchData();
-    }
-  }, [currentEntity, navigate]);
+    fetchMantenimiento();
+    fetchData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
