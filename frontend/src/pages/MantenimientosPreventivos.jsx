@@ -65,9 +65,14 @@ const MantenimientosPreventivos = () => {
   };
 
   useEffect(() => {
-    fetchMantenimientos();
-    fetchData();
-  }, []);
+    if (currentEntity) {
+      fetchMantenimientos();
+      fetchData();
+    }
+    else {
+      navigate('/login');
+    }
+  }, [currentEntity, navigate]);
 
   const handleFilterChange = (e) => {
     const newFilters = { ...filters, [e.target.name]: e.target.value };
@@ -116,8 +121,8 @@ const MantenimientosPreventivos = () => {
     setShowForm(true);
   };
 
-  const handleRowClick = (mantenimientoId) => {
-    navigate('/preventivo', { state: { mantenimientoId } });
+  const handleRowClick = (mantenimiento) => {
+    navigate('/preventivo', { state: { mantenimiento } });
   };
 
   const handleFormClose = () => {
@@ -237,7 +242,7 @@ const MantenimientosPreventivos = () => {
                 {filteredMantenimientos.map((mantenimiento) => (
                   <tr 
                     key={mantenimiento.id} 
-                    onClick={() => handleRowClick(mantenimiento.id)}
+                    onClick={() => handleRowClick(mantenimiento)}
                     style={{ cursor: 'pointer' }}
                   >
                     <td>{mantenimiento.id}</td>

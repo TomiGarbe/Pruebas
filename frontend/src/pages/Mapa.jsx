@@ -273,8 +273,14 @@ const Mapa = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!currentEntity) {
+      navigate('/login');
+    } else if (currentEntity.type !== 'usuario') {
+      navigate('/');
+    } else {
+      fetchData();
+    }
+  }, [currentEntity, navigate]);
 
   useEffect(() => {
     if (isDataLoaded) {

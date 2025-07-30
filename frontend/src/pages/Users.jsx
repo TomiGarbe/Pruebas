@@ -32,8 +32,16 @@ const Users = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (currentEntity.data.rol === 'Administrador') {
+      fetchUsers();
+    }
+    else if (currentEntity) {
+      navigate('/');
+    }
+    else {
+      navigate('/login');
+    }
+  }, [currentEntity, navigate]);
 
   const handleDelete = async (id) => {
     setIsLoading(true);

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from enum import Enum
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, Dict, Any
 
 # Enum para los roles
@@ -117,22 +117,10 @@ class MantenimientoCorrectivoCreate(BaseModel):
     rubro: Rubro
     estado: Estado
     prioridad: Prioridad
-
-
-class PushSubscriptionKeys(BaseModel):
-    p256dh: str
-    auth: str
-
-class PushSubscriptionCreate(BaseModel):
-    endpoint: str
-    keys: PushSubscriptionKeys
-    firebase_uid: str
-    device_info: Optional[str] = None
     
-class MaintenanceNearInfo(BaseModel):
-    id: int
-    tipo: str
-    mensaje: str
-
-class NearbyNotificationCreate(BaseModel):
-    mantenimientos: list[MaintenanceNearInfo]
+# Esquema para Mensaje
+class Message(BaseModel):
+    firebase_uid: str
+    nombre_usuario: str
+    texto: Optional[str] = None
+    archivo: Optional[str] = None

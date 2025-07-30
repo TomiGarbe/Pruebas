@@ -32,8 +32,16 @@ const Cuadrillas = () => {
   };
 
   useEffect(() => {
-    fetchCuadrillas();
-  }, []);
+    if (currentEntity.type === 'usuario') {
+      fetchCuadrillas();
+    }
+    else if (currentEntity) {
+      navigate('/');
+    }
+    else {
+      navigate('/login');
+    }
+  }, [currentEntity, navigate]);
 
   const handleDelete = async (id) => {
     setIsLoading(true);
