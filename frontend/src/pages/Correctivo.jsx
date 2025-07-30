@@ -313,15 +313,15 @@ const handleDeleteSelectedPlanilla = async () => {
 
   const handleEnviarMensaje = async () => {
   if (!nuevoMensaje && !archivoAdjunto) return;
-
-  const formData = new FormData();
-  formData.append('firebase_uid', currentEntity.data.uid);
-  formData.append('nombre_usuario', currentEntity.data.nombre);
-  if (nuevoMensaje) formData.append('texto', nuevoMensaje);
-  if (archivoAdjunto) formData.append('archivo', archivoAdjunto);
+  console.log(nuevoMensaje);
+  const message = new FormData();
+  message.append('firebase_uid', currentEntity.data.uid);
+  message.append('nombre_usuario', currentEntity.data.nombre);
+  if (nuevoMensaje) message.append('texto', nuevoMensaje);
+  if (archivoAdjunto) message.append('archivo', archivoAdjunto);
 
   try {
-    await sendMessageCorrectivo(mantenimiento.id, formData);
+    await sendMessageCorrectivo(mantenimiento.id, message);
     setNuevoMensaje('');
     setArchivoAdjunto(null);
     await cargarMensajes();
