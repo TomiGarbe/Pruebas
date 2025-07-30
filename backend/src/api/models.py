@@ -60,7 +60,7 @@ class MantenimientoPreventivo(Base):
     sucursal = relationship("Sucursal", back_populates="mantenimientos_preventivos")
     cuadrilla = relationship("Cuadrilla", back_populates="mantenimientos_preventivos")
     preventivo_seleccionado = relationship("PreventivoSeleccionado", back_populates="mantenimiento_preventivo")
-    mensaje_preventivo = relationship("MensajePreventivo", back_populates="mantenimiento_preventivo")
+    mensaje_preventivo = relationship("MensajePreventivo", backref="mantenimiento")
     planillas = relationship("MantenimientoPreventivoPlanilla", backref="mantenimiento")
     fotos = relationship("MantenimientoPreventivoFoto", backref="mantenimiento")
     
@@ -94,7 +94,7 @@ class MantenimientoCorrectivo(Base):
     sucursal = relationship("Sucursal", back_populates="mantenimientos_correctivos")
     cuadrilla = relationship("Cuadrilla", back_populates="mantenimientos_correctivos")
     correctivo_seleccionado = relationship("CorrectivoSeleccionado", back_populates="mantenimiento_correctivo")
-    mensaje_correctivo = relationship("MensajeCorrectivo", back_populates="mantenimiento_correctivo")
+    mensaje_correctivo = relationship("MensajeCorrectivo", backref="mantenimiento")
     fotos = relationship("MantenimientoCorrectivoFoto", backref="mantenimiento")
 
 class MantenimientoCorrectivoFoto(Base):
@@ -155,8 +155,6 @@ class MensajeCorrectivo(Base):
     archivo = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")))
     
-    mantenimiento_correctivo = relationship("MantenimientoCorrectivo", back_populates="mensaje_correctivo")
-    
 class MensajePreventivo(Base):
     __tablename__ = "mensaje_preventivo"
     id = Column(Integer, primary_key=True)
@@ -166,5 +164,3 @@ class MensajePreventivo(Base):
     texto = Column(String, nullable=True)
     archivo = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")))
-    
-    mantenimiento_preventivo = relationship("MantenimientoPreventivo", back_populates="mensaje_preventivo")

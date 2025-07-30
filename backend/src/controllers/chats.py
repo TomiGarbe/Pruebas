@@ -4,23 +4,12 @@ from config.database import get_db
 from services.chats import get_chat_correctivo, get_chat_preventivo, send_message_correctivo, send_message_preventivo
 from typing import List, Optional
 
-import logging
-
-logger = logging.getLogger("notifications")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-    logger.addHandler(handler)
-
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 @router.get("/correctivo/{mantenimiento_id}", response_model=List[dict])
 def chat_correctivo_get(mantenimiento_id: int, request: Request, db_session: Session = Depends(get_db)):
-    logger.info("chat_correctivo_get")
     current_entity = request.state.current_entity
     chat = get_chat_correctivo(db_session, mantenimiento_id, current_entity)
-    logger.info("respuesta: %s", chat)
     return [
         {
             "id": message.id,
@@ -61,7 +50,6 @@ async def correctivo_message_send(
     archivo: Optional[UploadFile] = File(None),
     db_session: Session = Depends(get_db)
 ):
-    logger.info("correctivo_message_send")
     current_entity = request.state.current_entity
     new_message = await send_message_correctivo(
         db_session,
@@ -72,7 +60,6 @@ async def correctivo_message_send(
         texto,
         archivo
     )
-    logger.info("respuesta: %s", new_message)
     return {
         "id": new_message.id,
         "firebase_uid": new_message.firebase_uid,

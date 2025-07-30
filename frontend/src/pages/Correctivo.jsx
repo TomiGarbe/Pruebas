@@ -313,7 +313,7 @@ const handleDeleteSelectedPlanilla = async () => {
 
   const handleEnviarMensaje = async () => {
   if (!nuevoMensaje && !archivoAdjunto) return;
-  console.log(nuevoMensaje);
+
   const message = new FormData();
   message.append('firebase_uid', currentEntity.data.uid);
   message.append('nombre_usuario', currentEntity.data.nombre);
