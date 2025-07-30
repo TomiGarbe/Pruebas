@@ -314,15 +314,14 @@ const handleDeleteSelectedPlanilla = async () => {
   const handleEnviarMensaje = async () => {
   if (!nuevoMensaje && !archivoAdjunto) return;
 
-  const message = {
-    firebase_uid: currentEntity.data.uid,
-    nombre_usuario: currentEntity.data.nombre,
-    texto: nuevoMensaje || '',
-    archivo: archivoAdjunto || '',
-  }
+  const formData = new FormData();
+  formData.append('firebase_uid', currentEntity.data.uid);
+  formData.append('nombre_usuario', currentEntity.data.nombre);
+  if (nuevoMensaje) formData.append('texto', nuevoMensaje);
+  if (archivoAdjunto) formData.append('archivo', archivoAdjunto);
 
   try {
-    await sendMessageCorrectivo(mantenimiento.id, message);
+    await sendMessageCorrectivo(mantenimiento.id, formData);
     setNuevoMensaje('');
     setArchivoAdjunto(null);
     await cargarMensajes();
@@ -463,7 +462,7 @@ const handleDeleteSelectedPlanilla = async () => {
             <Col className="chat-section">
               <div className="chat-box" ref={chatBoxRef}>
                 {mensajes.map((msg, index) => {
-                  const esPropio = msg.firebase_uid === currentEntity.firebase_uid;
+                  const esPropio = msg.firebase_uid === currentEntity.data.uid;
                   const esImagen = msg.archivo?.match(/\.(jpeg|jpg|png|gif)$/i);
                   return (
                     <div key={index} className={`chat-message ${esPropio ? 'chat-message-sent' : 'chat-message-received'}`}>

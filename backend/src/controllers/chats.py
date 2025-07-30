@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, UploadFile, Form, File
 from sqlalchemy.orm import Session
 from config.database import get_db
 from services.chats import get_chat_correctivo, get_chat_preventivo, send_message_correctivo, send_message_preventivo
-from api.schemas import Message
-from typing import List
+from typing import List, Optional
 
 import logging
 
@@ -53,17 +52,25 @@ def chat_preventivo_get(mantenimiento_id: int, request: Request, db_session: Ses
     ]
 
 @router.post("/message-correctivo/{mantenimiento_id}", response_model=dict)
-async def correctivo_message_send(mantenimiento_id: int, message: Message, request: Request, db_session: Session = Depends(get_db)):
+async def correctivo_message_send(
+    mantenimiento_id: int,
+    request: Request,
+    firebase_uid: str = Form(...),
+    nombre_usuario: str = Form(...),
+    texto: Optional[str] = Form(None),
+    archivo: Optional[UploadFile] = File(None),
+    db_session: Session = Depends(get_db)
+):
     logger.info("correctivo_message_send")
     current_entity = request.state.current_entity
     new_message = await send_message_correctivo(
         db_session,
         mantenimiento_id,
-        message.firebase_uid,
-        message.nombre_usuario,
+        firebase_uid,
+        nombre_usuario,
         current_entity,
-        message.texto,
-        message.archivo
+        texto,
+        archivo
     )
     logger.info("respuesta: %s", new_message)
     return {
@@ -77,16 +84,24 @@ async def correctivo_message_send(mantenimiento_id: int, message: Message, reque
     }
 
 @router.post("/message-preventivo/{mantenimiento_id}", response_model=dict)
-async def preventivo_message_send(mantenimiento_id: int, message: Message, request: Request, db_session: Session = Depends(get_db)):
+async def preventivo_message_send(
+    mantenimiento_id: int,  
+    request: Request,
+    firebase_uid: str = Form(...),
+    nombre_usuario: str = Form(...),
+    texto: Optional[str] = Form(None),
+    archivo: Optional[UploadFile] = File(None),
+    db_session: Session = Depends(get_db)
+):
     current_entity = request.state.current_entity
     new_message = await send_message_preventivo(
         db_session,
         mantenimiento_id,
-        message.firebase_uid,
-        message.nombre_usuario,
+        firebase_uid,
+        nombre_usuario,
         current_entity,
-        message.texto,
-        message.archivo
+        texto,
+        archivo
     )
     return {
         "id": new_message.id,
