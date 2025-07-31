@@ -65,7 +65,7 @@ const Sucursales = () => {
           </div>
         </div>
       ) : (
-        <div>
+        <div className="contenido-wrapper">
           <BackButton />
           <Row className="align-items-center mb-2">
             <Col>

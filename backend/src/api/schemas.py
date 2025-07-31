@@ -118,7 +118,6 @@ class MantenimientoCorrectivoCreate(BaseModel):
     estado: Estado
     prioridad: Prioridad
 
-
 class PushSubscriptionKeys(BaseModel):
     p256dh: str
     auth: str
@@ -126,6 +125,10 @@ class PushSubscriptionKeys(BaseModel):
 class PushSubscriptionCreate(BaseModel):
     endpoint: str
     keys: PushSubscriptionKeys
+    firebase_uid: str
+    device_info: Optional[str] = None
+    
+class PushSubscriptionDelete(BaseModel):
     firebase_uid: str
     device_info: Optional[str] = None
     

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { auth, signOut, getPushSubscription, signInWithCredential, GoogleAuthProvider } from '../services/firebase';
-import { saveSubscription } from '../services/notificaciones';
+import { saveSubscription, deleteSubscription } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { googleClientId } from '../config';
@@ -71,6 +71,13 @@ const AuthProvider = ({ children }) => {
     setVerifying(false);
     isVerifyingRef.current = false;
     isVerifiedRef.current = false;
+    const subscription = await getPushSubscription();
+    if (subscription) {
+      await deleteSubscription({
+        firebase_uid: response.data.data.uid,
+        device_info: navigator.userAgent
+      });
+    }
     await signOut(auth);
     if (error) {
       navigate('/login', { state: { error: error } });
