@@ -42,7 +42,6 @@ def notify_users_correctivo(db_session: Session, id_mantenimiento: int, mensaje:
         send_notification_correctivo(db_session, firebase_uid, id_mantenimiento, mensaje)
     else:
         encargados = db_session.query(Usuario).filter(Usuario.rol == "Encargado de Mantenimiento").all()
-        logger.info("Notificacion de encargados: %s", encargados)
         for encargado in encargados:
             send_notification_correctivo(db_session, encargado.firebase_uid, id_mantenimiento, mensaje)
 
