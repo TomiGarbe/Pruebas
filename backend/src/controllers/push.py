@@ -5,16 +5,6 @@ from services.push_subscriptions import save_subscription, get_subscriptions, de
 from api.schemas import PushSubscriptionCreate
 from typing import List
 
-import logging
-
-# Configure logger for console output
-logger = logging.getLogger("notifications")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-    logger.addHandler(handler)
-
 router = APIRouter(prefix="/push", tags=["push"])
 
 @router.post("/subscribe", response_model=dict)
@@ -29,5 +19,4 @@ def push_list(firebase_uid: str, db: Session = Depends(get_db)):
 
 @router.delete("/subscription", response_model=dict)
 def push_delete(firebase_uid: str = Form(...), device_info: str = Form(...), db: Session = Depends(get_db)):
-    logger.warning("delete subscription controller")
     return delete_subscription(db, firebase_uid, device_info)
