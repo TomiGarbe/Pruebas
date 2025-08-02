@@ -100,15 +100,16 @@ const AuthProvider = ({ children }) => {
                 localStorage.setItem('googleIdToken', idToken);
                 sessionStorage.setItem('googleIdToken', idToken);
                 setSingingIn(true);
-              }
-              const emailResponse = await fetch(
-                `https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${idToken}`
-              );
-              const tokenInfo = await emailResponse.json();
-              if (tokenInfo.email) {
-                resolve({ idToken, email: tokenInfo.email });
               } else {
-                reject(new Error('Failed to retrieve email from Google ID token'));
+                const emailResponse = await fetch(
+                  `https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${idToken}`
+                );
+                const tokenInfo = await emailResponse.json();
+                if (tokenInfo.email) {
+                  resolve({ idToken, email: tokenInfo.email });
+                } else {
+                  reject(new Error('Failed to retrieve email from Google ID token'));
+                }
               }
             } catch (error) {
               console.error('Error processing Google ID token:', error);
