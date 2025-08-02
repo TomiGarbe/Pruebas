@@ -61,6 +61,7 @@ const AuthProvider = ({ children }) => {
   };
 
   const logOut = async (error) => {
+    alert("1");
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('authToken');
     localStorage.removeItem('googleIdToken');
@@ -70,6 +71,7 @@ const AuthProvider = ({ children }) => {
     isVerifyingRef.current = false;
     isVerifiedRef.current = false;
     if (currentEntity) {
+      alert("2");
       const sub = new FormData();
       sub.append('firebase_uid', currentEntity.data.uid);
       sub.append('device_info', navigator.userAgent);
@@ -77,10 +79,13 @@ const AuthProvider = ({ children }) => {
     }
     setCurrentUser(null);
     setCurrentEntity(null);
+    alert("3");
     await signOut(auth);
     if (error) {
+      alert("4");
       navigate('/login', { state: { error: error } });
     } else {
+      alert("5");
       navigate('/login');
     }
   };
