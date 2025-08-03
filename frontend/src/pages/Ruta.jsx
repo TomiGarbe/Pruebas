@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { LocationContext } from '../context/LocationContext';
 import { getSucursalesLocations, getCorrectivos, getPreventivos, deleteSucursal, deleteSelection } from '../services/maps';
@@ -27,7 +26,6 @@ const NOTIFY_DISTANCE = 10000; // Distancia en metros para notificar mantenimien
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
   const { userLocation } = useContext(LocationContext);
-  const navigate = useNavigate();
   const [sucursales, setSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);

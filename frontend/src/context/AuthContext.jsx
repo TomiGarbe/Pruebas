@@ -72,10 +72,13 @@ const AuthProvider = ({ children }) => {
     isVerifiedRef.current = false;
     if (currentEntity) {
       alert("2");
-      const sub = new FormData();
+      /*const sub = new FormData();
       sub.append('firebase_uid', currentEntity.data.uid);
-      sub.append('device_info', navigator.userAgent);
-      const response = await deleteSubscription(sub);
+      sub.append('device_info', navigator.userAgent);*/
+      const response = await deleteSubscription({
+        firebase_uid: currentEntity.data.uid,
+        device_info: navigator.userAgent
+      });
       alert(response);
       alert(JSON.stringify(response));
     }
