@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Form
 from sqlalchemy.orm import Session
 from config.database import get_db
-from services.push_subscriptions import save_subscription, get_subscriptions, delete_subscription
+from services.push_subscriptions import save_subscription, get_subscriptions
 from api.schemas import PushSubscriptionCreate
 from typing import List
 
