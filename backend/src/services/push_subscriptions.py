@@ -8,6 +8,10 @@ def save_subscription(db_session: Session, current_entity: dict, sub: PushSubscr
         raise HTTPException(status_code=401, detail="Autenticación requerida")
 
     db_session.query(PushSubscription).filter(PushSubscription.endpoint == sub.endpoint).delete()
+    subs = db_session.query(PushSubscription).filter(PushSubscription.firebase_uid == sub.firebase_uid, PushSubscription.device_info == sub.device_info).all()
+    if subs:
+        for sub in subs:
+            db_session.delete(sub)
 
     db_sub = PushSubscription(
         firebase_uid=sub.firebase_uid,
@@ -29,7 +33,7 @@ def get_subscriptions(db_session: Session, firebase_uid: str):
 
 def delete_subscription(db_session: Session, firebase_uid: str, device_info: str):
     try:
-        subs = db_session.query(PushSubscription).filter(PushSubscription.firebase_uid == firebase_uid, PushSubscription.device_info == device_info,).all()
+        subs = db_session.query(PushSubscription).filter(PushSubscription.firebase_uid == firebase_uid, PushSubscription.device_info == device_info).all()
         if not subs:
             raise HTTPException(status_code=404, detail="Subscriptions not found")
         for sub in subs:

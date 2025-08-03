@@ -17,6 +17,6 @@ def push_list(firebase_uid: str, db: Session = Depends(get_db)):
     subs = get_subscriptions(db, firebase_uid)
     return [{"id": s.id, "endpoint": s.endpoint} for s in subs]
 
-@router.delete("/subscription", response_model=dict)
+@router.post("/subscription", response_model=dict)
 def push_delete(firebase_uid: str = Form(...), device_info: str = Form(...), db: Session = Depends(get_db)):
     return delete_subscription(db, firebase_uid, device_info)
