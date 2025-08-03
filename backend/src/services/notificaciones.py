@@ -5,17 +5,27 @@ from .webpush import send_webpush_notification
 from datetime import datetime
 from zoneinfo import ZoneInfo
     
-def notify_user(db_session: Session, firebase_uid: str, title: str, body: str):
+def notify_user(db_session: Session, firebase_uid: str, id_mantenimiento: int, mensaje: str, title: str, body: str):
     existing_notification = db_session.query(Notificacion_Correctivo).filter(
         Notificacion_Correctivo.firebase_uid == firebase_uid, 
-        Notificacion_Correctivo.title == title, 
-        Notificacion_Correctivo.body == body, 
+        Notificacion_Correctivo.id_mantenimiento == id_mantenimiento, 
+        Notificacion_Correctivo.mensaje == mensaje, 
         Notificacion_Correctivo.created_at >= datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).replace(hour=0, minute=0, second=0, microsecond=0),
         Notificacion_Correctivo.created_at < datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).replace(hour=23, minute=59, second=59, microsecond=999999)
     ).first()
     if not existing_notification:
-        send_webpush_notification(db_session, firebase_uid, title, body)
-        return {"message": "Notification sent"}
+        existing_notification = db_session.query(Notificacion_Preventivo).filter(
+            Notificacion_Preventivo.firebase_uid == firebase_uid, 
+            Notificacion_Preventivo.id_mantenimiento == id_mantenimiento, 
+            Notificacion_Preventivo.mensaje == mensaje, 
+            Notificacion_Preventivo.created_at >= datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).replace(hour=0, minute=0, second=0, microsecond=0),
+            Notificacion_Preventivo.created_at < datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).replace(hour=23, minute=59, second=59, microsecond=999999)
+        ).first()
+        if not existing_notification:
+            send_webpush_notification(db_session, firebase_uid, title, body)
+            return {"message": "Notification sent"}
+        else:
+            return {"message": "Notification already exist"}
     else:
         return {"message": "Notification already exist"}
 
@@ -40,14 +50,30 @@ def notificacion_preventivo_leida(db_session: Session, id_notificacion: int):
     return db_notificacion
 
 def send_notification_correctivo(db_session: Session, firebase_uid: str, id_mantenimiento: int, mensaje: str):
-    db_notificacion = Notificacion_Correctivo(firebase_uid=firebase_uid, id_mantenimiento=id_mantenimiento, mensaje=mensaje)
-    db_session.add(db_notificacion)
-    db_session.commit()
+    existing_notification = db_session.query(Notificacion_Preventivo).filter(
+        Notificacion_Preventivo.firebase_uid == firebase_uid, 
+        Notificacion_Preventivo.id_mantenimiento == id_mantenimiento, 
+        Notificacion_Preventivo.mensaje == mensaje, 
+        Notificacion_Preventivo.created_at >= datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).replace(hour=0, minute=0, second=0, microsecond=0),
+        Notificacion_Preventivo.created_at < datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).replace(hour=23, minute=59, second=59, microsecond=999999)
+    ).first()
+    if not existing_notification:
+        db_notificacion = Notificacion_Correctivo(firebase_uid=firebase_uid, id_mantenimiento=id_mantenimiento, mensaje=mensaje)
+        db_session.add(db_notificacion)
+        db_session.commit()
 
 def send_notification_preventivo(db_session: Session, firebase_uid: str, id_mantenimiento: int, mensaje: str):
-    db_notificacion = Notificacion_Preventivo(firebase_uid=firebase_uid, id_mantenimiento=id_mantenimiento, mensaje=mensaje)
-    db_session.add(db_notificacion)
-    db_session.commit()
+    existing_notification = db_session.query(Notificacion_Correctivo).filter(
+        Notificacion_Correctivo.firebase_uid == firebase_uid, 
+        Notificacion_Correctivo.id_mantenimiento == id_mantenimiento, 
+        Notificacion_Correctivo.mensaje == mensaje,
+        Notificacion_Correctivo.created_at >= datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).replace(hour=0, minute=0, second=0, microsecond=0),
+        Notificacion_Correctivo.created_at < datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).replace(hour=23, minute=59, second=59, microsecond=999999)
+    ).first()
+    if not existing_notification:
+        db_notificacion = Notificacion_Preventivo(firebase_uid=firebase_uid, id_mantenimiento=id_mantenimiento, mensaje=mensaje)
+        db_session.add(db_notificacion)
+        db_session.commit()
 
 def notify_users_correctivo(db_session: Session, id_mantenimiento: int, mensaje: str, firebase_uid: str = None):
     if firebase_uid is not None:
