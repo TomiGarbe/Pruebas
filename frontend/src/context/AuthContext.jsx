@@ -75,7 +75,9 @@ const AuthProvider = ({ children }) => {
       const sub = new FormData();
       sub.append('firebase_uid', currentEntity.data.uid);
       sub.append('device_info', navigator.userAgent);
-      await deleteSubscription(sub);
+      const response = await deleteSubscription(sub);
+      alert(response);
+      alert(JSON.stringify(response));
     }
     setCurrentUser(null);
     setCurrentEntity(null);
