@@ -127,10 +127,6 @@ class PushSubscriptionCreate(BaseModel):
     keys: PushSubscriptionKeys
     firebase_uid: str
     device_info: Optional[str] = None
-
-class PushSubscriptionDelete(BaseModel):
-    firebase_uid: str
-    device_info: str
     
 class MaintenanceNearInfo(BaseModel):
     id: int

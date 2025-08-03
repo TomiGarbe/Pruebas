@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { auth, signOut, getPushSubscription, signInWithCredential, GoogleAuthProvider } from '../services/firebase';
-import { saveSubscription, deleteSubscription } from '../services/notificaciones';
+import { saveSubscription } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { googleClientId } from '../config';
@@ -61,7 +61,6 @@ const AuthProvider = ({ children }) => {
   };
 
   const logOut = async (error) => {
-    alert("1");
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('authToken');
     localStorage.removeItem('googleIdToken');
@@ -70,27 +69,12 @@ const AuthProvider = ({ children }) => {
     setVerifying(false);
     isVerifyingRef.current = false;
     isVerifiedRef.current = false;
-    if (currentEntity) {
-      alert("2");
-      /*const sub = new FormData();
-      sub.append('firebase_uid', currentEntity.data.uid);
-      sub.append('device_info', navigator.userAgent);*/
-      const response = await deleteSubscription({
-        firebase_uid: currentEntity.data.uid,
-        device_info: navigator.userAgent
-      });
-      alert(response);
-      alert(JSON.stringify(response));
-    }
     setCurrentUser(null);
     setCurrentEntity(null);
-    alert("3");
     await signOut(auth);
     if (error) {
-      alert("4");
       navigate('/login', { state: { error: error } });
     } else {
-      alert("5");
       navigate('/login');
     }
   };
