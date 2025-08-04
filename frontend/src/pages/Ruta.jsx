@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { Button } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { LocationContext } from '../context/LocationContext';
 import { getSucursalesLocations, getCorrectivos, getPreventivos, deleteSucursal, deleteSelection } from '../services/maps';
@@ -26,6 +27,7 @@ const NOTIFY_DISTANCE = 10000; // Distancia en metros para notificar mantenimien
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
   const { userLocation } = useContext(LocationContext);
+  const navigate = useNavigate();
   const [sucursales, setSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -92,13 +94,13 @@ const Ruta = () => {
         ...selectedCorrectivosRes.data.map(c => c.id_mantenimiento),
         ...selectedPreventivosRes.data.map(p => p.id_mantenimiento)
       ]);
-      console.log("selectedIds", selectedIds);
+
       const nearbySucursalIds = new Set(
         sucursalesResponse.data
           .filter(s => currentLatLng.distanceTo(L.latLng(s.lat, s.lng)) <= NOTIFY_DISTANCE)
           .map(s => Number(s.id))
       );
-      console.log("nearbySucursalIds", nearbySucursalIds);
+
       const allMaintenances = [
         ...allCorrectivosRes.data
           .filter(m => m.estado === 'pendiente')
@@ -107,13 +109,13 @@ const Ruta = () => {
           .filter(m => !m.fechaCierre)
           .map(m => ({ ...m, tipo: 'preventivo' }))
       ];
-      console.log("allMaintenances", allMaintenances);
+
       const nearMaintenances = allMaintenances.filter(m =>
         m.id_cuadrilla === parseInt(currentEntity.data.id) &&
         nearbySucursalIds.has(m.id_sucursal) &&
         !selectedIds.has(m.id)
       );
-      console.log("nearMaintenances", nearMaintenances);
+
       const payload = [];
       nearMaintenances.forEach(m => {
         const key = `${m.tipo}-${m.id}`;
@@ -220,10 +222,6 @@ const Ruta = () => {
       routeWhileDragging: false,
       show: false
     }).addTo(mapInstanceRef.current);
-
-    control.on('routesfound', () => {
-      console.log('Ruta recalculada');
-    });
 
     control.on('routingerror', (err) => {
       console.error('Routing error:', err);
