@@ -2,12 +2,40 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from api.models import Notificacion_Correctivo, Notificacion_Preventivo, Usuario
 from .webpush import send_webpush_notification
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
     
 def notify_user(db_session: Session, firebase_uid: str, id_mantenimiento: int, mensaje: str, title: str, body: str):
-    send_webpush_notification(db_session, firebase_uid, title, body)
-    return {"message": "Notification sent"}
+    # Define the start and end of the current day in Argentina timezone
+    start_of_day = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day.replace(hour=23, minute=59, second=59, microsecond=999999)
+    time_threshold = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")) - timedelta(seconds=60)
+
+    # Check for existing Notificacion_Correctivo
+    existing_notification = db_session.query(Notificacion_Correctivo).filter(
+        Notificacion_Correctivo.firebase_uid == firebase_uid,
+        Notificacion_Correctivo.id_mantenimiento == id_mantenimiento,
+        Notificacion_Correctivo.mensaje == mensaje,
+        Notificacion_Correctivo.created_at >= start_of_day,
+        Notificacion_Correctivo.created_at <= end_of_day,
+        Notificacion_Correctivo.created_at >= time_threshold
+    ).first()
+
+    if not existing_notification:
+        # Check for existing Notificacion_Preventivo
+        existing_notification = db_session.query(Notificacion_Preventivo).filter(
+            Notificacion_Preventivo.firebase_uid == firebase_uid,
+            Notificacion_Preventivo.id_mantenimiento == id_mantenimiento,
+            Notificacion_Preventivo.mensaje == mensaje,
+            Notificacion_Preventivo.created_at >= start_of_day,
+            Notificacion_Preventivo.created_at <= end_of_day,
+            Notificacion_Preventivo.created_at >= time_threshold
+        ).first()
+
+        if not existing_notification:
+            send_webpush_notification(db_session, firebase_uid, title, body)
+            return {"message": "Notification sent"}
+    return {"message": "Notification already sent"}
 
 def get_notification_correctivo(db_session: Session, firebase_uid: str):
     return db_session.query(Notificacion_Correctivo).filter(Notificacion_Correctivo.firebase_uid == firebase_uid).all()
