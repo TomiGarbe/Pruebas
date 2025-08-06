@@ -4,7 +4,7 @@ import { Navbar as BootstrapNavbar, Nav, Container, Image, Modal, Button } from 
 import logoInversur from '../assets/logo_inversur.png';
 import { FaBell } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
-import { get_notificaciones_correctivos, get_notificaciones_preventivos, correctivo_leido, preventivo_leido, delete_notificaciones, delete_notificacion } from '../services/notificaciones';
+import { get_notificaciones_correctivos, get_notificaciones_preventivos, correctivo_leido, preventivo_leido, delete_notificacion } from '../services/notificaciones';
 import '../styles/navbar.css';
 
 const Navbar = () => {
