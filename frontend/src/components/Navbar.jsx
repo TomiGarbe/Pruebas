@@ -71,7 +71,6 @@ const Navbar = () => {
       }));
 
       const allNotificaciones = [...mappedCorrectivos, ...mappedPreventivos];
-      console.log(allNotificaciones);
       setUnreadCount(allNotificaciones.filter(n => !n.leida).length);
 
       // Ordenar por fecha descendente
