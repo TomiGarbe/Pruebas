@@ -25,6 +25,7 @@ const Mapa = () => {
   const mapInstanceRef = useRef(null);
   const routeLayersRef = useRef({});
   const usersMarkersRef = useRef([]);
+  const cuadrillasMarkersRef = useRef([]);
   const sucursalMarkersRef = useRef([]);
 
   const fetchData = async () => {
@@ -35,10 +36,19 @@ const Mapa = () => {
         getMantenimientosCorrectivos(),
         getMantenimientosPreventivos()
       ]);
-      setCuadrillas(usersResponse.data || []);
+      const allUsers = usersResponse.data || [];
+      const filteredUsers = allUsers.filter(user => !isNaN(user.lat) && !isNaN(user.lng) && user.lat !== 0 && user.lng !== 0);
+      const correctivosFiltrados = (correctivosResponse.data || []).filter(
+        c => c.estado === "Pendiente"
+      );
+      const preventivosFiltrados = (preventivosResponse.data || []).filter(
+        c => c.fecha_cierre === null
+      );
+      setCuadrillas(filteredUsers.filter(u => u.tipo === 'cuadrilla'));
+      setUsers(filteredUsers.filter(u => u.tipo === 'Encargado de Mantenimiento'));
       setSucursalesLocations(sucursalesResponse.data || []);
-      setCorrectivos(correctivosResponse.data || []);
-      setPreventivos(preventivosResponse.data || []);
+      setCorrectivos(correctivosFiltrados);
+      setPreventivos(preventivosFiltrados);
       setIsDataLoaded(true);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -46,14 +56,12 @@ const Mapa = () => {
   };
 
   const fetchCuadrillaData = async () => {
-    if (!sucursalesLocations.length) return;
+    if (!sucursalesLocations.length || !cuadrillas.length) return;
     try {
-      const responseUsers = await getUsersLocations();
-      const updatedUsers = await Promise.all(
-        responseUsers.data.map(async user => {
+      cuadrillas.map(async cuadrilla => {
           const [Correctivos, Preventivos] = await Promise.all([
-            getCorrectivos(user.id),
-            getPreventivos(user.id)
+            getCorrectivos(cuadrilla.id),
+            getPreventivos(cuadrilla.id)
           ]);
           const correctivoIds = Correctivos.data?.map(c => Number(c.id_sucursal)) || [];
           const preventivoIds = Preventivos.data?.map(p => Number(p.id_sucursal)) || [];
@@ -61,12 +69,12 @@ const Mapa = () => {
           let filteredSucursales = sucursalesLocations.filter(s => selectedSucursalIds.has(Number(s.id)))
           filteredSucursales = [...filteredSucursales].sort((a, b) => {
             const distA = Math.sqrt(
-              Math.pow(user.lat - a.lat, 2) +
-              Math.pow(user.lng - a.lng, 2)
+              Math.pow(cuadrilla.lat - a.lat, 2) +
+              Math.pow(cuadrilla.lng - a.lng, 2)
             );
             const distB = Math.sqrt(
-              Math.pow(user.lat - b.lat, 2) +
-              Math.pow(user.lng - b.lng, 2)
+              Math.pow(cuadrilla.lat - b.lat, 2) +
+              Math.pow(cuadrilla.lng - b.lng, 2)
             );
             return distA - distB;
           });
@@ -79,7 +87,7 @@ const Mapa = () => {
             }));
           const correctivoMantenimientoIds = Correctivos.data?.map(c => Number(c.id_mantenimiento)) || [];
           const preventivoMantenimientoIds = Preventivos.data?.map(p => Number(p.id_mantenimiento)) || [];
-          const userCorrectivos = correctivos
+          const cuadrillaCorrectivos = correctivos
             .filter(c => correctivoMantenimientoIds.includes(Number(c.id)))
             .map(c => ({
               id: c.id,
@@ -88,7 +96,7 @@ const Mapa = () => {
               numero_caso: c.numero_caso || 'Sin número',
               estado: c.estado || 'Sin estado'
             }));
-          const userPreventivos = preventivos
+          const cuadrillaPreventivos = preventivos
             .filter(p => preventivoMantenimientoIds.includes(Number(p.id)))
             .map(p => ({
               id: p.id,
@@ -97,17 +105,16 @@ const Mapa = () => {
               frecuencia: p.frecuencia || 'Sin frecuencia'
             }));
           return {
-            id: user.id,
-            name: user.name || 'Unknown',
-            lat: parseFloat(user.lat),
-            lng: parseFloat(user.lng),
-            correctivos: userCorrectivos,
-            preventivos: userPreventivos,
+            id: cuadrilla.id,
+            name: cuadrilla.name || 'Unknown',
+            lat: parseFloat(cuadrilla.lat),
+            lng: parseFloat(cuadrilla.lng),
+            correctivos: cuadrillaCorrectivos,
+            preventivos: cuadrillaPreventivos,
             sucursales: selectedSucursales
           };
-        })
+        }
       );
-      setUsers(updatedUsers.filter(user => !isNaN(user.lat) && !isNaN(user.lng) && user.lat !== 0 && user.lng !== 0));
     } catch (error) {
       console.error('Error fetching cuadrilla data:', error);
       setError('Error al cargar datos de cuadrillas');
@@ -153,17 +160,17 @@ const Mapa = () => {
     }
   };
 
-  const generarRutas = (user) => {
-    if (!user.sucursales || !mapInstanceRef.current) return;
-    const waypoints = user.sucursales.map(s => L.latLng(s.lat, s.lng)).filter(Boolean);
+  const generarRutas = (cuadrilla) => {
+    if (!cuadrilla.sucursales || !mapInstanceRef.current) return;
+    const waypoints = cuadrilla.sucursales.map(s => L.latLng(s.lat, s.lng)).filter(Boolean);
 
     if (waypoints.length > 0) {
-      if (routeLayersRef.current[user.id]?.control) {
-        mapInstanceRef.current.removeControl(routeLayersRef.current[user.id].control);
+      if (routeLayersRef.current[cuadrilla.id]?.control) {
+        mapInstanceRef.current.removeControl(routeLayersRef.current[cuadrilla.id].control);
       }
 
       const control = L.Routing.control({
-        waypoints: [[user.lat, user.lng], ...waypoints],
+        waypoints: [[cuadrilla.lat, cuadrilla.lng], ...waypoints],
         router: L.Routing.osrmv1({ serviceUrl: import.meta.env.VITE_OSRM_URL }),
         lineOptions: { styles: [{ color: '#3399FF', weight: 5 }] },
         createMarker: () => null,
@@ -175,20 +182,20 @@ const Mapa = () => {
 
       control.on('routesfound', (e) => {
         const route = e.routes[0];
-        if (routeLayersRef.current[user.id]?.polyline) {
-          routeLayersRef.current[user.id].polyline.remove();
+        if (routeLayersRef.current[cuadrilla.id]?.polyline) {
+          routeLayersRef.current[cuadrilla.id].polyline.remove();
         }
 
         const polyline = L.polyline(route.coordinates, { color: '#3399FF', weight: 5 }).addTo(mapInstanceRef.current);
 
-        routeLayersRef.current[user.id] = {
+        routeLayersRef.current[cuadrilla.id] = {
           control,
           polyline
         };
       });
 
       control.on('routingerror', (err) => {
-        console.error('Routing error for user', user.id, err);
+        console.error('Routing error for user', cuadrilla.id, err);
       });
     }
   };
@@ -306,36 +313,57 @@ const Mapa = () => {
   }, []);
 
   useEffect(() => {
-    if (!mapInstanceRef.current || !users.length || !sucursales.length) return;;
-    // Add user markers
-    usersMarkersRef.current.forEach(marker => marker?.remove());
-    users.map(user => {
-      const marker = L.marker([user.lat, user.lng], {
-        icon: L.divIcon({
-          html: `<div style="width: 15px; height: 20px; background:rgb(22, 109, 196); clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
-          className: '',
-          iconSize: [20, 20],
-          iconAnchor: [10, 20],
-        }),
-        title: user.name
-      }).addTo(mapInstanceRef.current);
+    if (!mapInstanceRef.current || !sucursales.length) return;;
+    
+    if (users.length) {
+      // Add user markers
+      usersMarkersRef.current.forEach(marker => marker?.remove());
+      users.map(user => {
+        const marker = L.marker([user.lat, user.lng], {
+          icon: L.divIcon({
+            html: `<div style="width: 15px; height: 20px; background:rgb(22, 109, 196); clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+            className: '',
+            iconSize: [20, 20],
+            iconAnchor: [10, 20],
+          }),
+          title: user.name
+        }).addTo(mapInstanceRef.current);
 
-      marker.on('click', () =>
-        showPopup(
-          {
-            type: 'cuadrilla',
-            name: user.name,
-            correctivos: user.correctivos,
-            preventivos: user.preventivos,
-            sucursales: user.sucursales
-          },
-          [user.lat, user.lng]
-        )
-      );
+        usersMarkersRef.current.push(marker);
+      });
+    }
 
-      usersMarkersRef.current.push(marker);
-      generarRutas(user);
-    });
+    if (cuadrillas.length) {
+      // Add user markers
+      cuadrillasMarkersRef.current.forEach(marker => marker?.remove());
+      cuadrillas.map(cuadrilla => {
+        const marker = L.marker([cuadrilla.lat, cuadrilla.lng], {
+          icon: L.divIcon({
+            html: `<div style="width: 15px; height: 20px; background:rgb(22, 109, 196); clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+            className: '',
+            iconSize: [20, 20],
+            iconAnchor: [10, 20],
+          }),
+          title: cuadrilla.name
+        }).addTo(mapInstanceRef.current);
+
+        marker.on('click', () =>
+          showPopup(
+            {
+              type: 'cuadrilla',
+              name: cuadrilla.name,
+              correctivos: cuadrilla.correctivos,
+              preventivos: cuadrilla.preventivos,
+              sucursales: cuadrilla.sucursales
+            },
+            [cuadrilla.lat, cuadrilla.lng]
+          )
+        );
+
+        cuadrillasMarkersRef.current.push(marker);
+        generarRutas(cuadrilla);
+      });
+    }
 
     // Add sucursal markers
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
@@ -367,9 +395,10 @@ const Mapa = () => {
 
     return () => {
       usersMarkersRef.current.forEach(marker => marker?.remove());
+      cuadrillasMarkersRef.current.forEach(marker => marker?.remove());
       sucursalMarkersRef.current.forEach(marker => marker?.remove());
     };
-  }, [users, sucursales]);
+  }, [cuadrillas, users, sucursales]);
 
   return (
   <div className="ruta-container">
@@ -381,31 +410,57 @@ const Mapa = () => {
 
     <div className="ruta-main">
       <div className="ruta-sidebar">
-        <h4>Cuadrillas Activas</h4>
-        {users.length === 0 && <p>No hay cuadrillas activas.</p>}
-        {users.map(user => (
+        <h4>Cuadrillas</h4>
+        {cuadrillas.length === 0 && <p>No hay cuadrillas activas.</p>}
+        {cuadrillas.map(cuadrilla => (
           <div
-            key={user.id}
+            key={cuadrilla.id}
             className="obra-item"
             onClick={() => {
               if (mapInstanceRef.current) {
-                mapInstanceRef.current.setView([user.lat, user.lng], 13);
+                mapInstanceRef.current.setView([cuadrilla.lat, cuadrilla.lng], 13);
                 showPopup(
                   {
                     type: 'cuadrilla',
-                    name: user.name,
-                    correctivos: user.correctivos,
-                    preventivos: user.preventivos,
-                    sucursales: user.sucursales
+                    name: cuadrilla.name,
+                    correctivos: cuadrilla.correctivos,
+                    preventivos: cuadrilla.preventivos,
+                    sucursales: cuadrilla.sucursales
                   },
-                  [user.lat, user.lng]
+                  [cuadrilla.lat, cuadrilla.lng]
                 );
               }
             }}
           >
-            <strong>{user.name}</strong>
+            <strong>{cuadrilla.name}</strong>
             <br />
-            <small>{user.sucursales?.length || 0} obras asignadas</small>
+            <small>{cuadrilla.sucursales?.length || 0} obras asignadas</small>
+          </div>
+        ))}
+        <h4>Sucursales</h4>
+        {sucursales.length === 0 && <p>No hay sucursales activas.</p>}
+        {sucursales.map(sucursal => (
+          <div
+            key={sucursal.id}
+            className="obra-item"
+            onClick={() => {
+              if (mapInstanceRef.current) {
+                mapInstanceRef.current.setView([sucursal.lat, sucursal.lng], 13);
+                showPopup(
+                  {
+                    type: 'sucursal',
+                    name: sucursal.name,
+                    Correctivos: sucursal.Correctivos,
+                    Preventivos: sucursal.Preventivos
+                  },
+                  [sucursal.lat, sucursal.lng]
+                );
+              }
+            }}
+          >
+            <strong>{sucursal.name}</strong>
+            <br />
+            <small>{sucursal.Correctivos?.length || 0} correctivos, {sucursal.Preventivos?.length || 0} preventivos</small>
           </div>
         ))}
       </div>
