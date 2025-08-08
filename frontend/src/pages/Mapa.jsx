@@ -37,7 +37,14 @@ const Mapa = () => {
         getMantenimientosPreventivos()
       ]);
       const allUsers = usersResponse.data || [];
-      const filteredUsers = allUsers.filter(user => !isNaN(user.lat) && !isNaN(user.lng) && user.lat !== 0 && user.lng !== 0);
+      const parsedUsers = (allUsers || []).map(user => ({
+        ...user,
+        lat: parseFloat(user.lat),
+        lng: parseFloat(user.lng)
+      }));
+      const filteredUsers = parsedUsers.filter(
+        user => !isNaN(user.lat) && !isNaN(user.lng) && user.lat !== 0 && user.lng !== 0
+      );
       const correctivosFiltrados = (correctivosResponse.data || []).filter(
         c => c.estado === "Pendiente"
       );
@@ -58,7 +65,7 @@ const Mapa = () => {
   const fetchCuadrillaData = async () => {
     if (!sucursalesLocations.length || !cuadrillas.length) return;
     try {
-      cuadrillas.map(async cuadrilla => {
+      const updatedCuadrillas = await Promise.all(cuadrillas.map(async cuadrilla => {
           const [Correctivos, Preventivos] = await Promise.all([
             getCorrectivos(cuadrilla.id),
             getPreventivos(cuadrilla.id)
@@ -106,6 +113,7 @@ const Mapa = () => {
             }));
           return {
             id: cuadrilla.id,
+            tipo: cuadrilla.tipo,
             name: cuadrilla.name || 'Unknown',
             lat: parseFloat(cuadrilla.lat),
             lng: parseFloat(cuadrilla.lng),
@@ -113,8 +121,9 @@ const Mapa = () => {
             preventivos: cuadrillaPreventivos,
             sucursales: selectedSucursales
           };
-        }
+        })
       );
+      setCuadrillas(updatedCuadrillas);
     } catch (error) {
       console.error('Error fetching cuadrilla data:', error);
       setError('Error al cargar datos de cuadrillas');
@@ -313,8 +322,7 @@ const Mapa = () => {
   }, []);
 
   useEffect(() => {
-    if (!mapInstanceRef.current || !sucursales.length) return;;
-    
+    if (!mapInstanceRef.current || !sucursales.length) return;
     if (users.length) {
       // Add user markers
       usersMarkersRef.current.forEach(marker => marker?.remove());
@@ -334,7 +342,7 @@ const Mapa = () => {
     }
 
     if (cuadrillas.length) {
-      // Add user markers
+      // Add cuadrilla markers
       cuadrillasMarkersRef.current.forEach(marker => marker?.remove());
       cuadrillas.map(cuadrilla => {
         const marker = L.marker([cuadrilla.lat, cuadrilla.lng], {
