@@ -1,6 +1,8 @@
 .map-container {
-  max-width: 1200px;
-  margin: 6rem auto;
+  padding: 6rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .map-container h2 {
@@ -8,14 +10,14 @@
   color: #333;
 }
 
-.ruta-container {
-  padding: 6rem 2rem;
+.map-main {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 1300px;
 }
 
-.ruta-controls {
+.map-controls {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
@@ -23,10 +25,10 @@
   margin-bottom: 1rem;
 }
 
-.ruta-map-container {
+.container-map {
   width: 100%;
   max-width: 90rem;
-  height: 30rem; /* Este define la altura */
+  height: 30rem;
   border-radius: 0.75rem;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -34,19 +36,7 @@
   background: white;
 }
 
-.ruta-map {
-  width: 100%;
-  height: 100%;
-}
-
-.ruta-main {
-  display: flex;
-  gap: 1rem;
-  width: 100%;
-  max-width: 1300px;
-}
-
-.ruta-sidebar {
+.map-sidebar {
   width: 280px;
   background: #fff;
   border: 1px solid #ddd;
@@ -55,6 +45,53 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   max-height: 75vh;
+}
+
+.ruta-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+.ruta-main {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.container-ruta {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.ruta-map {
+  height: 100%;
+  width: 100%;
+}
+
+.boton-borrar {
+  position: absolute;
+  top: 6.5rem;
+  right: 1rem;
+}
+
+.boton-centrar {
+  position: absolute;
+  bottom: 4rem;
+  left: 1rem;
+}
+
+.boton-navegar {
+  position: absolute;
+  bottom: 4rem;
+  right: 1rem;
 }
 
 .obra-item {
@@ -78,6 +115,7 @@
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
 }
 
 /* Hover */
@@ -116,16 +154,16 @@
 
 /* Ajustes para pantallas pequeñas (móviles) */
 @media (max-width: 768px) {
-  .ruta-main {
+  .map-main {
     flex-direction: column;
     align-items: center;
   }
 
-  .ruta-map-container {
+  .container-map {
     height: 50vh;
   }
 
-  .ruta-sidebar {
+  .map-sidebar {
     width: 100%;
     max-width: 600px;
     max-height: none;
@@ -134,16 +172,16 @@
 
 /* Ajustes para monitores grandes */
 @media (min-width: 1710px) {
-  .ruta-main {
+  .map-main {
     max-width: 1600px;
   }
 
-  .ruta-map-container {
+  .container-map {
     max-width: 100%;
     height: 45rem;
   }
 
-  .ruta-sidebar {
+  .map-sidebar {
     max-height: 45rem;
   }
 }

@@ -27,6 +27,7 @@ const Ruta = () => {
   const [sucursales, setSucursales] = useState([]);
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isCenter, setIsCenter] = useState(true);
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -248,6 +249,9 @@ const Ruta = () => {
   };
 
   const borrarRuta = () => {
+    if (!window.confirm("⚠️ Vas a borrar toda la selección. ¿Seguro que querés continuar?")) {
+      return;
+    }
     setSucursales([]);
     sucursalMarkersRef.current.forEach(marker => marker?.remove());
     if (routeMarkerRef.current?.control) {
@@ -376,48 +380,44 @@ const Ruta = () => {
     }
   }, [sucursales, isNavigating]);
 
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    mapInstanceRef.current.on('move', () => {
+      const centroActual = mapInstanceRef.current.getCenter();
+      if (userLocation) {
+        const distancia = centroActual.distanceTo(L.latLng(userLocation.lat, userLocation.lng));
+        setIsCenter(distancia < 10); // tolerancia de 10 metros
+      }
+    });
+  }, [userLocation]);
+
 return (
     <div className="ruta-container">
-      {error && <div className="alert alert-danger">{error}</div>}
-      
-      <div className="ruta-controls">
-        <button className="ruta-btn primary" onClick={centerOnUser}>
-          📍 Centrar en mi ubicación
-        </button>
-        <button
-          className={`ruta-btn ${isNavigating ? 'danger' : 'success'}`}
-          onClick={toggleNavegacion}
-        >
-          {isNavigating ? '🛑 Detener navegación' : '🚗 Iniciar navegación'}
-        </button>
-        <button className="ruta-btn danger" onClick={borrarRuta}>
-          ❌ Borrar ruta
-        </button>
-      </div>
-
       <div className="ruta-main">
-        <div className="ruta-sidebar">
-          <h5>Obras Seleccionadas</h5>
-          {sucursales.length === 0 && <p>No hay obras seleccionadas.</p>}
-          {sucursales.map((sucursal, idx) => (
-            <div
-              key={idx}
-              className="obra-item"
-              onClick={() => {
-                if (mapInstanceRef.current) {
-                  mapInstanceRef.current.flyTo([sucursal.lat, sucursal.lng], 18, { duration: 1 });
-                }
-              }}
-            >
-              <strong>{sucursal.name}</strong>
-              <div>Lat: {sucursal.lat.toFixed(4)}</div>
-              <div>Lng: {sucursal.lng.toFixed(4)}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="ruta-map-container">
+        <div className="container-ruta">
           <div ref={mapRef} className="ruta-map"></div>
+
+          {error && <div className="alert alert-danger">{error}</div>}
+
+          {/* Botón borrar con confirmación */}
+          <button className="ruta-btn danger boton-borrar" onClick={borrarRuta}>
+            ❌ Borrar ruta
+          </button>
+
+          {/* Botón centrar (condicional) */}
+          {!isCenter && !isNavigating && (
+            <button className="ruta-btn primary boton-centrar" onClick={centerOnUser}>
+              📍 Centrar
+            </button>
+          )}
+
+          {/* Botón iniciar/detener navegación */}
+          <button
+            className={`ruta-btn ${isNavigating ? 'danger' : 'success'} boton-navegar`}
+            onClick={toggleNavegacion}
+          >
+            {isNavigating ? '🛑 Detener' : '🚗 Iniciar'}
+          </button>
         </div>
       </div>
     </div>

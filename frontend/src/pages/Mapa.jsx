@@ -409,15 +409,15 @@ const Mapa = () => {
   }, [cuadrillas, users, sucursales]);
 
   return (
-  <div className="ruta-container">
+  <div className="map-container">
     {error && <div className="alert alert-danger">{error}</div>}
 
-    <div className="ruta-controls">
+    <div className="map-controls">
       <h2>Mapa de Usuarios y Sucursales</h2>
     </div>
 
-    <div className="ruta-main">
-      <div className="ruta-sidebar">
+    <div className="map-main">
+      <div className="map-sidebar">
         <h4>Cuadrillas</h4>
         {cuadrillas.length === 0 && <p>No hay cuadrillas activas.</p>}
         {cuadrillas.map(cuadrilla => (
@@ -473,7 +473,7 @@ const Mapa = () => {
         ))}
       </div>
 
-      <div className="ruta-map-container">
+      <div className="container-map">
         <div ref={mapRef} className="ruta-map"></div>
       </div>
     </div>
