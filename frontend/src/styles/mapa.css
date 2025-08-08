@@ -1,6 +1,5 @@
 .map-container {
   padding: 6rem 2rem;
-  display: flex;
   flex-direction: column;
   align-items: center;
 }
@@ -36,7 +35,18 @@
   background: white;
 }
 
-.map-sidebar {
+.map-sidebar-left {
+  width: 280px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  max-height: 75vh;
+}
+
+.map-sidebar-rigth {
   width: 280px;
   background: #fff;
   border: 1px solid #ddd;
@@ -78,6 +88,12 @@
 .ruta-map {
   height: 100%;
   width: 100%;
+}
+
+.boton-volver {
+  position: absolute;
+  top: 6.5rem;
+  left: 1rem;
 }
 
 .boton-borrar {
@@ -164,10 +180,11 @@
   }
 
   .container-map {
-    height: 50vh;
+    height: 70vh;
   }
 
-  .map-sidebar {
+  .map-sidebar-left,
+  .map-sidebar-rigth {
     width: 100%;
     max-width: 600px;
     max-height: none;
@@ -178,6 +195,11 @@
   .ruta-btn {
     padding: 0.5rem 1rem; 
     font-size: 0.9rem;
+  }
+
+  .boton-volver {
+    top: 6.5rem;
+    left: 0.5rem;
   }
 
   .boton-borrar {
@@ -207,7 +229,8 @@
     height: 45rem;
   }
 
-  .map-sidebar {
+  .map-sidebar-left,
+  .map-sidebar-rigth {
     max-height: 45rem;
   }
 }
