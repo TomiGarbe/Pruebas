@@ -172,7 +172,9 @@
     max-width: 600px;
     max-height: none;
   }
+}
 
+@media (max-width: 397px) {
   .ruta-btn {
     padding: 0.5rem 1rem; 
     font-size: 0.9rem;
@@ -191,10 +193,6 @@
   .boton-navegar {
     bottom: 5.5rem;
     right: 0.5rem;
-  }
-
-  .container-ruta {
-    padding-bottom: 8rem;
   }
 }
 
