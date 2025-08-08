@@ -78,19 +78,19 @@
 
 .boton-borrar {
   position: absolute;
-  top: 6.5rem;
+  top: 11%;
   right: 1rem;
 }
 
 .boton-centrar {
   position: absolute;
-  bottom: 4rem;
+  bottom: 7%;
   left: 1rem;
 }
 
 .boton-navegar {
   position: absolute;
-  bottom: 4rem;
+  bottom: 7%;
   right: 1rem;
 }
 
