@@ -47,6 +47,10 @@
   max-height: 75vh;
 }
 
+.hidden-routing-control {
+  display: none !important;
+}
+
 .ruta-container {
   display: flex;
   flex-direction: column;
@@ -78,19 +82,19 @@
 
 .boton-borrar {
   position: absolute;
-  top: 11%;
+  top: 6.5rem;
   right: 1rem;
 }
 
 .boton-centrar {
   position: absolute;
-  bottom: 7%;
+  bottom: 4rem;
   left: 1rem;
 }
 
 .boton-navegar {
   position: absolute;
-  bottom: 7%;
+  bottom: 4rem;
   right: 1rem;
 }
 
@@ -167,6 +171,30 @@
     width: 100%;
     max-width: 600px;
     max-height: none;
+  }
+
+  .ruta-btn {
+    padding: 0.5rem 1rem; 
+    font-size: 0.9rem;
+  }
+
+  .boton-borrar {
+    top: 6.5rem;
+    right: 0.5rem;
+  }
+
+  .boton-centrar {
+    bottom: 5.5rem; 
+    left: 0.5rem;
+  }
+
+  .boton-navegar {
+    bottom: 5.5rem;
+    right: 0.5rem;
+  }
+
+  .container-ruta {
+    padding-bottom: 8rem;
   }
 }
 
