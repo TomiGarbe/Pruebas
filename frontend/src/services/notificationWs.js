@@ -1,17 +1,17 @@
 import { API_URL } from '../config';
 
-const getWsUrl = (id) => {
+const getWsUrl = (uid) => {
   if (!API_URL) {
     console.error('Missing API URL configuration for WebSocket');
     return null;
   }
   const protocol = API_URL.startsWith('https') ? 'wss' : 'ws';
   const base = API_URL.replace(/^https?/, protocol);
-  return `${base}/ws/chat/${id}`;
+  return `${base}/ws/notificaciones/${uid}`;
 };
 
-export const subscribeToChat = (id, onMessage) => {
-  const url = getWsUrl(id);
+export const subscribeToNotifications = (uid, onMessage) => {
+  const url = getWsUrl(uid);
   if (!url) return null;
 
   const socket = new WebSocket(url);

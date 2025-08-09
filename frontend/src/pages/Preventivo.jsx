@@ -11,7 +11,7 @@ import { selectPreventivo, deletePreventivo } from '../services/maps';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { FiSend, FiPlusCircle, FiCheckCircle } from "react-icons/fi";
 import { BsSave } from 'react-icons/bs';
-import { sendMessagePreventivo } from '../services/chats';
+import { getChatCorrectivo, sendMessagePreventivo } from '../services/chats';
 import { subscribeToChat } from '../services/chatWs';
 import '../styles/mantenimientos.css';
 
@@ -57,6 +57,7 @@ const Preventivo = () => {
         fecha_cierre: response.data.fecha_cierre?.split('T')[0] || null,
         extendido: response.data.extendido || null,
       });
+      await cargarMensajes(response.data.id);
     } catch (error) {
       console.error('Error fetching mantenimiento:', error);
       setError('Error al cargar los datos actualizados.');
@@ -304,6 +305,16 @@ const Preventivo = () => {
 
     return `${year}-${month}-${day} ${hours}:${minutes}`;
   }
+
+  const cargarMensajes = async (id) => {
+    try {
+      const response = await getChatPreventivo(id);
+      setMensajes(response.data);
+      scrollToBottom();
+    } catch (error) {
+      console.error('Error al cargar mensajes:', error);
+    }
+  };
   
   const handleEnviarMensaje = async () => {
     if (!nuevoMensaje && !archivoAdjunto) return;

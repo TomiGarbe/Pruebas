@@ -3,7 +3,7 @@ from api.models import MensajeCorrectivo, MensajePreventivo
 from fastapi import HTTPException, UploadFile
 from typing import Optional
 from services.gcloud_storage import upload_chat_file_to_gcloud
-from services.chat_ws import manager
+from services.chat_ws import chat_manager
 import os
 
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
@@ -56,7 +56,7 @@ async def send_message_correctivo(
         db_session.add(db_message)
         db_session.commit()
         db_session.refresh(db_message)
-        await manager.send_message(
+        await chat_manager.send_message(
             id_mantenimiento,
             {
                 "id": db_message.id,
@@ -106,7 +106,7 @@ async def send_message_preventivo(
         db_session.add(db_message)
         db_session.commit()
         db_session.refresh(db_message)
-        await manager.send_message(
+        await chat_manager.send_message(
             id_mantenimiento,
             {
                 "id": db_message.id,

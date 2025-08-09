@@ -6,7 +6,6 @@ class ChatConnectionManager:
     """Manage websocket connections per mantenimiento."""
 
     def __init__(self) -> None:
-        # Map mantenimiento_id to list of active WebSocket connections
         self.active_connections: Dict[int, List[WebSocket]] = {}
 
     async def connect(self, mantenimiento_id: int, websocket: WebSocket) -> None:
@@ -28,6 +27,4 @@ class ChatConnectionManager:
         for connection in connections:
             await connection.send_json(message)
 
-
-# Shared instance used across the application
-manager = ChatConnectionManager()
+chat_manager = ChatConnectionManager()
