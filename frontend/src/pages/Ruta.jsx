@@ -16,6 +16,7 @@ import 'leaflet-rotate/dist/leaflet-rotate.js';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import 'leaflet-routing-machine';
 import 'leaflet-geometryutil';
+import 'leaflet-rotatedmarker';
 import '../styles/mapa.css';
 
 const defaultCenter = { lat: -31.4167, lng: -64.1833 };
@@ -31,6 +32,7 @@ const Ruta = () => {
   const [routingControl, setRoutingControl] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [isCenter, setIsCenter] = useState(true);
+  const [heading, setHeading] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const userMarkerRef = useRef(null);
@@ -40,6 +42,7 @@ const Ruta = () => {
   const sucursalMarkersRef = useRef([]);
   const lastSucursalIdsRef = useRef([]);
   const notifiedMaintenancesRef = useRef(new Set());
+  const headingRef = useRef(null);
 
   const fetchData = async () => {
     if (!currentEntity?.data?.id || !userLocation) return;
@@ -148,6 +151,44 @@ const Ruta = () => {
     }
   };
 
+  useEffect(() => {
+    if (!isNavigating) return;
+
+    const handleOrientation = (event) => {
+      const compass = event.webkitCompassHeading;
+      const alpha = event.alpha;
+      const value = typeof compass === 'number' ? compass : alpha;
+      if (typeof value === 'number') {
+        setHeading(value);
+        headingRef.current = value;
+      }
+    };
+
+    const enable = async () => {
+      try {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          const permission = await DeviceOrientationEvent.requestPermission();
+          if (permission !== 'granted') return;
+        }
+        window.addEventListener('deviceorientation', handleOrientation);
+      } catch (err) {
+        console.error('Device orientation error:', err);
+      }
+    };
+
+    enable();
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation);
+    };
+  }, [isNavigating]);
+
+  useEffect(() => {
+    if (!isNavigating || heading == null) return;
+    mapInstanceRef.current?.setBearing(heading);
+    userMarkerRef.current?.setRotationAngle?.(heading);
+  }, [heading, isNavigating]);
+
   const iniciarNavegacion = (route) => {
     const waypoints = route.getPlan().getWaypoints();
     if (!waypoints || waypoints.length < 2) {
@@ -197,6 +238,7 @@ const Ruta = () => {
           iconAnchor: [10, 20],
         }),
       }).addTo(mapInstanceRef.current);
+      userMarkerRef.current.setRotationAngle?.(bearing);
 
       if (progress < 1) {
         animationFrameRef.current = requestAnimationFrame(animate);
@@ -290,6 +332,7 @@ const Ruta = () => {
           iconAnchor: [10, 20],
         }),
       }).addTo(map);
+      userMarkerRef.current.setRotationAngle?.(0);
     }
 
     return () => {
@@ -323,14 +366,15 @@ const Ruta = () => {
         actualizarWaypoints(nextWaypoints);
 
         // Movimiento suave
-        let heading = 0;
-        if (prevLatLngRef.current) {
-          heading = bearing(
+        let mapBearing = headingRef.current;
+        if (mapBearing == null && prevLatLngRef.current) {
+          const calc = bearing(
             [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
             [longitude, latitude]
           );
+          mapBearing = -calc;
         }
-        smoothPanTo(currentLatLng, 20, -heading);
+        smoothPanTo(currentLatLng, 20, mapBearing ?? 0);
       }
 
       prevLatLngRef.current = currentLatLng;
