@@ -142,18 +142,16 @@ def delete_notificaciones(db_session: Session, firebase_uid: str):
     return {"message": "Notificaciones eliminadas"}
 
 def delete_notificacion(db_session: Session, id_notificacion: int):
-    # Buscar en correctivos
-    noti = db_session.query(Notificacion_Correctivo).filter(Notificacion_Correctivo.id == id_notificacion).first()
-    if noti:
-        db_session.delete(noti)
+    notification = db_session.query(Notificacion_Correctivo).filter(Notificacion_Correctivo.id == id_notificacion).first()
+    if notification:
+        db_session.delete(notification)
         db_session.commit()
-        return True
+        return {"detail": "Notificación eliminada"}
 
-    # Buscar en preventivos
-    noti = db_session.query(Notificacion_Preventivo).filter(Notificacion_Preventivo.id == id_notificacion).first()
-    if noti:
-        db_session.delete(noti)
+    notification = db_session.query(Notificacion_Preventivo).filter(Notificacion_Preventivo.id == id_notificacion).first()
+    if notification:
+        db_session.delete(notification)
         db_session.commit()
-        return True
+        return {"detail": "Notificación eliminada"}
 
-    return False  # No encontrada
+    return {"detail": "No se encontró la notificación"}
