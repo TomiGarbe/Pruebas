@@ -11,7 +11,8 @@ import { selectCorrectivo, deleteCorrectivo } from '../services/maps';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { FiSend, FiPlusCircle, FiCheckCircle } from "react-icons/fi";
 import { BsSave } from 'react-icons/bs';
-import { getChatCorrectivo, sendMessageCorrectivo } from '../services/chats';
+import { sendMessageCorrectivo } from '../services/chats';
+import { subscribeToChat } from '../services/chatWs';
 import '../styles/mantenimientos.css';
 
 const Correctivo = () => {
@@ -59,7 +60,6 @@ const Correctivo = () => {
         extendido: response.data.extendido || '',
         estado: response.data.estado,
       });
-      await cargarMensajes(response.data.id);
     } catch (error) {
       console.error('Error fetching mantenimiento:', error);
       setError('Error al cargar los datos actualizados.');
@@ -90,11 +90,34 @@ const Correctivo = () => {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      cargarMensajes(mantenimiento.id);
-    }, 30000);
+    let socket;
+    let reconnectTimeout;
 
-    return () => clearInterval(interval);
+    const connect = () => {
+      if (!mantenimiento.id) return;
+
+      socket = subscribeToChat(mantenimiento.id, (data) => {
+        setMensajes((prev) => (Array.isArray(data) ? data : [...prev, data]));
+        scrollToBottom();
+      });
+
+      if (socket) {
+        socket.onclose = () => {
+          reconnectTimeout = setTimeout(connect, 5000);
+        };
+
+        socket.onerror = () => {
+          socket.close();
+        };
+      }
+    };
+
+    connect();
+
+    return () => {
+      if (socket) socket.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    };
   }, [mantenimiento.id]);
 
   const handleChange = (e) => {
@@ -307,16 +330,6 @@ const Correctivo = () => {
     return `${year}-${month}-${day} ${hours}:${minutes}`;
   }
 
-  const cargarMensajes = async (id) => {
-    try {
-      const response = await getChatCorrectivo(id);
-      setMensajes(response.data);
-      scrollToBottom();
-    } catch (error) {
-      console.error('Error al cargar mensajes:', error);
-    }
-  };
-
   const handleEnviarMensaje = async () => {
     if (!nuevoMensaje && !archivoAdjunto) return;
 
@@ -331,7 +344,6 @@ const Correctivo = () => {
       setNuevoMensaje('');
       setArchivoAdjunto(null);
       setPreviewArchivoAdjunto(null);
-      await cargarMensajes(mantenimiento.id);
     } catch (error) {
       console.error('Error al enviar mensaje:', error);
       setError('No se pudo enviar el mensaje');
