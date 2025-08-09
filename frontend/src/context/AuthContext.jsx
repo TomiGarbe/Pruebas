@@ -74,8 +74,7 @@ const AuthProvider = ({ children }) => {
     setCurrentUser(null);
     setCurrentEntity(null);
     if (subscription) {
-      console.log({endpoint: subscription.endpoint});
-      await deleteSubscription({endpoint: subscription.endpoint});
+      await deleteSubscription({ params: { endpoint: subscription.endpoint } });
     }
     setSubscription(null);
     await signOut(auth);

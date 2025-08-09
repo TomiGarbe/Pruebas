@@ -113,6 +113,10 @@ async def notify_users_correctivo(db_session: Session, id_mantenimiento: int, me
         encargados = db_session.query(Usuario).filter(Usuario.rol == "Encargado de Mantenimiento").all()
         for encargado in encargados:
             await send_notification_correctivo(db_session, encargado.firebase_uid, id_mantenimiento, mensaje)
+        if "Solucionado" in mensaje:
+            admins = db_session.query(Usuario).filter(Usuario.rol == "Administrador").all()
+            for admin in admins:
+                await send_notification_correctivo(db_session, admin.firebase_uid, id_mantenimiento, mensaje)
 
 async def notify_users_preventivo(db_session: Session, id_mantenimiento: int, mensaje: str, firebase_uid: Optional[str] = None):
     if firebase_uid is not None:
@@ -121,6 +125,10 @@ async def notify_users_preventivo(db_session: Session, id_mantenimiento: int, me
         encargados = db_session.query(Usuario).filter(Usuario.rol == "Encargado de Mantenimiento").all()
         for encargado in encargados:
             await send_notification_preventivo(db_session, encargado.firebase_uid, id_mantenimiento, mensaje)
+        if "Solucionado" in mensaje:
+            admins = db_session.query(Usuario).filter(Usuario.rol == "Administrador").all()
+            for admin in admins:
+                await send_notification_preventivo(db_session, admin.firebase_uid, id_mantenimiento, mensaje)
 
 async def notify_nearby_maintenances(db_session: Session, current_entity: dict, mantenimientos: list[dict]):
     if not current_entity:
