@@ -186,7 +186,6 @@ const Ruta = () => {
   useEffect(() => {
     if (!isNavigating || heading == null) return;
     mapInstanceRef.current?.setBearing(heading);
-    userMarkerRef.current?.setRotationAngle?.(heading);
   }, [heading, isNavigating]);
 
   const iniciarNavegacion = (route) => {
@@ -238,7 +237,6 @@ const Ruta = () => {
           iconAnchor: [10, 20],
         }),
       }).addTo(mapInstanceRef.current);
-      userMarkerRef.current.setRotationAngle?.(bearing);
 
       if (progress < 1) {
         animationFrameRef.current = requestAnimationFrame(animate);
@@ -332,7 +330,6 @@ const Ruta = () => {
           iconAnchor: [10, 20],
         }),
       }).addTo(map);
-      userMarkerRef.current.setRotationAngle?.(0);
     }
 
     return () => {
