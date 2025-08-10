@@ -372,7 +372,7 @@ const Ruta = () => {
             [prevLatLngRef.current.lng, prevLatLngRef.current.lat],
             [longitude, latitude]
           );
-          mapBearing = calc;
+          mapBearing = -calc;
         }
         smoothPanTo(currentLatLng, 20, mapBearing ?? 0);
       }
