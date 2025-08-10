@@ -23,6 +23,7 @@ const defaultCenter = { lat: -31.4167, lng: -64.1833 };
 const ARRIVAL_RADIUS = 50;
 const ANIMATION_DURATION = 1000;
 const NOTIFY_DISTANCE = 10000; // Distancia en metros para notificar mantenimientos cercanos
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 const Ruta = () => {
   const { currentEntity } = useContext(AuthContext);
@@ -155,21 +156,19 @@ const Ruta = () => {
     if (!isNavigating) return;
 
     const handleOrientation = (event) => {
-    let value;
+      let value;
 
-    if (typeof event.webkitCompassHeading === 'number') {
-      // iOS
-      value = 360 - event.webkitCompassHeading; // invertir sentido
-    } else if (typeof event.alpha === 'number') {
-      // Android u otros navegadores
-      value = event.alpha;
-    }
+      if (typeof event.webkitCompassHeading === 'number') {
+        value = isIOS ? (360 - event.webkitCompassHeading) : event.webkitCompassHeading;
+      } else if (typeof event.alpha === 'number') {
+        value = event.alpha;
+      }
 
-    if (typeof value === 'number') {
-      setHeading(value);
-      headingRef.current = value;
-    }
-  };
+      if (typeof value === 'number') {
+        setHeading(value);
+        headingRef.current = value;
+      }
+    };
 
     const enable = async () => {
       try {
