@@ -155,14 +155,21 @@ const Ruta = () => {
     if (!isNavigating) return;
 
     const handleOrientation = (event) => {
-      const compass = event.webkitCompassHeading;
-      const alpha = event.alpha;
-      const value = typeof compass === 'number' ? compass : alpha;
-      if (typeof value === 'number') {
-        setHeading(value);
-        headingRef.current = value;
-      }
-    };
+    let value;
+
+    if (typeof event.webkitCompassHeading === 'number') {
+      // iOS
+      value = 360 - event.webkitCompassHeading; // invertir sentido
+    } else if (typeof event.alpha === 'number') {
+      // Android u otros navegadores
+      value = event.alpha;
+    }
+
+    if (typeof value === 'number') {
+      setHeading(value);
+      headingRef.current = value;
+    }
+  };
 
     const enable = async () => {
       try {
