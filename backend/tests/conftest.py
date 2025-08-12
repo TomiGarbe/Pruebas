@@ -1,14 +1,21 @@
 import os
+import sys
+import types
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from src.api.routes import app
 from src.api.models import Base
 from src.config.database import get_db
 
 # Configuramos la base de datos de testing
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+# Indicamos al código que se está ejecutando en modo de tests para evitar
+# inicializaciones reales de Firebase en los módulos de la aplicación.
+os.environ["TESTING"] = "true"
 DATABASE_URL = os.environ["DATABASE_URL"]
 
 # Creamos el engine para testing
@@ -55,3 +62,31 @@ def client():
     app.dependency_overrides[get_db] = override_get_db
 
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def firebase_admin_mock(monkeypatch):
+    """Reemplaza firebase_admin por un objeto simulado sin efectos."""
+
+    class _DummyRef:
+        def set(self, *args, **kwargs):
+            pass
+
+        def update(self, *args, **kwargs):
+            pass
+
+        def delete(self, *args, **kwargs):
+            pass
+
+    dummy_module = types.SimpleNamespace(
+        initialize_app=lambda *args, **kwargs: None,
+        credentials=types.SimpleNamespace(
+            Certificate=lambda *args, **kwargs: object()
+        ),
+        db=types.SimpleNamespace(reference=lambda *args, **kwargs: _DummyRef()),
+    )
+
+    # Reemplazamos el módulo en sys.modules para cualquier import futuro
+    monkeypatch.setitem(sys.modules, "firebase_admin", dummy_module)
+    return dummy_module
+
