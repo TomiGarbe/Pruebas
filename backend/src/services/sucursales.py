@@ -3,6 +3,7 @@ from api.models import Sucursal
 from fastapi import HTTPException
 from firebase_admin import db
 from auth.firebase import initialize_firebase
+import os
 
 def get_sucursales(db_session: Session):
     return db_session.query(Sucursal).all()
@@ -38,18 +39,19 @@ def create_sucursal(db_session: Session, nombre: str, zona: str, direccion: dict
         raise HTTPException(status_code=500, detail=f"Error guardando en PostgreSQL: {str(e)}")
     
     # Store in Firebase
-    try:
-        initialize_firebase()
-        ref = db.reference(f'/sucursales/{db_sucursal.id}')
-        ref.set({
-            'name': nombre,
-            'lat': direccion.get('lat', 0.0),
-            'lng': direccion.get('lng', 0.0)
-        })
-    except Exception as e:
-        db_session.delete(db_sucursal)  # Rollback PostgreSQL if Firebase fails
-        db_session.commit()
-        raise HTTPException(status_code=500, detail=f"Error guardando en Firebase: {str(e)}")
+    if os.environ.get("TESTING") != "true":
+        try:
+            initialize_firebase()
+            ref = db.reference(f'/sucursales/{db_sucursal.id}')
+            ref.set({
+                'name': nombre,
+                'lat': direccion.get('lat', 0.0),
+                'lng': direccion.get('lng', 0.0)
+            })
+        except Exception as e:
+            db_session.delete(db_sucursal)  # Rollback PostgreSQL if Firebase fails
+            db_session.commit()
+            raise HTTPException(status_code=500, detail=f"Error guardando en Firebase: {str(e)}")
     
     return db_sucursal
 
@@ -75,7 +77,9 @@ def update_sucursal(db_session: Session, sucursal_id: int, current_entity: dict,
     db_session.refresh(db_sucursal)
     
     # Update Firebase
-    if nombre or (direccion and ('lat' in direccion or 'lng' in direccion)):
+    if os.environ.get("TESTING") != "true" and (
+        nombre or (direccion and ("lat" in direccion or "lng" in direccion))
+    ):
         try:
             initialize_firebase()
             ref = db.reference(f'/sucursales/{sucursal_id}')
@@ -106,11 +110,12 @@ def delete_sucursal(db_session: Session, sucursal_id: int, current_entity: dict)
     db_session.commit()
     
     # Delete from Firebase
-    try:
-        initialize_firebase()
-        ref = db.reference(f'/sucursales/{sucursal_id}')
-        ref.delete()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error eliminando de Firebase: {str(e)}")
+    if os.environ.get("TESTING") != "true":
+        try:
+            initialize_firebase()
+            ref = db.reference(f'/sucursales/{sucursal_id}')
+            ref.delete()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error eliminando de Firebase: {str(e)}")
     
     return {"message": f"Sucursal con id {sucursal_id} eliminada"}

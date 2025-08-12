@@ -24,8 +24,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-initialize_firebase()
-init_admin(email=EMAIL_ADMIN, nombre=NOMBRE_ADMIN, password=PASSWORD_ADMIN)
+if os.environ.get("TESTING") != "true":
+    initialize_firebase()
+    init_admin(email=EMAIL_ADMIN, nombre=NOMBRE_ADMIN, password=PASSWORD_ADMIN)
 
 # Configuración de CORS
 origins = [
