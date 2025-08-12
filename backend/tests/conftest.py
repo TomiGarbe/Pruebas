@@ -29,9 +29,6 @@ def prepare_database():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
-    engine.dispose()
-    if os.path.exists("test.db"):
-        os.remove("test.db")
 
 
 @pytest.fixture(scope="function")
