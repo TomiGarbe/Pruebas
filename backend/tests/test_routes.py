@@ -1,8 +1,9 @@
+import os
 import pytest
-from fastapi.testclient import TestClient
-from src.api.routes import app
 
-client = TestClient(app)
+os.environ["TESTING"] = "true"
+
+from src.api.routes import app
 
 def test_app_instance():
     """ Verifica que la instancia de app es de FastAPI """
