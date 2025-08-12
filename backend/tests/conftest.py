@@ -1,4 +1,8 @@
 import os
+
+os.environ["TESTING"] = "true"
+os.environ.setdefault("GOOGLE_CREDENTIALS", "{}")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -6,6 +10,24 @@ from sqlalchemy.orm import sessionmaker
 from src.api.routes import app
 from src.api.models import Base
 from src.config.database import get_db
+from unittest.mock import MagicMock
+import services.sucursales as sucursales_service
+
+
+class _DummyRef:
+    def set(self, *args, **kwargs):
+        pass
+
+    def update(self, *args, **kwargs):
+        pass
+
+    def delete(self, *args, **kwargs):
+        pass
+
+
+_db_mock = MagicMock()
+_db_mock.reference.return_value = _DummyRef()
+sucursales_service.db = _db_mock
 
 # Configuramos la base de datos de testing
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
