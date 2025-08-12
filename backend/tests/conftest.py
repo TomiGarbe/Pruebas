@@ -1,18 +1,27 @@
 import os
+
+# Configurar variables de entorno **antes** de importar la aplicación
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["TESTING"] = "true"
+os.environ.setdefault("GOOGLE_CREDENTIALS", "{}")
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from src.api.routes import app
 from src.api.models import Base
-from src.config.database import get_db
+from src.config.database import (
+    SessionLocal as AppSessionLocal,
+    engine as app_engine,
+    get_db,
+)
 
-# Configuramos la base de datos de testing
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-DATABASE_URL = os.environ["DATABASE_URL"]
+# Verificar que la aplicación usa la base de datos en memoria
+assert str(app_engine.url) == "sqlite:///:memory:"
+assert str(AppSessionLocal.kw["bind"].url) == "sqlite:///:memory:"
 
-# Creamos el engine para testing
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Usar el mismo engine de la aplicación para las pruebas
+engine = app_engine
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # --- Fixtures ---
