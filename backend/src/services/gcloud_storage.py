@@ -44,7 +44,7 @@ def generate_gallery_html(bucket_name: str, folder: str):
         urls = [
             f"https://storage.googleapis.com/{bucket_name}/{blob.name}"
             for blob in blobs
-            if not blob.name.endswith("index.html")
+            if not blob.name.endswith("index.html") and blob.content_type.startswith("image/")
         ]
         
         if not urls:

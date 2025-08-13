@@ -202,7 +202,7 @@ def delete_mantenimiento_planilla(db: Session, mantenimiento_id: int, file_name:
     
     db.commit()
     db.refresh(db_mantenimiento)
-    update_correctivo(db, db_mantenimiento)
+    update_correctivo(db_mantenimiento)
     return True
 
 def delete_mantenimiento_photo(db: Session, mantenimiento_id: int, file_name: str, current_entity: dict) -> bool:
@@ -223,5 +223,5 @@ def delete_mantenimiento_photo(db: Session, mantenimiento_id: int, file_name: st
     delete_file_in_folder(GOOGLE_CLOUD_BUCKET_NAME, f"mantenimientos_correctivos/{mantenimiento_id}/fotos/", file_name)
     db.delete(foto)
     db.commit()
-    update_correctivo(db, db_mantenimiento)
+    update_correctivo(db_mantenimiento)
     return True
