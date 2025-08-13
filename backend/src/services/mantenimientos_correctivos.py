@@ -49,7 +49,7 @@ async def create_mantenimiento_correctivo(db: Session, id_sucursal: int, id_cuad
     db.add(db_mantenimiento)
     db.commit()
     db.refresh(db_mantenimiento)
-    append_correctivo(db, db_mantenimiento)
+    append_correctivo(db_mantenimiento)
     if cuadrilla is not None:
         # Notificar si es alta prioridad
         if prioridad == "Alta":
@@ -155,7 +155,7 @@ async def update_mantenimiento_correctivo(
         )
     db.commit()
     db.refresh(db_mantenimiento)
-    update_correctivo(db, db_mantenimiento)
+    update_correctivo(db_mantenimiento)
     if cuadrilla is not None:
         # Notify only once after all updates
         if prioridad == "Alta":
@@ -185,7 +185,7 @@ def delete_mantenimiento_correctivo(db: Session, mantenimiento_id: int, current_
         raise HTTPException(status_code=404, detail="Mantenimiento correctivo no encontrado")
     db.delete(db_mantenimiento)
     db.commit()
-    delete_correctivo(db, mantenimiento_id)
+    delete_correctivo(mantenimiento_id)
     return {"message": f"Mantenimiento correctivo con id {mantenimiento_id} eliminado"}
 
 def delete_mantenimiento_planilla(db: Session, mantenimiento_id: int, file_name: str, current_entity: dict) -> bool:
