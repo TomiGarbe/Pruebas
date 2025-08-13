@@ -77,3 +77,25 @@ def test_delete_zona_in_use(db_session, mocker):
         )
     assert exc.value.status_code == 400
     assert "está en uso" in exc.value.detail
+
+
+def test_create_zona_without_auth(db_session):
+    with pytest.raises(HTTPException) as exc:
+        zonas_service.create_zona(db_session, nombre="Zona", current_entity=None)
+    assert exc.value.status_code == 401
+
+
+def test_create_zona_no_permissions(db_session):
+    with pytest.raises(HTTPException) as exc:
+        zonas_service.create_zona(
+            db_session,
+            nombre="Zona",
+            current_entity={"type": "cuadrilla"},
+        )
+    assert exc.value.status_code == 403
+
+
+def test_delete_zona_not_found(db_session):
+    with pytest.raises(HTTPException) as exc:
+        zonas_service.delete_zona(db_session, 999, current_entity={"type": "usuario"})
+    assert exc.value.status_code == 404

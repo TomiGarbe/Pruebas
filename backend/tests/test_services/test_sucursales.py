@@ -1,6 +1,7 @@
 import os
 import pytest
 from unittest.mock import MagicMock, patch
+from fastapi import HTTPException
 
 os.environ["TESTING"] = "true"
 
@@ -99,3 +100,50 @@ def test_delete_sucursal(db_session):
     # Verificar que no existe más
     with pytest.raises(Exception):
         sucursales_service.get_sucursal(db_session, nueva_sucursal.id)
+
+
+def test_create_sucursal_without_auth(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.create_sucursal(
+            db_session,
+            "Sucursal Fail",
+            "Zona",
+            {"address": "Dirección", "lat": 0, "lng": 0},
+            "100m2",
+            None,
+        )
+    assert exc.value.status_code == 401
+
+
+def test_create_sucursal_invalid_direccion(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.create_sucursal(
+            db_session,
+            "Sucursal Fail",
+            "Zona",
+            "no es un dict",
+            "100m2",
+            {"type": "usuario"},
+        )
+    assert exc.value.status_code == 400
+
+
+def test_update_sucursal_not_found(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.update_sucursal(
+            db_session,
+            999,
+            {"type": "usuario"},
+            nombre="Nueva",
+        )
+    assert exc.value.status_code == 404
+
+
+def test_delete_sucursal_not_found(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.delete_sucursal(
+            db_session,
+            999,
+            {"type": "usuario"},
+        )
+    assert exc.value.status_code == 404
