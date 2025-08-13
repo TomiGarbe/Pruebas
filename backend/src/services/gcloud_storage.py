@@ -31,8 +31,18 @@ def generate_gallery_html(bucket_name: str, folder: str):
         storage_client = storage.Client.from_service_account_info(GOOGLE_CREDENTIALS)
         bucket = storage_client.bucket(bucket_name)
         prefix = folder.rstrip("/") + "/"
+        
+        # Borrar el index.html si ya existe
+        index_blob = bucket.blob(f"{prefix}index.html")
+        if index_blob.exists():
+            index_blob.delete()
+        
         blobs = bucket.list_blobs(prefix=prefix)
-        urls = [f"https://storage.googleapis.com/{bucket_name}/{blob.name}" for blob in blobs if not blob.name.endswith("index.html")]
+        urls = [
+            f"https://storage.googleapis.com/{bucket_name}/{blob.name}"
+            for blob in blobs
+            if not blob.name.endswith("index.html")
+        ]
         
         if not urls:
             return None  # No photos, no gallery needed
@@ -50,7 +60,7 @@ def generate_gallery_html(bucket_name: str, folder: str):
             <div class="gallery">
         """
         for url in urls:
-            html_content += f'<a href="{url}" target="_blank"><img src="{url}" alt="Photo"></a>'
+            html_content += f'<a href="{url}" target="_blank"><img src="{url}"></a>'
         html_content += """
             </div>
         </body>
@@ -118,7 +128,7 @@ def delete_file_in_folder(bucket_name: str, folder: str, file_path: str) -> bool
         
         storage_client = storage.Client.from_service_account_info(GOOGLE_CREDENTIALS)
         bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(f"{folder.rstrip('/')}{file_path}")
+        blob = bucket.blob(f"{folder.rstrip('/')}/{file_path.lstrip('/')}")
         if blob.exists():
             blob.delete()
             generate_gallery_html(bucket_name, folder)
