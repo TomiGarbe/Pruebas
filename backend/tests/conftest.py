@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["TESTING"] = "true"
 os.environ.setdefault("GOOGLE_CREDENTIALS", "{}")
+os.environ.setdefault("GOOGLE_CLOUD_BUCKET_NAME", "test-bucket")
 
 # Asegurar que los paquetes del backend sean importables
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -54,3 +55,28 @@ def client(db_session):
 
     return TestClient(app)
 
+@pytest.fixture(autouse=True)
+def mock_firebase(monkeypatch):
+    class DummyReference:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get(self):
+            return {}
+
+        def set(self, *args, **kwargs):
+            pass
+
+        def update(self, *args, **kwargs):
+            pass
+
+        def delete(self, *args, **kwargs):
+            pass
+
+    def dummy_reference(*args, **kwargs):
+        return DummyReference()
+
+    monkeypatch.setattr("firebase_admin.db.reference", dummy_reference)
+    monkeypatch.setattr("src.services.sucursales.initialize_firebase", lambda: None)
+    monkeypatch.setattr("src.services.maps.initialize_firebase", lambda: None)
+    
