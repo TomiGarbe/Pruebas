@@ -30,21 +30,34 @@ def test_preventivos_selection(client):
     assert resp.json() == [{"id_mantenimiento": "1", "id_sucursal": "1"}]
 
 def test_update_user_location(client):
-    current_entity_mock = {
-        "type": "usuario",
-        "data": {
-            "uid": "UID123",
-            "id": "1",
-            "rol": "admin"
-        }
-    }
     payload = {
         "name": "N", 
         "lat": 1.0, 
         "lng": 2.0
     }
     with patch("controllers.maps.update_user_location", AsyncMock(return_value={"message": "Ubicación actualizada para 1"})):
-        client.app.state.current_entity = current_entity_mock
         resp = client.post("/maps/update-user-location", json=payload)
     assert resp.status_code == 200
     assert resp.json() == {"message": "Ubicación actualizada para 1"}
+
+def test_select_correctivo(client):
+    c = SimpleNamespace(id="1", id_cuadrilla="1", id_mantenimiento="1", id_sucursal="1")
+    payload = {
+        "id_mantenimiento": 1, 
+        "id_sucursal": 1
+    }
+    with patch("controllers.maps.update_correctivo", return_value=c):
+        resp = client.post("/maps/select-correctivo", json=payload)
+    assert resp.status_code == 200
+    assert resp.json() == {"id": "1", "id_cuadrilla": "1", "id_mantenimiento": "1", "id_sucursal": "1"}
+
+def test_select_preventivo(client):
+    c = SimpleNamespace(id="1", id_cuadrilla="1", id_mantenimiento="1", id_sucursal="1")
+    payload = {
+        "id_mantenimiento": 1, 
+        "id_sucursal": 1
+    }
+    with patch("controllers.maps.update_preventivo", return_value=c):
+        resp = client.post("/maps/select-preventivo", json=payload)
+    assert resp.status_code == 200
+    assert resp.json() == {"id": "1", "id_cuadrilla": "1", "id_mantenimiento": "1", "id_sucursal": "1"}

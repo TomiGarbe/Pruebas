@@ -17,6 +17,16 @@ FRONTEND_URL = os.getenv("FRONTEND_URL")
 EMAIL_ADMIN = os.getenv("EMAIL_ADMIN")
 NOMBRE_ADMIN = os.getenv("NOMBRE_ADMIN")
 PASSWORD_ADMIN = os.getenv("PASSWORD_ADMIN")
+DEFAULT_TEST_ENTITY = {
+    "type": "usuario",
+    "data": {
+        "id": 1,
+        "nombre": "Test User",
+        "email": "test@example.com",
+        "rol": "Administrador",
+        "uid": "test-uid",
+    },
+}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,15 +62,10 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
     
     if os.environ.get("TESTING") == "true":
-        request.state.current_entity = {
-            "type": "usuario",
-            "data": {
-                "id": 1,
-                "nombre": "Test User",
-                "email": "test@example.com",
-                "rol": "Administrador"
-            }
-        }
+        request.state.current_entity = getattr(
+            request.app.state, "current_entity", DEFAULT_TEST_ENTITY
+        )
+        request.app.state.current_entity = DEFAULT_TEST_ENTITY
     else:
         token = request.headers.get("Authorization")
         if token and token.startswith("Bearer "):
