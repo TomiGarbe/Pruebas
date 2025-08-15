@@ -17,8 +17,18 @@ def test_cors_middleware_exists():
 def test_routes_registered():
     """ Verifica que se registraron los routers principales """
     expected_routes = [
+        "/users",
+        "/cuadrillas",
         "/sucursales",
-        "/zonas"
+        "/zonas",
+        "/auth",
+        "/preventivos",
+        "/mantenimientos-preventivos",
+        "/mantenimientos-correctivos",
+        "/maps",
+        "/notificaciones",
+        "/push",
+        "/chat"
     ]
 
     app_routes = [route.path for route in app.routes]
