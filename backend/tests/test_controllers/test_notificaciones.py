@@ -39,11 +39,12 @@ def test_notificaciones_delete(client):
     assert resp.json() == mock_result
 
 def test_notificaciones_nearby(client):
-    with patch("controllers.notificaciones.notify_nearby_maintenances", AsyncMock(return_value={"message": "ok"})):
+    mock_result = {"message": "Notificaciones enviadas"}
+    with patch("controllers.notificaciones.notify_nearby_maintenances", AsyncMock(return_value=mock_result)):
         payload = {"mantenimientos": [{"id": 1, "tipo": "correctivo", "mensaje": "hola"}]}
         resp = client.post("/notificaciones/nearby", json=payload)
     assert resp.status_code == 200
-    assert resp.json()["message"] == "ok"
+    assert resp.json() == mock_result
 
 def test_notificaciones_delete(client):
     mock_result = {"message": "Notificaciones eliminadas"}

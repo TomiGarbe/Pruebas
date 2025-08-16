@@ -1,103 +1,56 @@
-import pytest
+from unittest.mock import patch, MagicMock
 
+def test_sucursales_get(client):
+    s = MagicMock(id=1, nombre="N", zona="Z", direccion="D", superficie="1")
+    with patch("controllers.sucursales.get_sucursales", return_value=[s]):
+        resp = client.get("/sucursales/")
+    assert resp.status_code == 200
+    assert resp.json()[0] == {"id": 1, "nombre": "N", "zona": "Z", "direccion": "D", "superficie": "1"}
 
-def test_create_sucursal(client):
-    response = client.post(
-        "/sucursales/",
-        json={
-            "nombre": "Sucursal Controller",
-            "zona": "Zona Controller",
+def test_sucursal_get(client):
+    s = MagicMock(id=1, nombre="N", zona="Z", direccion="D", superficie="1")
+    with patch("controllers.sucursales.get_sucursal", return_value=s):
+        resp = client.get("/sucursales/1")
+    assert resp.status_code == 200
+    assert resp.json() == {"id": 1, "nombre": "N", "zona": "Z", "direccion": "D", "superficie": "1"}
+
+def test_sucursal_create(client):
+    s = MagicMock(id=1, nombre="N", zona="Z", direccion="D", superficie="1")
+    with patch("controllers.sucursales.create_sucursal", return_value=s):
+        payload = {
+            "nombre": "N", 
+            "zona": "Z", 
             "direccion": {
-                "address": "Dirección Controller",
-                "lat": 0.0,
-                "lng": 0.0,
-            },
-            "superficie": "80m2",
-        },
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["nombre"] == "Sucursal Controller"
-    assert "id" in data
+                "address": "A", 
+                "lat": 1.0, 
+                "lng": 1.0
+            }, 
+            "superficie": "1"
+        }
+        resp = client.post("/sucursales/", json=payload)
+    assert resp.status_code == 200
+    assert resp.json() == {"id": 1, "nombre": "N", "zona": "Z", "direccion": "D", "superficie": "1"}
 
-
-def test_listar_sucursales(client):
-    response = client.get("/sucursales/")
-    assert response.status_code == 200
-    assert isinstance(response.json(), list)
-
-
-def test_get_sucursal(client):
-    post_response = client.post(
-        "/sucursales/",
-        json={
-            "nombre": "Sucursal para GET",
-            "zona": "Zona GET",
+def test_sucursal_update(client):
+    s = MagicMock(id=1, nombre="N", zona="Z", direccion="D", superficie="1")
+    with patch("controllers.sucursales.update_sucursal", return_value=s):
+        payload = {
+            "nombre": "N", 
+            "zona": "Z", 
             "direccion": {
-                "address": "Dirección GET",
-                "lat": 0.0,
-                "lng": 0.0,
-            },
-            "superficie": "85m2",
-        },
-    )
-    sucursal_id = post_response.json()["id"]
+                "address": "A", 
+                "lat": 1.0, 
+                "lng": 1.0
+            }, 
+            "superficie": "1"
+        }
+        resp = client.put("/sucursales/1", json=payload)
+    assert resp.status_code == 200
+    assert resp.json() == {"id": 1, "nombre": "N", "zona": "Z", "direccion": "D", "superficie": "1"}
 
-    get_response = client.get(f"/sucursales/{sucursal_id}")
-    assert get_response.status_code == 200
-    assert get_response.json()["id"] == sucursal_id
-
-
-def test_update_sucursal(client):
-    post_response = client.post(
-        "/sucursales/",
-        json={
-            "nombre": "Sucursal para UPDATE",
-            "zona": "Zona",
-            "direccion": {
-                "address": "Dirección",
-                "lat": 0.0,
-                "lng": 0.0,
-            },
-            "superficie": "90m2",
-        },
-    )
-    sucursal_id = post_response.json()["id"]
-
-    put_response = client.put(
-        f"/sucursales/{sucursal_id}",
-        json={
-            "nombre": "Sucursal Actualizada",
-            "zona": "Zona Actualizada",
-            "direccion": {
-                "address": "Dirección Actualizada",
-                "lat": 1.0,
-                "lng": 1.0,
-            },
-            "superficie": "95m2",
-        },
-    )
-    assert put_response.status_code == 200
-    assert put_response.json()["nombre"] == "Sucursal Actualizada"
-
-
-def test_delete_sucursal(client):
-    post_response = client.post(
-        "/sucursales/",
-        json={
-            "nombre": "Sucursal para DELETE",
-            "zona": "Zona",
-            "direccion": {
-                "address": "Dirección",
-                "lat": 0.0,
-                "lng": 0.0,
-            },
-            "superficie": "100m2",
-        },
-    )
-    sucursal_id = post_response.json()["id"]
-
-    delete_response = client.delete(f"/sucursales/{sucursal_id}")
-    assert delete_response.status_code == 200
-    assert "eliminada" in delete_response.json()["message"]
-
+def test_sucursal_delete(client):
+    mock_result = {"message": "Sucursal con id 1 eliminada"}
+    with patch("controllers.sucursales.delete_sucursal", return_value=mock_result):
+        resp = client.delete("/sucursales/1")
+    assert resp.status_code == 200
+    assert resp.json() == mock_result
