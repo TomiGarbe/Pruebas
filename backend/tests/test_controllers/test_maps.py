@@ -61,3 +61,31 @@ def test_select_preventivo(client):
         resp = client.post("/maps/select-preventivo", json=payload)
     assert resp.status_code == 200
     assert resp.json() == {"id": "1", "id_cuadrilla": "1", "id_mantenimiento": "1", "id_sucursal": "1"}
+
+def test_sucursal_delete(client):
+    mock_result = {"message": "Seleccion de sucursal eliminada"}
+    with patch("controllers.maps.delete_sucursal", return_value=mock_result):
+        resp = client.delete("/maps/sucursal/1")
+    assert resp.status_code == 200
+    assert resp.json() == mock_result
+
+def test_correctivo_delete(client):
+    mock_result = {"message": "Seleccion de correctivo eliminada"}
+    with patch("controllers.maps.delete_correctivo", return_value=mock_result):
+        resp = client.delete("/maps/correctivo/1")
+    assert resp.status_code == 200
+    assert resp.json() == mock_result
+
+def test_preventivo_delete(client):
+    mock_result = {"message": "Seleccion de preventivo eliminada"}
+    with patch("controllers.maps.delete_preventivo", return_value=mock_result):
+        resp = client.delete("/maps/preventivo/1")
+    assert resp.status_code == 200
+    assert resp.json() == mock_result
+
+def test_selection_delete(client):
+    mock_result = {"message": "Seleccion eliminada"}
+    with patch("controllers.maps.delete_preventivo", return_value=mock_result):
+        resp = client.delete("/maps/selection")
+    assert resp.status_code == 200
+    assert resp.json() == mock_result

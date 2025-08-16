@@ -15,7 +15,17 @@ def test_list_mantenimientos_preventivos(client):
     with patch("controllers.mantenimientos_preventivos.get_mantenimientos_preventivos", return_value=[m]):
         resp = client.get("/mantenimientos-preventivos/")
     assert resp.status_code == 200
-    assert resp.json()[0]["id"] == 1
+    assert resp.json()[0] == {
+        "id": 1,
+        "id_sucursal": 1,
+        "frecuencia": "Mensual",
+        "id_cuadrilla": 1,
+        "fecha_apertura": "2025-01-01",
+        "fecha_cierre": None,
+        "planillas": [],
+        "fotos": [],
+        "extendido": None
+    }
 
 def test_get_mantenimiento_preventivo(client):
     m = MagicMock(
@@ -32,15 +42,31 @@ def test_get_mantenimiento_preventivo(client):
     with patch("controllers.mantenimientos_preventivos.get_mantenimiento_preventivo", return_value=m):
         resp = client.get("/mantenimientos-preventivos/1")
     assert resp.status_code == 200
-    assert resp.json()["id"] == 1
+    assert resp.json() == {
+        "id": 1,
+        "id_sucursal": 1,
+        "frecuencia": "Mensual",
+        "id_cuadrilla": 1,
+        "fecha_apertura": "2025-01-01",
+        "fecha_cierre": "2025-02-01",
+        "planillas": [],
+        "fotos": [],
+        "extendido": None
+    }
 
 def test_create_mantenimiento_preventivo(client):
-    m = MagicMock(id=1, id_sucursal=1, frecuencia="Mensual", id_cuadrilla=1, fecha_apertura="2023-01-01")
+    m = MagicMock(id=1, id_sucursal=1, frecuencia="Mensual", id_cuadrilla=1, fecha_apertura="2025-01-01")
     with patch("controllers.mantenimientos_preventivos.create_mantenimiento_preventivo", AsyncMock(return_value=m)):
-        payload = {"id_sucursal": 1, "frecuencia": "Mensual", "id_cuadrilla": 1, "fecha_apertura": "2023-01-01"}
+        payload = {"id_sucursal": 1, "frecuencia": "Mensual", "id_cuadrilla": 1, "fecha_apertura": "2025-01-01"}
         resp = client.post("/mantenimientos-preventivos/", json=payload)
     assert resp.status_code == 200
-    assert resp.json()["id"] == 1
+    assert resp.json() == {
+        "id": 1,
+        "id_sucursal": 1,
+        "frecuencia": "Mensual",
+        "id_cuadrilla": 1,
+        "fecha_apertura": "2025-01-01"
+    }
 
 def test_update_mantenimiento_preventivo(client):
     m = MagicMock(
@@ -64,7 +90,17 @@ def test_update_mantenimiento_preventivo(client):
         }
         resp = client.put("/mantenimientos-preventivos/1", data=payload)
     assert resp.status_code == 200
-    assert resp.json()["id"] == 1
+    assert resp.json() == {
+        "id": 1,
+        "id_sucursal": 1,
+        "frecuencia": "Mensual",
+        "id_cuadrilla": 1,
+        "fecha_apertura": "2025-01-01",
+        "fecha_cierre": "2025-02-01",
+        "planillas": [],
+        "fotos": [],
+        "extendido": None
+    }
 
 def test_mantenimiento_preventivo_delete(client):
     mock_result = {"message": "Mantenimiento preventivo con id 1 eliminado"}
