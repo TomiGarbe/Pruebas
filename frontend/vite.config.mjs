@@ -12,4 +12,9 @@ export default defineConfig({
       requireEnv: false, // Habilita instrumentación sin variable de entorno
     }),
   ],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './setupTests.js',
+  },
 });

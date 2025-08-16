@@ -1,13 +1,14 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import Sucursales from '../../src/pages/Sucursales';
 import * as sucursalService from '../../src/services/sucursalService';
 import * as zonaService from '../../src/services/zonaService';
 
 // Mocks
-jest.mock('../../src/services/sucursalService');
-jest.mock('../../src/services/zonaService');
-jest.mock('../../src/services/api');
+vi.mock('../../src/services/sucursalService');
+vi.mock('../../src/services/zonaService');
+vi.mock('../../src/services/api');
 
 describe('Sucursales component', () => {
   const mockSucursales = [
@@ -18,7 +19,7 @@ describe('Sucursales component', () => {
   const mockZonas = [{ id: 1, nombre: 'Zona A' }, { id: 2, nombre: 'Zona B' }];
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     sucursalService.getSucursales.mockResolvedValue({ data: mockSucursales });
     zonaService.getZonas.mockResolvedValue({ data: mockZonas });
   });
@@ -73,3 +74,4 @@ describe('Sucursales component', () => {
     expect(await screen.findByDisplayValue('Sucursal 2')).toBeInTheDocument();
   });  
 });
+

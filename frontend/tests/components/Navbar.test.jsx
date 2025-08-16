@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import AppNavbar from '../../src/components/Navbar';
 import { BrowserRouter } from 'react-router-dom';
 
@@ -7,12 +8,12 @@ describe('Navbar component', () => {
   beforeEach(() => {
     // Mock localStorage
     window.localStorage = {
-      getItem: jest.fn(() => JSON.stringify({ nombre: 'Usuario' })),
+      getItem: vi.fn(() => JSON.stringify({ nombre: 'Usuario' })),
     };
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renderiza los links de navegación', () => {
