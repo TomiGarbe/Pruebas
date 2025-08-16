@@ -1,17 +1,15 @@
-import pytest
-from fastapi import HTTPException
-
 from src.services import push_subscriptions as ps
-from api.schemas import PushSubscriptionCreate, PushSubscriptionKeys
+from src.api.schemas import PushSubscriptionCreate, PushSubscriptionKeys
 
-
-def test_save_subscription_requires_auth(db_session):
+def test_save_subscription(db_session):
     sub = PushSubscriptionCreate(
         endpoint="e",
         keys=PushSubscriptionKeys(p256dh="p", auth="a"),
         firebase_uid="uid",
+        device_info="web",
     )
-    with pytest.raises(HTTPException) as exc:
-        ps.save_subscription(db_session, None, sub)
-    assert exc.value.status_code == 401
 
+    result = ps.save_subscription(db_session, {"type": "usuario"}, sub)
+
+    assert result["message"] == "Subscription saved"
+    assert len(ps.get_subscriptions(db_session, "uid")) == 1

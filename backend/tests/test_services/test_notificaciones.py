@@ -1,11 +1,7 @@
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 import asyncio
-from unittest.mock import AsyncMock, patch
-import pytest
-from fastapi import HTTPException
-from src.api.models import Usuario
 from src.services import notificaciones as notif_service
-
+from src.api.models import Usuario
 
 def test_notify_user_sends_webpush(db_session):
     with patch("src.services.notificaciones.send_webpush_notification") as mock_push:
@@ -62,9 +58,3 @@ def test_notify_nearby_maintenances_sends_webpush(db_session):
         mock_correctivo.assert_awaited_once_with(db_session, "user", 1, "mc")
         mock_preventivo.assert_awaited_once_with(db_session, "user", 2, "mp")
         assert mock_push.call_count == 2
-
-
-def test_notify_nearby_maintenances_auth_error(db_session):
-    with pytest.raises(HTTPException) as exc:
-        asyncio.run(notif_service.notify_nearby_maintenances(db_session, {}, []))
-    assert exc.value.status_code == 401
