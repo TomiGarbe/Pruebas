@@ -9,6 +9,14 @@ import * as sucursalService from '../../src/services/sucursalService';
 vi.mock('../../src/services/zonaService');
 vi.mock('../../src/services/sucursalService');
 vi.mock('../../src/services/api');
+vi.mock('../../src/components/DirreccionAutocomplete', () => ({
+  default: ({ onSelect }) => (
+    <input
+      placeholder="Escriba una dirección"
+      onChange={() => onSelect({ address: 'Calle Falsa 123', lat: 1, lng: 1 })}
+    />
+  ),
+}));
 
 describe('SucursalForm component', () => {
   const sucursalMock = {
@@ -23,6 +31,7 @@ describe('SucursalForm component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    zonaService.getZonas.mockResolvedValue({ data: [] });
   });
 
   test('renderiza correctamente el formulario para crear', async () => {
@@ -30,7 +39,7 @@ describe('SucursalForm component', () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Nombre/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Dirección/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/Escriba una dirección/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Superficie/i)).toBeInTheDocument();
     });
 
@@ -43,7 +52,7 @@ describe('SucursalForm component', () => {
     render(<SucursalForm onClose={mockOnSave} />);
 
     fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Sucursal Nueva' } });
-    fireEvent.change(screen.getByLabelText(/Dirección/i), { target: { value: 'Calle Falsa 123' } });
+    fireEvent.change(screen.getByPlaceholderText(/Escriba una dirección/i), { target: { value: 'Calle Falsa 123' } });
     fireEvent.change(screen.getByLabelText(/Superficie/i), { target: { value: '300' } });
 
     fireEvent.click(screen.getByText(/Seleccione una zona/i));
@@ -69,7 +78,7 @@ describe('SucursalForm component', () => {
     
     expect(screen.getByDisplayValue('Sucursal Centro')).toBeInTheDocument();
     expect(screen.getByText('Zona 1')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Calle Falsa 123')).toBeInTheDocument();
+    expect(screen.getByText(/Seleccionado: Calle Falsa 123/i)).toBeInTheDocument();
     expect(screen.getByDisplayValue('300')).toBeInTheDocument();
   });
   
@@ -132,3 +141,4 @@ describe('SucursalForm component', () => {
     });
   });
 });
+
