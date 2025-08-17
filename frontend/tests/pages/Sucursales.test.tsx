@@ -4,6 +4,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import Sucursales from '../../src/pages/Sucursales';
 import * as sucursalService from '../../src/services/sucursalService';
 import * as zonaService from '../../src/services/zonaService';
+import { BrowserRouter } from 'react-router-dom';
 
 // Mocks
 vi.mock('../../src/services/sucursalService');
@@ -25,7 +26,11 @@ describe('Sucursales component', () => {
   });
 
   test('muestra sucursales en la tabla', async () => {
-    render(<Sucursales />);
+    render(
+      <BrowserRouter>
+        <Sucursales />
+      </BrowserRouter>
+    );
 
     expect(screen.getByText('Gestión de Sucursales')).toBeInTheDocument();
 
@@ -36,7 +41,11 @@ describe('Sucursales component', () => {
   });
 
   test('al hacer click en Agregar muestra el formulario', async () => {
-    render(<Sucursales />);
+    render(
+      <BrowserRouter>
+        <Sucursales />
+      </BrowserRouter>
+    );
 
     fireEvent.click(screen.getByText(/Agregar/i));
 
@@ -51,7 +60,11 @@ describe('Sucursales component', () => {
     });
     sucursalService.deleteSucursal.mockResolvedValue({});
 
-    render(<Sucursales />);
+    render(
+      <BrowserRouter>
+        <Sucursales />
+      </BrowserRouter>
+    );
 
     const eliminarButton = await screen.findByRole('button', { name: /Eliminar/i });
     fireEvent.click(eliminarButton);
@@ -66,7 +79,11 @@ describe('Sucursales component', () => {
       data: [{ id: 1, nombre: 'Sucursal 2', zona: 'Zona B', direccion: 'Avenida 456', superficie: '200' }],
     });
 
-    render(<Sucursales />);
+    render(
+      <BrowserRouter>
+        <Sucursales />
+      </BrowserRouter>
+    );
 
     const editarButton = await screen.findByRole('button', { name: /Editar/i });
     fireEvent.click(editarButton);
@@ -74,4 +91,5 @@ describe('Sucursales component', () => {
     expect(await screen.findByDisplayValue('Sucursal 2')).toBeInTheDocument();
   });  
 });
+
 
