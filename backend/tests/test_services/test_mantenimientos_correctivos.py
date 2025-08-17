@@ -169,7 +169,7 @@ def test_delete_mantenimiento_planilla(mock_delete_file, mock_update, db_session
         db_session, mantenimiento.id, "planilla.png", {"type": "usuario"}
     )
 
-    db_refresh = db_session.query(MantenimientoCorrectivo).get(mantenimiento.id)
+    db_refresh = db_session.get(MantenimientoCorrectivo, mantenimiento.id)
     assert result is True
     assert db_refresh.planilla is None
 
