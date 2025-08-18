@@ -320,6 +320,7 @@ const Ruta = () => {
       zoom: 12,
       rotate: true,
       rotateControl: false,
+      touchRotate: true,
     });
     mapInstanceRef.current = map;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

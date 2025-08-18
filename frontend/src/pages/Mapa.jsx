@@ -9,6 +9,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import 'leaflet-routing-machine';
+import 'leaflet-rotate/dist/leaflet-rotate.js';
 import '../styles/mapa.css';
 import '../styles/botones_forms.css';
 
@@ -321,7 +322,8 @@ const Mapa = () => {
 
     mapInstanceRef.current = L.map(mapRef.current, {
       center: [defaultCenter.lat, defaultCenter.lng],
-      zoom: 12
+      zoom: 12,
+      touchRotate: true,
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
