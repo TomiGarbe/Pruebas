@@ -20,6 +20,11 @@ def test_get_users_success(db_session):
     users = users_service.get_users(db_session, {"type": "usuario", "data": {"rol": Role.ADMIN}})
     assert len(users) == 1
 
+def test_get_users_wrong_entity_type(db_session):
+    with pytest.raises(HTTPException) as exc:
+        users_service.get_users(db_session, {"type": "cuadrilla", "data": {}})
+    assert exc.value.status_code == 403
+
 def test_get_user_requires_auth(db_session):
     with pytest.raises(HTTPException) as exc:
         users_service.get_user(db_session, 1, None)
@@ -39,6 +44,19 @@ def test_get_user_no_permission(db_session):
             db_session,
             user.id,
             {"type": "usuario", "data": {"id": 999, "rol": Role.ENCARGADO}},
+        )
+    assert exc.value.status_code == 403
+
+def test_get_user_wrong_entity_type(db_session):
+    user = Usuario(nombre="User4", email="u4@example.com", rol=Role.ENCARGADO)
+    db_session.add(user)
+    db_session.commit()
+
+    with pytest.raises(HTTPException) as exc:
+        users_service.get_user(
+            db_session,
+            user.id,
+            {"type": "cuadrilla", "data": {}},
         )
     assert exc.value.status_code == 403
 

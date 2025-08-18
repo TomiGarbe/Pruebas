@@ -1,7 +1,8 @@
 import importlib
 import io
 import asyncio
-from fastapi import UploadFile
+import pytest
+from fastapi import UploadFile, HTTPException
 from starlette.datastructures import Headers
 from src.services import gcloud_storage
 
@@ -224,3 +225,34 @@ def test_upload_chat_file_to_gcloud(monkeypatch):
     assert url == client.bucket_obj.blob_obj.public_url
     assert client.bucket_obj.blob_obj.uploaded
     assert client.bucket_obj.blob_obj.upload_content_type == "text/plain"
+
+def test_create_folder_missing_credentials(monkeypatch):
+    monkeypatch.setattr(gcloud_storage, "GOOGLE_CREDENTIALS", None)
+    with pytest.raises(HTTPException):
+        gcloud_storage.create_folder_if_not_exists("bucket", "folder")
+
+def test_generate_gallery_html_missing_credentials(monkeypatch):
+    monkeypatch.setattr(gcloud_storage, "GOOGLE_CREDENTIALS", None)
+    with pytest.raises(HTTPException):
+        gcloud_storage.generate_gallery_html("bucket", "folder")
+
+def test_upload_file_to_gcloud_missing_credentials(monkeypatch):
+    monkeypatch.setattr(gcloud_storage, "GOOGLE_CREDENTIALS", None)
+    upload = UploadFile(filename="t.txt", file=io.BytesIO(b"data"))
+    upload.headers = Headers({"content-type": "text/plain"})
+    with pytest.raises(HTTPException):
+        asyncio.run(gcloud_storage.upload_file_to_gcloud(upload, "bucket", "folder"))
+
+def test_upload_chat_file_to_gcloud_missing_credentials(monkeypatch):
+    monkeypatch.setattr(gcloud_storage, "GOOGLE_CREDENTIALS", None)
+    upload = UploadFile(filename="c.txt", file=io.BytesIO(b"chat"))
+    upload.headers = Headers({"content-type": "text/plain"})
+    with pytest.raises(HTTPException):
+        asyncio.run(
+            gcloud_storage.upload_chat_file_to_gcloud(upload, "bucket", "folder")
+        )
+
+def test_delete_file_in_folder_missing_credentials(monkeypatch):
+    monkeypatch.setattr(gcloud_storage, "GOOGLE_CREDENTIALS", None)
+    with pytest.raises(HTTPException):
+        gcloud_storage.delete_file_in_folder("bucket", "folder", "/file")

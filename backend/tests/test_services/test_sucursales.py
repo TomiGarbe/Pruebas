@@ -141,3 +141,42 @@ def test_delete_sucursal_not_found(db_session):
             {"type": "usuario"},
         )
     assert exc.value.status_code == 404
+
+def test_get_sucursales_empty(db_session):
+    assert sucursales_service.get_sucursales(db_session) == []
+
+def test_get_sucursal_not_found(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.get_sucursal(db_session, 999)
+    assert exc.value.status_code == 404
+
+def test_create_sucursal_forbidden(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.create_sucursal(
+            db_session,
+            "S", "Z",
+            {"address": "A", "lat": 0, "lng": 0},
+            "1",
+            {"type": "otro"},
+        )
+    assert exc.value.status_code == 403
+
+def test_update_sucursal_without_auth(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.update_sucursal(db_session, 1, None, nombre="N")
+    assert exc.value.status_code == 401
+
+def test_update_sucursal_forbidden(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.update_sucursal(db_session, 1, {"type": "otro"}, nombre="N")
+    assert exc.value.status_code == 403
+
+def test_delete_sucursal_without_auth(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.delete_sucursal(db_session, 1, None)
+    assert exc.value.status_code == 401
+
+def test_delete_sucursal_forbidden(db_session):
+    with pytest.raises(HTTPException) as exc:
+        sucursales_service.delete_sucursal(db_session, 1, {"type": "otro"})
+    assert exc.value.status_code == 403

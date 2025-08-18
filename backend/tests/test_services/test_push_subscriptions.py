@@ -1,3 +1,5 @@
+import pytest
+from fastapi import HTTPException
 from src.services import push_subscriptions as ps
 from src.api.schemas import PushSubscriptionCreate, PushSubscriptionKeys
 
@@ -50,3 +52,24 @@ def test_delete_subscription(db_session):
 
     assert result["message"] == "Subscription deleted"
     assert ps.get_subscriptions(db_session, "uid") == []
+
+def test_save_subscription_without_auth(db_session):
+    sub = PushSubscriptionCreate(
+        endpoint="e", keys=PushSubscriptionKeys(p256dh="p", auth="a"), firebase_uid="uid", device_info="web"
+    )
+    with pytest.raises(HTTPException) as exc:
+        ps.save_subscription(db_session, None, sub)
+    assert exc.value.status_code == 401
+
+def test_get_subscriptions_empty(db_session):
+    subs = ps.get_subscriptions(db_session, "uid")
+    assert subs == []
+
+def test_delete_subscription_not_found(db_session):
+    sub = PushSubscriptionCreate(
+        endpoint="e", keys=PushSubscriptionKeys(p256dh="p", auth="a"), firebase_uid="uid", device_info="web"
+    )
+    ps.save_subscription(db_session, {"type": "usuario"}, sub)
+    result = ps.delete_subscription(db_session, "unknown")
+    assert result["message"] == "Subscription deleted"
+    assert len(ps.get_subscriptions(db_session, "uid")) == 1

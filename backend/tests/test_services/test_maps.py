@@ -1,5 +1,7 @@
 from datetime import date
 import asyncio
+import pytest
+from fastapi import HTTPException
 from src.services import maps as maps_service
 from src.api.models import Sucursal, Cuadrilla, MantenimientoCorrectivo, CorrectivoSeleccionado, MantenimientoPreventivo, PreventivoSeleccionado
 
@@ -335,3 +337,138 @@ def test_delete_selection(db_session):
     assert resp == {"message": "Seleccion eliminada"}
     assert db_session.query(CorrectivoSeleccionado).count() == 0
     assert db_session.query(PreventivoSeleccionado).count() == 0
+
+def test_get_correctivos_unauthorized(db_session):
+    with pytest.raises(HTTPException) as exc:
+        maps_service.get_correctivos(db_session, 1, None)
+
+    assert exc.value.status_code == 401
+
+def test_get_sucursales_locations_unauthorized():
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(maps_service.get_sucursales_locations(None))
+
+    assert exc.value.status_code == 401
+
+def test_get_users_locations_forbidden():
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(maps_service.get_users_locations({"type": "admin"}))
+
+    assert exc.value.status_code == 403
+
+def test_get_preventivos_unauthorized(db_session):
+    with pytest.raises(HTTPException) as exc:
+        maps_service.get_preventivos(db_session, 1, None)
+
+    assert exc.value.status_code == 401
+
+def test_update_user_location_unauthorized():
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            maps_service.update_user_location(
+                None,
+                "uid",
+                "1",
+                "tipo",
+                "Name",
+                1.0,
+                2.0,
+            )
+        )
+
+    assert exc.value.status_code == 401
+
+def test_update_correctivo_already_selected(db_session):
+    sucursal = Sucursal(nombre="S", zona="Z", direccion="D", superficie="1")
+    cuadrilla = Cuadrilla(nombre="C", zona="Z", email="c@example.com")
+    db_session.add_all([sucursal, cuadrilla])
+    db_session.commit()
+
+    mantenimiento = MantenimientoCorrectivo(
+        id_sucursal=sucursal.id,
+        id_cuadrilla=cuadrilla.id,
+        fecha_apertura=date.today(),
+        numero_caso="1",
+        incidente="inc",
+        rubro="r",
+        estado="abierto",
+        prioridad="baja",
+    )
+    db_session.add(mantenimiento)
+    db_session.commit()
+
+    seleccion = CorrectivoSeleccionado(
+        id_cuadrilla=cuadrilla.id,
+        id_mantenimiento=mantenimiento.id,
+        id_sucursal=sucursal.id,
+    )
+    db_session.add(seleccion)
+    db_session.commit()
+
+    with pytest.raises(HTTPException) as exc:
+        maps_service.update_correctivo(
+            db_session,
+            cuadrilla.id,
+            mantenimiento.id,
+            sucursal.id,
+            {"type": "usuario"},
+        )
+
+    assert exc.value.status_code == 400
+
+def test_update_preventivo_already_selected(db_session):
+    sucursal = Sucursal(nombre="S", zona="Z", direccion="D", superficie="1")
+    cuadrilla = Cuadrilla(nombre="C", zona="Z", email="c@example.com")
+    db_session.add_all([sucursal, cuadrilla])
+    db_session.commit()
+
+    mantenimiento = MantenimientoPreventivo(
+        id_sucursal=sucursal.id,
+        id_cuadrilla=cuadrilla.id,
+        fecha_apertura=date.today(),
+    )
+    db_session.add(mantenimiento)
+    db_session.commit()
+
+    seleccion = PreventivoSeleccionado(
+        id_cuadrilla=cuadrilla.id,
+        id_mantenimiento=mantenimiento.id,
+        id_sucursal=sucursal.id,
+    )
+    db_session.add(seleccion)
+    db_session.commit()
+
+    with pytest.raises(HTTPException) as exc:
+        maps_service.update_preventivo(
+            db_session,
+            cuadrilla.id,
+            mantenimiento.id,
+            sucursal.id,
+            {"type": "usuario"},
+        )
+
+    assert exc.value.status_code == 400
+
+def test_delete_sucursal_unauthorized(db_session):
+    with pytest.raises(HTTPException) as exc:
+        maps_service.delete_sucursal(db_session, 1, 1, None)
+
+    assert exc.value.status_code == 401
+
+def test_delete_correctivo_not_found(db_session):
+    with pytest.raises(HTTPException) as exc:
+        maps_service.delete_correctivo(db_session, 1, 1, {"type": "usuario"})
+
+    assert exc.value.status_code == 404
+
+def test_delete_preventivo_not_found(db_session):
+    with pytest.raises(HTTPException) as exc:
+        maps_service.delete_preventivo(db_session, 1, 1, {"type": "usuario"})
+
+    assert exc.value.status_code == 404
+
+def test_delete_selection_unauthorized(db_session):
+    with pytest.raises(HTTPException) as exc:
+        maps_service.delete_selection(db_session, 1, None)
+
+    assert exc.value.status_code == 401

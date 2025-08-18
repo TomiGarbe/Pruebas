@@ -1,3 +1,5 @@
+import pytest
+from fastapi import HTTPException
 from src.services import auth as auth_service
 from src.api.schemas import UserCreate, UserUpdate, CuadrillaCreate, CuadrillaUpdate, Role
 from src.api.models import Usuario, Cuadrilla
@@ -109,3 +111,66 @@ def test_delete_firebase_cuadrilla(db_session, monkeypatch):
     result = auth_service.delete_firebase_cuadrilla(cuadrilla.id, db_session, current)
 
     assert "eliminada" in result["message"]
+
+def test_verify_user_token_invalid_token(db_session, monkeypatch):
+    def mock_verify_id_token(token):
+        raise Exception("bad token")
+
+    monkeypatch.setattr(auth_service.auth, "verify_id_token", mock_verify_id_token)
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_service.verify_user_token("invalid", db_session)
+
+    assert exc_info.value.status_code == 401
+
+def test_create_firebase_user_missing_id_token(db_session):
+    user_data = UserCreate(nombre="Nuevo", email="new@example.com", rol=Role.ENCARGADO, id_token="")
+    current = {"type": "usuario", "data": {"rol": Role.ADMIN}}
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_service.create_firebase_user(user_data, db_session, current, None)
+
+    assert exc_info.value.status_code == 400
+
+def test_update_firebase_user_not_found(db_session):
+    current = {"type": "usuario", "data": {"rol": Role.ADMIN}}
+    update = UserUpdate(nombre="Nuevo")
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_service.update_firebase_user(999, update, db_session, current)
+
+    assert exc_info.value.status_code == 404
+
+def test_delete_firebase_user_not_found(db_session):
+    current = {"type": "usuario", "data": {"rol": Role.ADMIN}}
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_service.delete_firebase_user(999, db_session, current)
+
+    assert exc_info.value.status_code == 404
+
+def test_create_firebase_cuadrilla_missing_id_token(db_session):
+    data = CuadrillaCreate(nombre="C1", zona="Z", email="c@example.com", id_token="")
+    current = {"type": "usuario"}
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_service.create_firebase_cuadrilla(data, db_session, current, None)
+
+    assert exc_info.value.status_code == 400
+
+def test_update_firebase_cuadrilla_not_found(db_session):
+    update = CuadrillaUpdate(nombre="Nueva")
+    current = {"type": "usuario"}
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_service.update_firebase_cuadrilla(999, update, db_session, current)
+
+    assert exc_info.value.status_code == 404
+
+def test_delete_firebase_cuadrilla_not_found(db_session):
+    current = {"type": "usuario"}
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_service.delete_firebase_cuadrilla(999, db_session, current)
+
+    assert exc_info.value.status_code == 404

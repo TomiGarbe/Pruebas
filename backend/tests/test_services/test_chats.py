@@ -1,7 +1,8 @@
 from unittest.mock import AsyncMock, patch
 import asyncio
 from io import BytesIO
-from fastapi import UploadFile
+import pytest
+from fastapi import UploadFile, HTTPException
 from src.services import chats as chat_service
 from src.api.models import MensajeCorrectivo, MensajePreventivo
 
@@ -74,3 +75,53 @@ def test_send_message_preventivo(db_session):
     stored = db_session.query(MensajePreventivo).all()
     assert len(stored) == 1
     assert stored[0].archivo == "http://uploaded"
+
+def test_get_chat_correctivo_no_auth(db_session):
+    with pytest.raises(HTTPException):
+        chat_service.get_chat_correctivo(db_session, 1, None)
+
+def test_get_chat_correctivo_no_messages(db_session):
+    result = chat_service.get_chat_correctivo(db_session, 1, {"type": "usuario"})
+    assert result == {"message": "No hay mensajes"}
+
+def test_get_chat_preventivo_no_auth(db_session):
+    with pytest.raises(HTTPException):
+        chat_service.get_chat_preventivo(db_session, 1, None)
+
+def test_get_chat_preventivo_no_messages(db_session):
+    result = chat_service.get_chat_preventivo(db_session, 1, {"type": "usuario"})
+    assert result == {"message": "No hay mensajes"}
+
+def test_send_message_correctivo_no_auth(db_session):
+    with pytest.raises(HTTPException):
+        asyncio.run(
+            chat_service.send_message_correctivo(
+                db_session, 1, "uid", "N", None, texto="hola"
+            )
+        )
+
+def test_send_message_correctivo_no_bucket(db_session, monkeypatch):
+    monkeypatch.setattr(chat_service, "GOOGLE_CLOUD_BUCKET_NAME", None)
+    with pytest.raises(HTTPException):
+        asyncio.run(
+            chat_service.send_message_correctivo(
+                db_session, 1, "uid", "N", {"type": "usuario"}, texto="hola"
+            )
+        )
+
+def test_send_message_preventivo_no_auth(db_session):
+    with pytest.raises(HTTPException):
+        asyncio.run(
+            chat_service.send_message_preventivo(
+                db_session, 1, "uid", "N", None, texto="hola"
+            )
+        )
+
+def test_send_message_preventivo_no_bucket(db_session, monkeypatch):
+    monkeypatch.setattr(chat_service, "GOOGLE_CLOUD_BUCKET_NAME", None)
+    with pytest.raises(HTTPException):
+        asyncio.run(
+            chat_service.send_message_preventivo(
+                db_session, 1, "uid", "N", {"type": "usuario"}, texto="hola"
+            )
+        )

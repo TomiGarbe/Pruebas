@@ -76,3 +76,19 @@ def test_delete_zona_not_found(db_session):
     with pytest.raises(HTTPException) as exc:
         zonas_service.delete_zona(db_session, 999, current_entity={"type": "usuario"})
     assert exc.value.status_code == 404
+
+def test_delete_zona_without_auth(db_session):
+    zona = zonas_service.create_zona(
+        db_session, nombre="Zona sin auth", current_entity={"type": "usuario"}
+    )
+    with pytest.raises(HTTPException) as exc:
+        zonas_service.delete_zona(db_session, zona.id, current_entity=None)
+    assert exc.value.status_code == 401
+
+def test_delete_zona_no_permissions(db_session):
+    zona = zonas_service.create_zona(
+        db_session, nombre="Zona sin permisos", current_entity={"type": "usuario"}
+    )
+    with pytest.raises(HTTPException) as exc:
+        zonas_service.delete_zona(db_session, zona.id, current_entity={"type": "cuadrilla"})
+    assert exc.value.status_code == 403
