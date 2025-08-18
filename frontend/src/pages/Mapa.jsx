@@ -24,6 +24,7 @@ const Mapa = () => {
   const [preventivos, setPreventivos] = useState([]);
   const [error, setError] = useState(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [selectedCuadrillaId, setSelectedCuadrillaId] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const routeLayersRef = useRef({});
@@ -300,6 +301,37 @@ const Mapa = () => {
       .openOn(mapInstanceRef.current);
   };
 
+  const clearRoutes = () => {
+    Object.values(routeLayersRef.current).forEach(({ control, polyline }) => {
+      if (control) {
+        mapInstanceRef.current.removeControl(control);
+      }
+      if (polyline) {
+        polyline.remove();
+      }
+    });
+    routeLayersRef.current = {};
+  };
+
+  const handleCuadrillaSelection = (cuadrilla) => {
+    setSelectedCuadrillaId(cuadrilla.id);
+    clearRoutes();
+    generarRutas(cuadrilla);
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setView([cuadrilla.lat, cuadrilla.lng], 13);
+    }
+    showPopup(
+      {
+        type: 'cuadrilla',
+        name: cuadrilla.name,
+        correctivos: cuadrilla.correctivos,
+        preventivos: cuadrilla.preventivos,
+        sucursales: cuadrilla.sucursales,
+      },
+      [cuadrilla.lat, cuadrilla.lng]
+    );
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -355,7 +387,9 @@ const Mapa = () => {
           title: user.name
         }).addTo(mapInstanceRef.current);
 
-        marker.on('click', () =>
+        marker.on('click', () => {
+          setSelectedCuadrillaId(null);
+          clearRoutes();
           showPopup(
             {
               type: 'encargado',
@@ -363,7 +397,7 @@ const Mapa = () => {
             },
             [user.lat, user.lng]
           )
-        );
+        });
 
         usersMarkersRef.current.push(marker);
       });
@@ -383,21 +417,9 @@ const Mapa = () => {
           title: cuadrilla.name
         }).addTo(mapInstanceRef.current);
 
-        marker.on('click', () =>
-          showPopup(
-            {
-              type: 'cuadrilla',
-              name: cuadrilla.name,
-              correctivos: cuadrilla.correctivos,
-              preventivos: cuadrilla.preventivos,
-              sucursales: cuadrilla.sucursales
-            },
-            [cuadrilla.lat, cuadrilla.lng]
-          )
-        );
+        marker.on('click', () => handleCuadrillaSelection(cuadrilla));
 
         cuadrillasMarkersRef.current.push(marker);
-        generarRutas(cuadrilla);
       });
     }
 
@@ -414,7 +436,9 @@ const Mapa = () => {
         title: sucursal.name
       }).addTo(mapInstanceRef.current);
 
-      marker.on('click', () =>
+      marker.on('click', () => {
+        setSelectedCuadrillaId(null);
+        clearRoutes();
         showPopup(
           {
             type: 'sucursal',
@@ -424,7 +448,7 @@ const Mapa = () => {
           },
           [sucursal.lat, sucursal.lng]
         )
-      );
+      });
 
       sucursalMarkersRef.current.push(marker);
     });
@@ -452,21 +476,7 @@ const Mapa = () => {
             <div
               key={cuadrilla.id}
               className="obra-item"
-              onClick={() => {
-                if (mapInstanceRef.current) {
-                  mapInstanceRef.current.setView([cuadrilla.lat, cuadrilla.lng], 13);
-                  showPopup(
-                    {
-                      type: 'cuadrilla',
-                      name: cuadrilla.name,
-                      correctivos: cuadrilla.correctivos,
-                      preventivos: cuadrilla.preventivos,
-                      sucursales: cuadrilla.sucursales
-                    },
-                    [cuadrilla.lat, cuadrilla.lng]
-                  );
-                }
-              }}
+              onClick={() => handleCuadrillaSelection(cuadrilla)}
             >
               <strong>- {cuadrilla.name}</strong>
               <br />
