@@ -1,5 +1,6 @@
 const { defineConfig } = require("cypress");
-require('dotenv').config();
+const { exec } = require("child_process");
+require("dotenv").config();
 
 module.exports = defineConfig({
   reporter: 'mocha-junit-reporter',
@@ -19,15 +20,34 @@ module.exports = defineConfig({
           const fixturePath = path.join(__dirname, 'cypress', 'fixtures', filename);
           return fs.readFileSync(fixturePath, 'utf8');
         },
-        resetDB() {
-          // Implement DB reset logic here
-          console.log('resetDB called');
-          return null;
-        }
+        "db:reset"() {
+          return new Promise((resolve, reject) => {
+            exec("python ../backend/scripts/reset_db.py", (err, stdout, stderr) => {
+              if (err) {
+                console.error(stderr);
+                return reject(err);
+              }
+              console.log(stdout);
+              resolve(null);
+            });
+          });
+        },
+        "db:seed"() {
+          return new Promise((resolve, reject) => {
+            exec("python ../backend/scripts/seed_db.py", (err, stdout, stderr) => {
+              if (err) {
+                console.error(stderr);
+                return reject(err);
+              }
+              console.log(stdout);
+              resolve(null);
+            });
+          });
+        },
       });
 
       return config;
     }
   },
-  experimentalStudio: true
+  experimentalStudio: true,
 });
