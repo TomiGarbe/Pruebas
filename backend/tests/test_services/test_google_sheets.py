@@ -182,3 +182,79 @@ def test_delete_preventivo(monkeypatch):
     google_sheets.delete_preventivo(None, 1)
 
     worksheet.delete_rows.assert_called_once_with(2)
+
+def test_append_correctivo_adds_header(monkeypatch):
+    worksheet = Mock()
+    worksheet.row_values.return_value = []
+    monkeypatch.setattr(
+        google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
+    )
+    monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
+
+    google_sheets.append_correctivo(None, _sample_correctivo())
+
+    assert worksheet.append_row.call_count == 2
+
+def test_update_correctivo_not_found(monkeypatch):
+    worksheet = Mock()
+    worksheet.find.return_value = None
+    monkeypatch.setattr(
+        google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
+    )
+    monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
+    append_mock = Mock()
+    monkeypatch.setattr(google_sheets, "append_correctivo", append_mock)
+
+    google_sheets.update_correctivo(None, _sample_correctivo())
+
+    append_mock.assert_called_once()
+
+def test_delete_correctivo_not_found(monkeypatch):
+    worksheet = Mock()
+    worksheet.find.return_value = None
+    monkeypatch.setattr(
+        google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
+    )
+    monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
+
+    google_sheets.delete_correctivo(None, 1)
+
+    worksheet.delete_rows.assert_not_called()
+
+def test_append_preventivo_adds_header(monkeypatch):
+    worksheet = Mock()
+    worksheet.row_values.return_value = []
+    monkeypatch.setattr(
+        google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
+    )
+    monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
+
+    google_sheets.append_preventivo(None, _sample_preventivo())
+
+    assert worksheet.append_row.call_count == 2
+
+def test_update_preventivo_not_found(monkeypatch):
+    worksheet = Mock()
+    worksheet.find.return_value = None
+    monkeypatch.setattr(
+        google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
+    )
+    monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
+    append_mock = Mock()
+    monkeypatch.setattr(google_sheets, "append_preventivo", append_mock)
+
+    google_sheets.update_preventivo(None, _sample_preventivo())
+
+    append_mock.assert_called_once()
+
+def test_delete_preventivo_not_found(monkeypatch):
+    worksheet = Mock()
+    worksheet.find.return_value = None
+    monkeypatch.setattr(
+        google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
+    )
+    monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
+
+    google_sheets.delete_preventivo(None, 1)
+
+    worksheet.delete_rows.assert_not_called()

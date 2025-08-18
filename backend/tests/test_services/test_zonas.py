@@ -1,7 +1,17 @@
 import pytest
-from src.services import zonas as zonas_service
 from fastapi import HTTPException
-from api.models import Sucursal, Cuadrilla
+from src.services import zonas as zonas_service
+from src.api.models import Sucursal
+
+def test_get_zonas(db_session):
+    zonas_service.create_zona(
+        db_session, nombre="Zona 1", current_entity={"type": "usuario"}
+    )
+    zonas_service.create_zona(
+        db_session, nombre="Zona 2", current_entity={"type": "usuario"}
+    )
+    zonas = zonas_service.get_zonas(db_session)
+    assert len(zonas) == 2
 
 def test_create_zona(db_session):
     zona = zonas_service.create_zona(
@@ -21,16 +31,6 @@ def test_create_zona_already_exists(db_session):
     assert exc.value.status_code == 400
     assert "ya existe" in exc.value.detail
 
-def test_get_zonas(db_session):
-    zonas_service.create_zona(
-        db_session, nombre="Zona 1", current_entity={"type": "usuario"}
-    )
-    zonas_service.create_zona(
-        db_session, nombre="Zona 2", current_entity={"type": "usuario"}
-    )
-    zonas = zonas_service.get_zonas(db_session)
-    assert len(zonas) == 2
-
 def test_delete_zona(db_session):
     nueva_zona = zonas_service.create_zona(
         db_session, nombre="Zona para borrar", current_entity={"type": "usuario"}
@@ -40,50 +40,28 @@ def test_delete_zona(db_session):
     )
     assert response["message"] == "Zona eliminada"
 
-    # Verificar que no existe más
     with pytest.raises(HTTPException) as exc:
         zonas_service.delete_zona(
             db_session, nueva_zona.id, current_entity={"type": "usuario"}
         )
     assert exc.value.status_code == 404
 
-def test_delete_zona_in_use(db_session, mocker):
-    # Crear una zona
-    nueva_zona = zonas_service.create_zona(
+def test_delete_zona_in_use(db_session):
+    zona = zonas_service.create_zona(
         db_session, nombre="Zona en uso", current_entity={"type": "usuario"}
     )
-
-    # Mockear solo la consulta específica para simular que la zona está en uso
-    original_query = db_session.query
-
-    def query_side_effect(model):
-        query = original_query(model)
-        if model in (Sucursal, Cuadrilla):
-            original_filter = query.filter
-
-            def filter_side_effect(*args, **kwargs):
-                filtered_query = original_filter(*args, **kwargs)
-                mocker.patch.object(filtered_query, "count", return_value=1)
-                return filtered_query
-
-            query.filter = filter_side_effect
-        return query
-
-    mocker.patch.object(db_session, "query", side_effect=query_side_effect)
-
+    db_session.add(Sucursal(nombre="S1", zona=zona.nombre, direccion="D", superficie="1"))
+    db_session.commit()
+    
     with pytest.raises(HTTPException) as exc:
-        zonas_service.delete_zona(
-            db_session, nueva_zona.id, current_entity={"type": "usuario"}
-        )
+        zonas_service.delete_zona(db_session, zona.id, current_entity={"type": "usuario"})
     assert exc.value.status_code == 400
     assert "está en uso" in exc.value.detail
-
 
 def test_create_zona_without_auth(db_session):
     with pytest.raises(HTTPException) as exc:
         zonas_service.create_zona(db_session, nombre="Zona", current_entity=None)
     assert exc.value.status_code == 401
-
 
 def test_create_zona_no_permissions(db_session):
     with pytest.raises(HTTPException) as exc:
@@ -94,8 +72,23 @@ def test_create_zona_no_permissions(db_session):
         )
     assert exc.value.status_code == 403
 
-
 def test_delete_zona_not_found(db_session):
     with pytest.raises(HTTPException) as exc:
         zonas_service.delete_zona(db_session, 999, current_entity={"type": "usuario"})
     assert exc.value.status_code == 404
+
+def test_delete_zona_without_auth(db_session):
+    zona = zonas_service.create_zona(
+        db_session, nombre="Zona sin auth", current_entity={"type": "usuario"}
+    )
+    with pytest.raises(HTTPException) as exc:
+        zonas_service.delete_zona(db_session, zona.id, current_entity=None)
+    assert exc.value.status_code == 401
+
+def test_delete_zona_no_permissions(db_session):
+    zona = zonas_service.create_zona(
+        db_session, nombre="Zona sin permisos", current_entity={"type": "usuario"}
+    )
+    with pytest.raises(HTTPException) as exc:
+        zonas_service.delete_zona(db_session, zona.id, current_entity={"type": "cuadrilla"})
+    assert exc.value.status_code == 403
