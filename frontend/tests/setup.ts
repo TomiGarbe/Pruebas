@@ -3,6 +3,9 @@
 import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
+import { TextEncoder, TextDecoder } from 'util';
+
 
 vi.mock('../src/services/firebase', () => ({
   auth: {},
@@ -16,3 +19,5 @@ afterEach(() => {
   cleanup();
 });
 
+if (!globalThis.TextEncoder) (globalThis as any).TextEncoder = TextEncoder;
+if (!globalThis.TextDecoder) (globalThis as any).TextDecoder = TextDecoder;

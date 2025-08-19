@@ -324,13 +324,13 @@ const MantenimientosCorrectivos = () => {
                     {currentEntity.type === 'usuario' && (
                       <td className="action-cell" onClick={(e) => e.stopPropagation()}>
                         <button
-                          className="action-btn edit me-2"
+                          className="action-btn edit me-2" aria-label="Editar"
                           onClick={() => handleEdit(mantenimiento)}
                         >
                           <FiEdit />
                         </button>
                         <button
-                          className="action-btn delete"
+                          className="action-btn delete" aria-label="Eliminar"
                           onClick={() => handleDelete(mantenimiento.id)}
                         >
                           <FiTrash2 />
