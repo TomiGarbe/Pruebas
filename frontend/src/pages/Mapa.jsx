@@ -355,6 +355,9 @@ const Mapa = () => {
     mapInstanceRef.current = L.map(mapRef.current, {
       center: [defaultCenter.lat, defaultCenter.lng],
       zoom: 12,
+      rotate: true,
+      rotateControl: false,
+      zoomControl: false,
       touchRotate: true,
     });
 

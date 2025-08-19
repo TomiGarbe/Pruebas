@@ -8,7 +8,7 @@ import { getMantenimientosPreventivos } from '../services/mantenimientoPreventiv
 import { notify_nearby_maintenances } from '../services/notificaciones';
 import { renderToString } from 'react-dom/server';
 import { FaMapMarkerAlt } from 'react-icons/fa';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiCompass } from 'react-icons/fi';
 import { bearing } from '@turf/turf';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -295,6 +295,14 @@ const Ruta = () => {
     return a.every((s, i) => s.id === b[i]?.id);
   };
 
+  const rotarNorte = () => {
+  if (mapInstanceRef.current) {
+    mapInstanceRef.current.setBearing(0); // apunto al norte
+  }
+  setHeading(0);
+  headingRef.current = 0;
+};
+
   const borrarRuta = () => {
     if (!window.confirm("⚠️ Vas a borrar toda la selección. ¿Seguro que querés continuar?")) {
       return;
@@ -320,6 +328,7 @@ const Ruta = () => {
       zoom: 12,
       rotate: true,
       rotateControl: false,
+      zoomControl: false,
       touchRotate: true,
     });
     mapInstanceRef.current = map;
@@ -448,6 +457,12 @@ return (
             className="ruta-btn danger boton-volver"
           >
             <FiArrowLeft size={28} color="white" />
+          </button>
+          <button
+            onClick={rotarNorte}
+            className="ruta-btn primary boton-brujula"
+          >
+            <FiCompass size={28} color="white" />
           </button>
           <button className="ruta-btn danger boton-borrar" onClick={borrarRuta}>
             ❌ Borrar ruta
