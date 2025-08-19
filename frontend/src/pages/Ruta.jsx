@@ -296,12 +296,12 @@ const Ruta = () => {
   };
 
   const rotarNorte = () => {
-  if (mapInstanceRef.current) {
-    mapInstanceRef.current.setBearing(0); // apunto al norte
-  }
-  setHeading(0);
-  headingRef.current = 0;
-};
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setBearing(0); // apunto al norte
+    }
+    setHeading(0);
+    headingRef.current = 0;
+  };
 
   const borrarRuta = () => {
     if (!window.confirm("⚠️ Vas a borrar toda la selección. ¿Seguro que querés continuar?")) {

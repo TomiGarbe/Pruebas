@@ -4,6 +4,7 @@ import { getMantenimientosCorrectivos } from '../services/mantenimientoCorrectiv
 import { getMantenimientosPreventivos } from '../services/mantenimientoPreventivoService';
 import { renderToString } from 'react-dom/server';
 import { FaMapMarkerAlt } from 'react-icons/fa';
+import { FiCompass } from 'react-icons/fi';
 import BackButton from '../components/BackButton';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -332,6 +333,12 @@ const Mapa = () => {
     );
   };
 
+  const rotarNorte = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setBearing(0); // apunto al norte
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -495,6 +502,7 @@ const Mapa = () => {
               onClick={() => {
                 if (mapInstanceRef.current) {
                   mapInstanceRef.current.setView([user.lat, user.lng], 13);
+                  clearRoutes();
                   showPopup(
                     {
                       type: 'encargado',
@@ -521,6 +529,7 @@ const Mapa = () => {
               onClick={() => {
                 if (mapInstanceRef.current) {
                   mapInstanceRef.current.setView([sucursal.lat, sucursal.lng], 13);
+                  clearRoutes();
                   showPopup(
                     {
                       type: 'sucursal',
@@ -542,6 +551,12 @@ const Mapa = () => {
 
         <div className="container-map">
           <div ref={mapRef} className="ruta-map"></div>
+          <button
+            onClick={rotarNorte}
+            className="ruta-btn primary boton-brujula"
+          >
+            <FiCompass size={28} color="white" />
+          </button>
         </div>
       </div>
     </div>
