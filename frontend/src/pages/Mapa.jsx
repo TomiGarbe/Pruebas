@@ -25,7 +25,6 @@ const Mapa = () => {
   const [preventivos, setPreventivos] = useState([]);
   const [error, setError] = useState(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [selectedCuadrillaId, setSelectedCuadrillaId] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const routeLayersRef = useRef({});
@@ -315,7 +314,6 @@ const Mapa = () => {
   };
 
   const handleCuadrillaSelection = (cuadrilla) => {
-    setSelectedCuadrillaId(cuadrilla.id);
     clearRoutes();
     generarRutas(cuadrilla);
     if (mapInstanceRef.current) {
@@ -398,7 +396,6 @@ const Mapa = () => {
         }).addTo(mapInstanceRef.current);
 
         marker.on('click', () => {
-          setSelectedCuadrillaId(null);
           clearRoutes();
           showPopup(
             {
@@ -447,7 +444,6 @@ const Mapa = () => {
       }).addTo(mapInstanceRef.current);
 
       marker.on('click', () => {
-        setSelectedCuadrillaId(null);
         clearRoutes();
         showPopup(
           {
