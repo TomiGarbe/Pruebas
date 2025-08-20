@@ -37,14 +37,18 @@ def _sample_preventivo():
         extendido=None,
     )
 
-def test_get_fotos_gallery_url():
+def test_get_fotos_gallery_url(monkeypatch):
+    monkeypatch.setattr(google_sheets, '_blob_exists', lambda p: True)
+    monkeypatch.setattr(google_sheets, 'GOOGLE_CLOUD_BUCKET_NAME', 'test-bucket')
     expected = (
         "https://storage.googleapis.com/test-bucket/"
         "mantenimientos_correctivos/1/fotos/index.html"
     )
     assert google_sheets.get_fotos_gallery_url(1, "correctivos") == expected
 
-def test_get_planillas_gallery_url():
+def test_get_planillas_gallery_url(monkeypatch):
+    monkeypatch.setattr(google_sheets, '_blob_exists', lambda p: True)
+    monkeypatch.setattr(google_sheets, 'GOOGLE_CLOUD_BUCKET_NAME', 'test-bucket')
     expected = (
         "https://storage.googleapis.com/test-bucket/"
         "mantenimientos_preventivos/1/planillas/index.html"
@@ -59,7 +63,7 @@ def test_append_correctivo(monkeypatch):
     )
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
-    google_sheets.append_correctivo(None, _sample_correctivo())
+    google_sheets.append_correctivo(_sample_correctivo())
 
     worksheet.append_row.assert_called_once_with(
         [
@@ -89,27 +93,11 @@ def test_update_correctivo(monkeypatch):
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
     mantenimiento = _sample_correctivo()
-    google_sheets.update_correctivo(None, mantenimiento)
+    google_sheets.update_correctivo(mantenimiento)
 
     worksheet.update.assert_called_once_with(
         "A2:M2",
-        [
-            [
-                1,
-                1,
-                2,
-                "2024-01-01",
-                "",
-                "NC",
-                "Inc",
-                "Rubro",
-                "",
-                "open",
-                "alta",
-                "",
-                google_sheets.get_fotos_gallery_url(1, "correctivos"),
-            ]
-        ],
+        [[1, 1, 2, "2024-01-01", "", "NC", "Inc", "Rubro", "", "open", "alta", "", ""]],
     )
 
 def test_delete_correctivo(monkeypatch):
@@ -122,7 +110,7 @@ def test_delete_correctivo(monkeypatch):
     )
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
-    google_sheets.delete_correctivo(None, 1)
+    google_sheets.delete_correctivo(1)
 
     worksheet.delete_rows.assert_called_once_with(2)
 
@@ -134,7 +122,7 @@ def test_append_preventivo(monkeypatch):
     )
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
-    google_sheets.append_preventivo(None, _sample_preventivo())
+    google_sheets.append_preventivo(_sample_preventivo())
 
     worksheet.append_row.assert_called_once_with(
         [1, 1, "mensual", 2, "2024-01-01", "", ""]
@@ -150,23 +138,11 @@ def test_update_preventivo(monkeypatch):
     )
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
-    google_sheets.update_preventivo(None, _sample_preventivo())
+    google_sheets.update_preventivo(_sample_preventivo())
 
     worksheet.update.assert_called_once_with(
         "A2:I2",
-        [
-            [
-                1,
-                1,
-                "mensual",
-                2,
-                "2024-01-01",
-                "",
-                "",
-                google_sheets.get_planillas_gallery_url(1),
-                google_sheets.get_fotos_gallery_url(1, "preventivos"),
-            ]
-        ],
+        [[1, 1, "mensual", 2, "2024-01-01", "", "", "", ""]],
     )
 
 def test_delete_preventivo(monkeypatch):
@@ -179,7 +155,7 @@ def test_delete_preventivo(monkeypatch):
     )
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
-    google_sheets.delete_preventivo(None, 1)
+    google_sheets.delete_preventivo(1)
 
     worksheet.delete_rows.assert_called_once_with(2)
 
@@ -191,7 +167,7 @@ def test_append_correctivo_adds_header(monkeypatch):
     )
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
-    google_sheets.append_correctivo(None, _sample_correctivo())
+    google_sheets.append_correctivo(_sample_correctivo())
 
     assert worksheet.append_row.call_count == 2
 
@@ -205,7 +181,7 @@ def test_update_correctivo_not_found(monkeypatch):
     append_mock = Mock()
     monkeypatch.setattr(google_sheets, "append_correctivo", append_mock)
 
-    google_sheets.update_correctivo(None, _sample_correctivo())
+    google_sheets.update_correctivo(_sample_correctivo())
 
     append_mock.assert_called_once()
 
@@ -217,7 +193,7 @@ def test_delete_correctivo_not_found(monkeypatch):
     )
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
-    google_sheets.delete_correctivo(None, 1)
+    google_sheets.delete_correctivo(1)
 
     worksheet.delete_rows.assert_not_called()
 
@@ -229,7 +205,7 @@ def test_append_preventivo_adds_header(monkeypatch):
     )
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
-    google_sheets.append_preventivo(None, _sample_preventivo())
+    google_sheets.append_preventivo(_sample_preventivo())
 
     assert worksheet.append_row.call_count == 2
 
@@ -243,7 +219,7 @@ def test_update_preventivo_not_found(monkeypatch):
     append_mock = Mock()
     monkeypatch.setattr(google_sheets, "append_preventivo", append_mock)
 
-    google_sheets.update_preventivo(None, _sample_preventivo())
+    google_sheets.update_preventivo(_sample_preventivo())
 
     append_mock.assert_called_once()
 
@@ -255,6 +231,6 @@ def test_delete_preventivo_not_found(monkeypatch):
     )
     monkeypatch.setattr(google_sheets, "SHEET_ID", "sheet")
 
-    google_sheets.delete_preventivo(None, 1)
+    google_sheets.delete_preventivo(1)
 
     worksheet.delete_rows.assert_not_called()

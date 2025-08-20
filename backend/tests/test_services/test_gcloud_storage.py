@@ -48,9 +48,19 @@ def test_generate_gallery_html(monkeypatch):
         def __init__(self, name=None):
             self.name = name
             self.uploaded_content = None
+            self.content_type = 'image/jpeg' if self.name.endswith('.jpg') else 'image/png' if self.name.endswith('.png') else None
 
         def upload_from_string(self, content, content_type=None):
             self.uploaded_content = content
+            
+        def exists(self):
+            return False
+
+        def delete(self):
+            pass
+
+        def patch(self):
+            pass
 
     class DummyBucket:
         def __init__(self):
@@ -95,6 +105,9 @@ def test_upload_file_to_gcloud(monkeypatch):
         def upload_from_file(self, file, content_type=None):
             self.uploaded = True
             self.upload_content_type = content_type
+        
+        def patch(self):
+            pass
 
     class DummyBucket:
         def __init__(self):
