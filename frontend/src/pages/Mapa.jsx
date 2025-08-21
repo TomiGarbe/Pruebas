@@ -4,7 +4,9 @@ import { getMantenimientosCorrectivos } from '../services/mantenimientoCorrectiv
 import { getMantenimientosPreventivos } from '../services/mantenimientoPreventivoService';
 import { renderToString } from 'react-dom/server';
 import { FaMapMarkerAlt } from 'react-icons/fa';
-import { FiCompass } from 'react-icons/fi';
+import { FiCompass} from 'react-icons/fi';
+import { FaUserAlt, FaTruck } from "react-icons/fa";
+import { renderToStaticMarkup } from "react-dom/server";
 import BackButton from '../components/BackButton';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -387,7 +389,7 @@ const Mapa = () => {
       users.map(user => {
         const marker = L.marker([user.lat, user.lng], {
           icon: L.divIcon({
-            html: `<div style="width: 15px; height: 20px; background:#2c2c2c; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+            html: renderToStaticMarkup(<FaUserAlt size={22} color="#2c2c2c" />),
             className: '',
             iconSize: [20, 20],
             iconAnchor: [10, 20],
@@ -416,7 +418,7 @@ const Mapa = () => {
       cuadrillas.map(cuadrilla => {
         const marker = L.marker([cuadrilla.lat, cuadrilla.lng], {
           icon: L.divIcon({
-            html: `<div style="width: 15px; height: 20px; background:#2c2c2c; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>`,
+            html: renderToStaticMarkup(<FaTruck size={22} color="#2c2c2c" />),
             className: '',
             iconSize: [20, 20],
             iconAnchor: [10, 20],
@@ -435,7 +437,7 @@ const Mapa = () => {
     sucursales.map(sucursal => {
       const marker = L.marker([sucursal.lat, sucursal.lng], {
         icon: L.divIcon({
-          html: renderToString(<FaMapMarkerAlt style={{ color: '#2c2c2c', fontSize: '24px' }} />),
+          html: renderToString(<FaMapMarkerAlt size={22} color="#2c2c2c" />),
           className: 'sucursal-marker',
           iconSize: [20, 20],
           iconAnchor: [10, 20],
