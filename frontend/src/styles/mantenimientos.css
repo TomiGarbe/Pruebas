@@ -373,7 +373,6 @@ margin-top: 0.5rem;
   color: #000000 !important;
 }
 
-
 .gallery-section {
   display: flex;
   flex-wrap: wrap;
@@ -413,7 +412,6 @@ margin-top: 0.5rem;
   align-items: center;
   justify-content: center;
 }
-
 
 .photo-container.selectable {
   cursor: pointer;
@@ -500,6 +498,25 @@ margin-top: 0.5rem;
   transition: background-color 0.3s ease;
 }
 
+.floating-chat-btn {
+  position: fixed;
+  right: 0.5rem;
+  bottom: 13rem;
+  background-color: #ffc720;
+  border: none;
+  border-radius: 50% !important;
+  width: 60px;
+  height: 60px;
+  font-size: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  cursor: pointer;
+  z-index: 1000;
+  transition: background-color 0.3s ease;
+}
+
 .floating-back-btn:hover {
   background-color: #ff0505;
 }
@@ -547,15 +564,21 @@ margin-top: 0.5rem;
   .planilla-button {
     max-width: 100%;
   }
-
-  .floating-save-btn {
-  margin-bottom: 1.5rem;
 }
+
+/* botones en pantallas de telefono */
+@media (max-width: 398px) {
+  .floating-save-btn {
+    margin-bottom: 1.5rem;
+  }
 
   .floating-back-btn {
     margin-bottom: 1.3rem;
   }
 
+  .floating-chat-btn {
+    margin-bottom: 1.1rem;
+  }
 }
 
 /* Pantallas grandes: monitores grandes (desde 1400px) */

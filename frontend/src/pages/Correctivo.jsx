@@ -803,32 +803,32 @@ const Correctivo = () => {
               </Button>
             </Modal.Footer>
           </Modal>
-            {isMobile && (
-              <>
-                {!isChatOpen && (
-                  <button
-                    type="button"
-                    className="floating-chat-btn"
-                    onClick={() => setIsChatOpen(true)}
-                  >
-                    <FiMessageSquare size={28} color="white" />
-                  </button>
-                )}
-                <div className={`chat-overlay ${isChatOpen ? 'open' : ''}`}>
-                  <button
-                    type="button"
-                    className="close-chat-btn"
-                    onClick={() => setIsChatOpen(false)}
-                  >
-                    <FiArrowLeft size={28} color="black" />
-                  </button>
-                  <div className="chat-section">
-                    <ChatContent />
-                  </div>
+          {isMobile && (
+            <>
+              {!isChatOpen && (
+                <button
+                  type="button"
+                  className="floating-chat-btn"
+                  onClick={() => setIsChatOpen(true)}
+                >
+                  <FiMessageSquare size={28} color="white" />
+                </button>
+              )}
+              <div className={`chat-overlay ${isChatOpen ? 'open' : ''}`}>
+                <button
+                  type="button"
+                  className="close-chat-btn"
+                  onClick={() => setIsChatOpen(false)}
+                >
+                  <FiArrowLeft size={28} color="black" />
+                </button>
+                <div className="chat-section">
+                  <ChatContent />
                 </div>
-              </>
-            )}
-            <button
+              </div>
+            </>
+          )}
+          <button
             type="button"
             onClick={() => navigate('/mantenimientos-correctivos')}
             className="floating-back-btn"
