@@ -11,3 +11,4 @@ dist
 *.xml
 coverage
 package-lock.json
+__mocks__

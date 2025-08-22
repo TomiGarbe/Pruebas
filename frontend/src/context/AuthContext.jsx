@@ -205,8 +205,9 @@ const AuthProvider = ({ children }) => {
 
   // Ejecutar al cargar la página
   useEffect(() => {
-    handleGoogleSignIn();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!currentEntity) {
+      handleGoogleSignIn();
+    }
   }, []);
 
   // Ejecutar cuando se establece un nuevo token
@@ -215,7 +216,6 @@ const AuthProvider = ({ children }) => {
       setSingingIn(false); // evitar loops
       handleGoogleSignIn();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [singingIn]);
 
   return (
