@@ -376,7 +376,7 @@ const Correctivo = () => {
     }, 100);
   };
 
-  const ChatContent = () => (
+  const renderChatContent = () => (
     <>
       <div className="chat-box" ref={chatBoxRef}>
         {mensajes.map((msg, index) => {
@@ -573,7 +573,7 @@ const Correctivo = () => {
             </Col>
             {!isMobile && (
               <Col className="chat-section">
-                <ChatContent />
+                {renderChatContent()}
               </Col>
             )}
             <Col xs={12} md={4} className="planilla-section">
@@ -821,7 +821,7 @@ const Correctivo = () => {
                   <FiArrowLeft size={28} color="black" />
                 </button>
                 <div className="chat-section">
-                  <ChatContent />
+                  {renderChatContent()}
                 </div>
               </div>
             </>

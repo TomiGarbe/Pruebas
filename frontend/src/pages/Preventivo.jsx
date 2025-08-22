@@ -43,6 +43,7 @@ const Preventivo = () => {
   const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState('');
   const [archivoAdjunto, setArchivoAdjunto] = useState(null);
+  const [previewArchivoAdjunto, setPreviewArchivoAdjunto] = useState(null);
   const chatBoxRef = React.useRef(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -350,7 +351,7 @@ const Preventivo = () => {
     }, 100);
   };
 
-  const ChatContent = () => (
+  const renderChatContent = () => (
     <>
       <div className="chat-box" ref={chatBoxRef}>
         {mensajes.map((msg, index) => {
@@ -501,7 +502,7 @@ const Preventivo = () => {
             </Col>
             {!isMobile && (
               <Col className="chat-section">
-                <ChatContent />
+                {renderChatContent()}
               </Col>
             )}
             <Col xs={12} md={4} className="planilla-section">
@@ -743,7 +744,7 @@ const Preventivo = () => {
                   <FiArrowLeft size={28} color="black" />
                 </button>
                 <div className="chat-section">
-                  <ChatContent />
+                  {renderChatContent()}
                 </div>
               </div>
             </>

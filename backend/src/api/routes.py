@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from controllers import users, cuadrillas, sucursales, zonas, auth, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, maps, notificaciones, push, chats
+from controllers import users, cuadrillas, sucursales, zonas, auth, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, maps, notificaciones, push, chats, preferences
 from config.database import get_db
 from services.auth import verify_user_token
 from services.chat_ws import chat_manager
@@ -17,16 +17,6 @@ FRONTEND_URL = os.getenv("FRONTEND_URL")
 EMAIL_ADMIN = os.getenv("EMAIL_ADMIN")
 NOMBRE_ADMIN = os.getenv("NOMBRE_ADMIN")
 PASSWORD_ADMIN = os.getenv("PASSWORD_ADMIN")
-DEFAULT_TEST_ENTITY = {
-    "type": "usuario",
-    "data": {
-        "id": 1,
-        "nombre": "Test User",
-        "email": "test@example.com",
-        "rol": "Administrador",
-        "uid": "test-uid",
-    },
-}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,9 +24,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-if os.environ.get("TESTING") != "true":
-    initialize_firebase()
-    init_admin(email=EMAIL_ADMIN, nombre=NOMBRE_ADMIN, password=PASSWORD_ADMIN)
+initialize_firebase()
+init_admin(email=EMAIL_ADMIN, nombre=NOMBRE_ADMIN, password=PASSWORD_ADMIN)
 
 # Configuración de CORS
 origins = [
@@ -62,10 +51,15 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
     
     if os.environ.get("TESTING") == "true":
-        request.state.current_entity = getattr(
-            request.app.state, "current_entity", DEFAULT_TEST_ENTITY
-        )
-        request.app.state.current_entity = DEFAULT_TEST_ENTITY
+        request.state.current_entity = {
+            "type": "usuario",
+            "data": {
+                "id": 1,
+                "nombre": "Test User",
+                "email": "test@example.com",
+                "rol": "Administrador"
+            }
+        }
     else:
         token = request.headers.get("Authorization")
         if token and token.startswith("Bearer "):
@@ -128,3 +122,4 @@ app.include_router(maps.router)
 app.include_router(notificaciones.router)
 app.include_router(push.router)
 app.include_router(chats.router)
+app.include_router(preferences.router)
