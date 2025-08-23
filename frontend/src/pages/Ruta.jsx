@@ -45,7 +45,7 @@ const Ruta = () => {
   const lastSucursalIdsRef = useRef([]);
   const notifiedMaintenancesRef = useRef(new Set());
   const headingRef = useRef(null);
-const compassRutaRef = useRef(null);
+  const compassRutaRef = useRef(null);
 
   const fetchData = async () => {
     if (!currentEntity?.data?.id || !userLocation) return;
@@ -495,15 +495,15 @@ return (
             ❌ Borrar ruta
           </button>
           {!isCenter && !isNavigating && (
-            <button className="ruta-btn primary boton-centrar" onClick={centerOnUser}>
-              📍 Centrar
+            <button className="ruta-btn success boton-centrar" onClick={centerOnUser}>
+              Centrar
             </button>
           )}
           <button
             className={`ruta-btn ${isNavigating ? 'danger' : 'success'} boton-navegar`}
             onClick={toggleNavegacion}
           >
-            {isNavigating ? '🛑 Detener' : '🚗 Iniciar'}
+            {isNavigating ? 'Detener' : 'Iniciar'}
           </button>
         </div>
       </div>

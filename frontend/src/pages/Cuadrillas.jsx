@@ -42,8 +42,8 @@ const Cuadrillas = () => {
   const loadPreferences = async () => {
     try {
       const response = await getColumnPreferences('cuadrillas');
-      const cols = response.data?.columns || availableColumns.map((c) => c.key);
-      if (cols.length == 0) {
+      let cols = response.data?.columns || availableColumns.map((c) => c.key);
+      if (cols.length === 0) {
         cols = ['id', 'nombre', 'zona', 'email', 'acciones'];
       }
       setSelectedColumns(cols);
@@ -105,11 +105,6 @@ const Cuadrillas = () => {
               <h2>Gestión de Cuadrillas</h2>
             </Col>
             <Col className="text-end">
-              <ColumnSelector
-                availableColumns={availableColumns}
-                selectedColumns={selectedColumns}
-                onSave={handleSaveColumns}
-              />
               <Button className="custom-button" onClick={() => setShowForm(true)}>
                 <FaPlus />
                 Agregar
@@ -126,6 +121,11 @@ const Cuadrillas = () => {
             />
           )}
           <div className="table-responsive">
+            <ColumnSelector
+              availableColumns={availableColumns}
+              selectedColumns={selectedColumns}
+              onSave={handleSaveColumns}
+            />
             <Table striped bordered hover>
               <thead>
                 <tr>

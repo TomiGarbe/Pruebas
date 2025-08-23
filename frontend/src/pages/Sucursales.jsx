@@ -41,8 +41,8 @@ const Sucursales = () => {
   const loadPreferences = async () => {
     try {
       const response = await getColumnPreferences('sucursales');
-      const cols = response.data?.columns || availableColumns.map((c) => c.key);
-      if (cols.length == 0) {
+      let cols = response.data?.columns || availableColumns.map((c) => c.key);
+      if (cols.length === 0) {
         cols = ['id', 'nombre', 'zona', 'direccion', 'superficie', 'acciones'];
       }
       setSelectedColumns(cols);
@@ -84,7 +84,7 @@ const Sucursales = () => {
     try {
       await saveColumnPreferences('sucursales', cols);
     } catch (e) {
-      /* empty */
+      setError(error.response?.data?.detail || 'Error al seleccionar columnas');
     }
   };
 
@@ -103,11 +103,6 @@ const Sucursales = () => {
               <h2>Gestión de Sucursales</h2>
             </Col>
             <Col className="text-end">
-              <ColumnSelector
-                availableColumns={availableColumns}
-                selectedColumns={selectedColumns}
-                onSave={handleSaveColumns}
-              />
               <Button className="custom-button" onClick={() => setShowForm(true)}>
                 <FaPlus />
                 Agregar
@@ -123,6 +118,11 @@ const Sucursales = () => {
           )}
 
           <div className="table-responsive">
+            <ColumnSelector
+              availableColumns={availableColumns}
+              selectedColumns={selectedColumns}
+              onSave={handleSaveColumns}
+            />
             <Table striped bordered hover>
               <thead>
                 <tr>

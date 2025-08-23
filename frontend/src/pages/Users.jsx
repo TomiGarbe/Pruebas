@@ -42,8 +42,8 @@ const Users = () => {
   const loadPreferences = async () => {
     try {
       const response = await getColumnPreferences('users');
-      const cols = response.data?.columns || availableColumns.map((c) => c.key);
-      if (cols.length == 0) {
+      let cols = response.data?.columns || availableColumns.map((c) => c.key);
+      if (cols.length === 0) {
         cols = ['id', 'nombre', 'email', 'rol', 'acciones'];
       }
       setSelectedColumns(cols);
@@ -86,7 +86,7 @@ const Users = () => {
     try {
       await saveColumnPreferences('users', cols);
     } catch (e) {
-      /* empty */
+      setError(error.response?.data?.detail || 'Error al seleccionar columnas');
     }
   };
 
@@ -105,11 +105,6 @@ const Users = () => {
               <h2>Gestión de Usuarios</h2>
             </Col>
             <Col className="text-end">
-              <ColumnSelector
-                availableColumns={availableColumns}
-                selectedColumns={selectedColumns}
-                onSave={handleSaveColumns}
-              />
               <Button className="custom-button" onClick={() => setShowForm(true)}>
                 <FaPlus />
                 Agregar
@@ -126,6 +121,11 @@ const Users = () => {
             />
           )}
           <div className="table-responsive">
+            <ColumnSelector
+              availableColumns={availableColumns}
+              selectedColumns={selectedColumns}
+              onSave={handleSaveColumns}
+            />
             <Table striped bordered hover>
               <thead>
                 <tr>

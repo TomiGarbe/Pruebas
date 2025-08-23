@@ -77,7 +77,6 @@ const MantenimientosCorrectivos = () => {
   };
 
   const fetchData = async () => {
-    setIsLoading(true);
     try {
       const [sucursalesResponse, cuadrillasResponse, zonasResponse] = await Promise.all([
         getSucursales(),
@@ -94,8 +93,6 @@ const MantenimientosCorrectivos = () => {
       setZonas(zonasResponse.data);
     } catch (error) {
       console.error('Error fetching data:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -177,8 +174,8 @@ const MantenimientosCorrectivos = () => {
   const loadPreferences = async () => {
     try {
       const response = await getColumnPreferences('mantenimientos_correctivos');
-      const cols = response.data?.columns || availableColumns.map((c) => c.key);
-      if (cols.length == 0) {
+      let cols = response.data?.columns || availableColumns.map((c) => c.key);
+      if (cols.length === 0) {
         if (currentEntity.type === 'usuario') {
           cols = ['id', 'sucursal', 'cuadrilla', 'zona', 'rubro', 'numero_caso', 'fecha_apertura', 'fecha_cierre', 'incidente', 'estado', 'prioridad', 'acciones'];
         }
@@ -197,7 +194,7 @@ const MantenimientosCorrectivos = () => {
     try {
       await saveColumnPreferences('mantenimientos_correctivos', cols);
     } catch (e) {
-      /* empty */
+      setError(error.response?.data?.detail || 'Error al seleccionar columnas');
     }
   };
 
@@ -218,6 +215,7 @@ const MantenimientosCorrectivos = () => {
 
   return (
     <Container className="custom-container">
+      <BackButton to="/mantenimiento" />
       {isLoading ? (
         <div className="custom-div">
           <div className="spinner-border" role="status">
@@ -226,17 +224,11 @@ const MantenimientosCorrectivos = () => {
         </div>
       ) : (
         <div className="contenido-wrapper">
-          <BackButton to="/mantenimiento" />
           <Row className="align-items-center mb-2">
             <Col>
               <h2>Gestión de Mantenimientos Correctivos</h2>
             </Col>
             <Col className="text-end">
-              <ColumnSelector
-                availableColumns={availableColumns}
-                selectedColumns={selectedColumns}
-                onSave={handleSaveColumns}
-              />
               {currentEntity.type === 'usuario' && (
                 <Button className="custom-button" onClick={() => setShowForm(true)}>
                   <FaPlus />
@@ -352,6 +344,11 @@ const MantenimientosCorrectivos = () => {
           )}
 
           <div className="table-responsive">
+            <ColumnSelector
+              availableColumns={availableColumns}
+              selectedColumns={selectedColumns}
+              onSave={handleSaveColumns}
+            />
             <Table striped bordered hover>
               <thead>
                 <tr>
@@ -360,18 +357,12 @@ const MantenimientosCorrectivos = () => {
                   {selectedColumns.includes('sucursal') && <th>Sucursal</th>}
                   {currentEntity.type === 'usuario' &&
                     selectedColumns.includes('cuadrilla') && <th>Cuadrilla</th>}
-                  {currentEntity.type === 'usuario' &&
-                    selectedColumns.includes('zona') && <th>Zona</th>}
+                  {selectedColumns.includes('zona') && <th>Zona</th>}
                   {selectedColumns.includes('rubro') && <th>Rubro</th>}
-                  {currentEntity.type === 'usuario' &&
-                    selectedColumns.includes('numero_caso') && (
-                      <th>Número de Caso</th>
-                    )}
+                  {selectedColumns.includes('numero_caso') && <th>Número de Caso</th>}
                   {selectedColumns.includes('fecha_apertura') && <th>Fecha Apertura</th>}
-                  {currentEntity.type === 'usuario' &&
-                    selectedColumns.includes('fecha_cierre') && <th>Fecha Cierre</th>}
-                  {currentEntity.type === 'usuario' &&
-                    selectedColumns.includes('incidente') && <th>Incidente</th>}
+                  {selectedColumns.includes('fecha_cierre') && <th>Fecha Cierre</th>}
+                  {selectedColumns.includes('incidente') && <th>Incidente</th>}
                   {selectedColumns.includes('estado') && <th>Estado</th>}
                   {selectedColumns.includes('prioridad') && <th>Prioridad</th>}
                   {currentEntity.type === 'usuario' &&
@@ -398,30 +389,26 @@ const MantenimientosCorrectivos = () => {
                       selectedColumns.includes('cuadrilla') && (
                         <td>{getCuadrillaNombre(mantenimiento.id_cuadrilla)}</td>
                       )}
-                    {currentEntity.type === 'usuario' &&
-                      selectedColumns.includes('zona') && (
+                    {selectedColumns.includes('zona') && (
                         <td>{getZonaNombre(mantenimiento.id_sucursal)}</td>
                       )}
                     {selectedColumns.includes('rubro') && (
                       <td>{mantenimiento.rubro}</td>
                     )}
-                    {currentEntity.type === 'usuario' &&
-                      selectedColumns.includes('numero_caso') && (
+                    {selectedColumns.includes('numero_caso') && (
                         <td>{mantenimiento.numero_caso}</td>
                       )}
                     {selectedColumns.includes('fecha_apertura') && (
                       <td>{mantenimiento.fecha_apertura?.split('T')[0]}</td>
                     )}
-                    {currentEntity.type === 'usuario' &&
-                      selectedColumns.includes('fecha_cierre') && (
+                    {selectedColumns.includes('fecha_cierre') && (
                         <td>
                           {mantenimiento.fecha_cierre
                             ? mantenimiento.fecha_cierre?.split('T')[0]
                             : 'No hay Fecha'}
                         </td>
                       )}
-                    {currentEntity.type === 'usuario' &&
-                      selectedColumns.includes('incidente') && (
+                    {selectedColumns.includes('incidente') && (
                         <td>{mantenimiento.incidente}</td>
                       )}
                     {selectedColumns.includes('estado') && (
