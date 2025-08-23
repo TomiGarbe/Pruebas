@@ -14,16 +14,17 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState('');
 
   const handleShowNotifications = () => setShowNotifications(true);
   const handleCloseNotifications = () => setShowNotifications(false);
 
   const handleLogout = async () => {
     try {
-      if (socketRef.current?.close) socketRef.current.close();
-      else if (socketRef.current?.disconnect) socketRef.current.disconnect();
-      socketRef.current = null;
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
       await logOut();
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -57,12 +58,9 @@ const Navbar = () => {
 
   const fetchNotifications = async () => {
     try {
-      const uid = currentEntity?.data?.uid;
-      if (!uid) return;
-
       const [correctivosResp, preventivosResp] = await Promise.all([
-        get_notificaciones_correctivos(uid),
-        get_notificaciones_preventivos(uid)
+        get_notificaciones_correctivos(currentEntity.data.uid),
+        get_notificaciones_preventivos(currentEntity.data.uid)
       ]);
 
       const correctivos = Array.isArray(correctivosResp.data) ? correctivosResp.data : [];
@@ -91,16 +89,18 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    if (currentEntity?.data?.uid) fetchNotifications();
-  }, [currentEntity?.data?.uid]);
+    if (currentEntity) {
+      fetchNotifications();
+    }
+  }, [currentEntity]);
 
   useEffect(() => {
-    const uid = currentEntity?.data?.uid;
-    if (!uid) return;
+    if (!currentEntity) return;
 
-    // Evita depender de WebSocket en JSDOM
-    const OPEN = typeof WebSocket !== 'undefined' ? WebSocket.OPEN : 1;
-    if (socketRef.current && socketRef.current.readyState === OPEN) return;
+    // Si ya hay socket abierto, no crear otro
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      return;
+    }
 
     const onMessage = (data) => {
       setNotifications((prev) => {
@@ -110,15 +110,16 @@ const Navbar = () => {
       });
     };
 
-    const socket = subscribeToNotifications(uid, onMessage);
+    const socket = subscribeToNotifications(currentEntity.data.uid, onMessage);
     socketRef.current = socket;
 
     return () => {
-      if (socketRef.current?.close) socketRef.current.close();
-      else if (socketRef.current?.disconnect) socketRef.current.disconnect();
-      socketRef.current = null;
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
     };
-  }, [currentEntity?.data?.uid]);
+  }, [currentEntity]);
 
   const handleClick = async (notification) => {
     if (notification.tipo === 'correctivo') {
@@ -180,7 +181,6 @@ const Navbar = () => {
           ></span>
         )}
         <Button
-          aria-label="Eliminar notificación"
           variant="outline-danger"
           size="sm"
           onClick={(e) => handleDeleteNotification(notification.id, e)}
@@ -242,7 +242,7 @@ const Navbar = () => {
               )}
             </Nav>
             <Nav className="nav-right">
-              <Nav.Link onClick={handleShowNotifications} aria-label="Notificaciones" data-testid="notif-btn">
+              <Nav.Link onClick={handleShowNotifications} aria-label="Notificaciones">
                 <div className="notification-icon">
                   <FaBell size={24} color="#fff" />
                   {unreadCount > 0 && <span className="notification-counter">{unreadCount}</span>}
@@ -253,20 +253,9 @@ const Navbar = () => {
         </Container>
       </BootstrapNavbar>
 
-      <Modal 
-        show={showNotifications} 
-        onHide={handleCloseNotifications} 
-        centered
-        aria-labelledby="notif-title"
-      >
+      <Modal show={showNotifications} onHide={handleCloseNotifications} centered>
         <Modal.Header closeButton>
-          <Modal.Title 
-          id="notif-title"
-          as="h2"
-          className="w-100 text-center"
-          >
-            Notificaciones
-          </Modal.Title>
+          <Modal.Title className="w-100 text-center">Notificaciones</Modal.Title>
         </Modal.Header>
         <div className="d-flex flex-column gap-2 px-3 mt-2">
           <Button 

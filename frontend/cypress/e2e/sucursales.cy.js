@@ -1,13 +1,4 @@
 describe('Gestión de Sucursales', () => {
-  before(() => {
-    cy.task('db:reset');
-    cy.task('db:seed');
-  });
-
-  after(() => {
-    cy.task('db:reset');
-  });
-  
   beforeEach(() => {
     // Intercepta la solicitud GET a /sucursales que el frontend hace al backend
     cy.intercept('GET', '**/sucursales').as('getSucursales');
