@@ -8,12 +8,12 @@ import { getCuadrillas } from '../services/cuadrillaService';
 import { getSucursales } from '../services/sucursalService';
 import { selectPreventivo, deletePreventivo } from '../services/maps';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import { FiSend, FiPlusCircle, FiCheckCircle, FiArrowLeft, FiMessageSquare } from "react-icons/fi";
-import { BsSave } from 'react-icons/bs';
+import { FiSend, FiArrowLeft, FiMessageSquare } from "react-icons/fi";
 import { getChatPreventivo, sendMessagePreventivo } from '../services/chats';
 import { subscribeToChat } from '../services/chatWs';
 import BackButton from '../components/BackButton';
 import LoadingSpinner from '../components/LoadingSpinner';
+import MantenimientoInfo from '../components/MantenimientoInfo';
 import '../styles/mantenimientos.css';
 
 const Preventivo = () => {
@@ -435,68 +435,24 @@ const Preventivo = () => {
       ) : (
         <div className="page-content">
           <Row className="main-row">
-            <Col className="info-section">
-              <h4 className="info-section-title">Mantenimiento Preventivo</h4>
-              <div className="info-field">
-                <strong className="info-label">Sucursal - Frecuencia:</strong>{' '}
-                {mantenimiento.id_sucursal ? getSucursalNombre(mantenimiento.id_sucursal) : 'N/A'} - {mantenimiento.frecuencia || 'N/A'}
-              </div>
-              <div className="info-field">
-                <strong className="info-label">Cuadrilla:</strong>{' '}
-                {mantenimiento.id_cuadrilla ? getCuadrillaNombre(mantenimiento.id_cuadrilla) : 'N/A'}
-              </div>
-              <div className="info-field">
-                <strong className="info-label">Zona:</strong>{' '}
-                {mantenimiento.id_sucursal ? getZonaNombre(mantenimiento.id_sucursal) : 'N/A'}
-              </div>
-              <div className="info-field">
-                <strong className="info-label">Fecha Apertura:</strong>{' '}
-                {mantenimiento.fecha_apertura?.split('T')[0] || 'N/A'}
-              </div>
-              <div className="info-field">
-                <strong className="info-label">Fecha Cierre:</strong>{' '}
-                {mantenimiento.fecha_cierre?.split('T')[0] || 'Mantenimiento no finalizado'}
-              </div>
-              <div className="info-field">
-                <strong className="info-label">Extendido:</strong>{' '}
-                {mantenimiento.extendido
-                  ? `${formatExtendido(mantenimiento.extendido)} hs`
-                  : 'No hay extendido'}
-              </div>
-              {currentEntity.type !== 'usuario' && (
-                <Form className="info-form" onSubmit={handleSubmit}>
-                  <Form.Group className="extendido-row">
-                    <Form.Label className="extendido-label">Extendido:</Form.Label>
-                    <Form.Control 
-                      type="datetime-local" 
-                      name="extendido"
-                      value={formData.extendido}
-                      onChange={handleExtendidoChange}
-                      placeholder="Seleccionar fecha" 
-                      className="extendido-input" />
-                  </Form.Group>
-                  {error && <Alert variant="danger">{error}</Alert>}
-                  {success && <Alert variant="success">{success}</Alert>}
-                </Form>
-              )}
-              {currentEntity.type !== 'usuario' && (
-                <Button variant={isSelected ? 'danger' : 'success'} className="info-button-add" onClick={toggleRoute}>
-                  <FiPlusCircle className="me-2" size={18} />{isSelected ? 'Borrar de la ruta' : 'Agregar a la ruta actual'}
-                </Button>
-              )}
-              {mantenimiento.fecha_cierre === null && (
-                <Button variant="dark" className="info-button-finish" onClick={handleFinish}>
-                  <FiCheckCircle className="me-2" size={18} />Marcar como finalizado
-                </Button>
-              )}
-              <button
-                className="floating-save-btn d-flex align-items-center justify-content-center"
-                onClick={handleSubmit}
-                title="Guardar cambios"
-              >
-                <BsSave size={28} />
-              </button>
-            </Col>
+            <MantenimientoInfo
+              title="Mantenimiento Preventivo"
+              mantenimiento={mantenimiento}
+              currentEntity={currentEntity}
+              formData={formData}
+              getSucursalNombre={getSucursalNombre}
+              getCuadrillaNombre={getCuadrillaNombre}
+              getZonaNombre={getZonaNombre}
+              formatExtendido={formatExtendido}
+              handleExtendidoChange={handleExtendidoChange}
+              handleSubmit={handleSubmit}
+              error={error}
+              success={success}
+              toggleRoute={toggleRoute}
+              isSelected={isSelected}
+              showFinishButton={mantenimiento.fecha_cierre === null}
+              handleFinish={handleFinish}
+            />
             {!isMobile && (
               <Col className="chat-section">
                 {renderChatContent()}
