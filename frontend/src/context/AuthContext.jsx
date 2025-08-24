@@ -1,5 +1,5 @@
 import React, { createContext, useEffect } from 'react';
-import { googleClientId } from '../config';
+import { config } from '../config';
 import { loadGoogleSDK } from '../utils/googleSignIn';
 import useAuth, { buildUserAuthError } from '../hooks/useAuth';
 
@@ -7,7 +7,6 @@ const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
   const {
-    currentUser,
     currentEntity,
     loading,
     verifying,
@@ -23,7 +22,7 @@ const AuthProvider = ({ children }) => {
     return new Promise((resolve, reject) => {
       try {
         window.google.accounts.id.initialize({
-          client_id: googleClientId,
+          client_id: config.googleClientId,
           callback: async (response) => {
             try {
               const idToken = response.credential;
@@ -97,7 +96,7 @@ const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ currentUser, currentEntity, loading, verifying, signInWithGoogle, logOut }}
+      value={{ currentEntity, loading, verifying, signInWithGoogle, logOut }}
     >
       {children}
     </AuthContext.Provider>

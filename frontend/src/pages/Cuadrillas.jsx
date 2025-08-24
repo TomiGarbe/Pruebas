@@ -6,6 +6,7 @@ import { getCuadrillas, deleteCuadrilla } from '../services/cuadrillaService';
 import { getColumnPreferences, saveColumnPreferences } from '../services/preferencesService';
 import ColumnSelector from '../components/ColumnSelector';
 import { FaPlus } from 'react-icons/fa';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../styles/botones_forms.css';
 
 const availableColumns = [
@@ -93,11 +94,7 @@ const Cuadrillas = () => {
   return (
     <Container className="custom-container">
       {isLoading ? (
-        <div className="custom-div">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
+        <LoadingSpinner />
       ) : (
         <div className="contenido-wrapper">
           <Row className="align-items-center mb-2">

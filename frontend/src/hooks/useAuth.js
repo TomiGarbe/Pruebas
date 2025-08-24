@@ -39,7 +39,6 @@ function reducer(state, action) {
 }
 
 export default function useAuth() {
-  const [currentUser, setCurrentUser] = useState(null);
   const [currentEntity, setCurrentEntity] = useState(() => {
     try {
       const stored =
@@ -72,7 +71,6 @@ export default function useAuth() {
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
         isVerifiedRef.current = true;
-        setCurrentUser(user);
         setCurrentEntity(response.data);
         localStorage.setItem('authToken', idToken);
         sessionStorage.setItem('authToken', idToken);
@@ -102,11 +100,12 @@ export default function useAuth() {
       sessionStorage.removeItem('authToken');
       localStorage.removeItem('googleIdToken');
       sessionStorage.removeItem('googleIdToken');
+      localStorage.removeItem('currentEntity');
+      sessionStorage.removeItem('currentEntity');
       dispatch({ type: 'SET_LOADING', value: false });
       dispatch({ type: 'SET_VERIFYING', value: false });
       isVerifyingRef.current = false;
       isVerifiedRef.current = false;
-      setCurrentUser(null);
       setCurrentEntity(null);
 
       await unsubscribe();
@@ -148,7 +147,6 @@ export default function useAuth() {
   const stopSigningIn = () => dispatch({ type: 'SET_SIGNING_IN', value: false });
 
   return {
-    currentUser,
     currentEntity,
     loading: state.loading,
     verifying: state.verifying,

@@ -12,6 +12,7 @@ import { getColumnPreferences, saveColumnPreferences } from '../services/prefere
 import ColumnSelector from '../components/ColumnSelector';
 import { AuthContext } from '../context/AuthContext';
 import { FaPlus } from 'react-icons/fa';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../styles/botones_forms.css';
 
 const MantenimientosCorrectivos = () => {
@@ -217,11 +218,7 @@ const MantenimientosCorrectivos = () => {
     <Container className="custom-container">
       <BackButton to="/mantenimiento" />
       {isLoading ? (
-        <div className="custom-div">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
+        <LoadingSpinner />
       ) : (
         <div className="contenido-wrapper">
           <Row className="align-items-center mb-2">

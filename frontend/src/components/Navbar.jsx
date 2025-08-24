@@ -1,32 +1,29 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar as BootstrapNavbar, Nav, Container, Image, Modal, Button } from 'react-bootstrap';
 import logoInversur from '../assets/logo_inversur.png';
-import { FaBell, FaTimes } from 'react-icons/fa';
+import { FaBell } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
 import { useAuthRoles } from '../hooks/useAuthRoles';
-import { get_notificaciones_correctivos, get_notificaciones_preventivos, correctivo_leido, preventivo_leido, delete_notificacion } from '../services/notificaciones';
-import { subscribeToNotifications } from '../services/notificationWs';
+import { correctivo_leido, preventivo_leido, delete_notificacion } from '../services/notificaciones';
+import useNotifications from '../hooks/useNotifications';
+import NotificationItem from './NotificationItem';
 import '../styles/navbar.css';
 
 const Navbar = () => {
   const { currentEntity, logOut } = useContext(AuthContext);
   const { isAdmin, isUser, isCuadrilla } = useAuthRoles();
   const isLogged = isUser || isCuadrilla;
-  const socketRef = useRef(null);
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { notifications, unreadCount, fetchNotifications, disconnect } = useNotifications();
 
   const handleShowNotifications = () => setShowNotifications(true);
   const handleCloseNotifications = () => setShowNotifications(false);
 
   const handleLogout = async () => {
     try {
-      if (socketRef.current?.close) socketRef.current.close();
-      else if (socketRef.current?.disconnect) socketRef.current.disconnect();
-      socketRef.current = null;
+      disconnect();
       await logOut();
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -58,71 +55,6 @@ const Navbar = () => {
     return result.trim();
   };
 
-  const fetchNotifications = async () => {
-    try {
-      const uid = currentEntity?.data?.uid;
-      if (!uid) return;
-
-      const [correctivosResp, preventivosResp] = await Promise.all([
-        get_notificaciones_correctivos(uid),
-        get_notificaciones_preventivos(uid)
-      ]);
-
-      const correctivos = Array.isArray(correctivosResp.data) ? correctivosResp.data : [];
-      const preventivos = Array.isArray(preventivosResp.data) ? preventivosResp.data : [];
-
-      const mappedCorrectivos = correctivos.map((notif) => ({
-        ...notif,
-        tipo: 'correctivo'
-      }));
-
-      const mappedPreventivos = preventivos.map((notif) => ({
-        ...notif,
-        tipo: 'preventivo'
-      }));
-
-      const allNotificaciones = [...mappedCorrectivos, ...mappedPreventivos];
-      setUnreadCount(allNotificaciones.filter(n => !n.leida).length);
-
-      // Ordenar por fecha descendente
-      allNotificaciones.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-      setNotifications(allNotificaciones);
-    } catch (error) {
-      console.error('Error obteniendo notificaciones:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (currentEntity?.data?.uid) fetchNotifications();
-  }, [currentEntity?.data?.uid]);
-
-  useEffect(() => {
-    const uid = currentEntity?.data?.uid;
-    if (!uid) return;
-
-    // Evita depender de WebSocket en JSDOM
-    const OPEN = typeof WebSocket !== 'undefined' ? WebSocket.OPEN : 1;
-    if (socketRef.current && socketRef.current.readyState === OPEN) return;
-
-    const onMessage = (data) => {
-      setNotifications((prev) => {
-        const updated = [data, ...prev];
-        setUnreadCount(updated.filter((n) => !n.leida).length);
-        return updated;
-      });
-    };
-
-    const socket = subscribeToNotifications(uid, onMessage);
-    socketRef.current = socket;
-
-    return () => {
-      if (socketRef.current?.close) socketRef.current.close();
-      else if (socketRef.current?.disconnect) socketRef.current.disconnect();
-      socketRef.current = null;
-    };
-  }, [currentEntity?.data?.uid]);
-
   const handleClick = async (notification) => {
     if (notification.tipo === 'correctivo') {
       const mantenimientoId = notification.id_mantenimiento
@@ -139,7 +71,7 @@ const Navbar = () => {
     }
   };
 
-  const handleDeleteNotification = async (notificationId, e) => {
+  const handleDeleteNotification = async (notificationId) => {
     e.stopPropagation();
     try {
       await delete_notificacion(notificationId);
@@ -164,36 +96,6 @@ const Navbar = () => {
       console.error('Error al marcar todas como leídas:', error);
     }
   };
-
-  const renderNotification = (notification, index) => (
-    <div 
-      key={index} 
-      onClick={() => handleClick(notification)} 
-      className="mb-3 p-2 border-bottom hover:bg-gray-100 p-2 rounded d-flex align-items-center"
-    >
-      <div className="flex-grow-1">
-        <p className="mb-1">{notification.mensaje}</p>
-        <small className="text-muted">{timeAgo(notification.created_at)}</small>
-      </div>
-      <div className="d-flex align-items-center">
-        {!notification.leida && (
-          <span 
-            className="bg-warning rounded-circle"
-            style={{ width: '10px', height: '10px', marginLeft: '10px' }}
-          ></span>
-        )}
-        <Button
-          aria-label="Eliminar notificación"
-          variant="outline-danger"
-          size="sm"
-          onClick={(e) => handleDeleteNotification(notification.id, e)}
-          className="ms-2"
-        >
-          <FaTimes />
-        </Button>
-      </div>
-    </div>
-  );
 
   const handleDeleteReadNotifications = async () => {
     try {
@@ -295,14 +197,29 @@ const Navbar = () => {
               )}
               {notifications
                 .filter(n => n.tipo === 'correctivo')
-                .map((notification, index) => renderNotification(notification, index))}
-
+                .map((notification, index) => (
+                  <NotificationItem
+                    key={index}
+                    notification={notification}
+                    timeAgo={timeAgo}
+                    onClick={handleClick}
+                    onDelete={handleDeleteNotification}
+                  />
+                ))}
               {notifications.some(n => n.tipo === 'preventivo') && (
                 <h6 className="mt-3 mb-1 text-muted">Preventivos</h6>
               )}
               {notifications
                 .filter(n => n.tipo === 'preventivo')
-                .map((notification, index) => renderNotification(notification, index))}
+                .map((notification, index) => (
+                  <NotificationItem
+                    key={index}
+                    notification={notification}
+                    timeAgo={timeAgo}
+                    onClick={handleClick}
+                    onDelete={handleDeleteNotification}
+                  />
+                ))}
             </>
           ) : (
             <p>No tienes notificaciones.</p>

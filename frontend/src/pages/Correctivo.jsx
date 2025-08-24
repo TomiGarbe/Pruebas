@@ -13,6 +13,7 @@ import { BsSave } from 'react-icons/bs';
 import { getChatCorrectivo, sendMessageCorrectivo } from '../services/chats';
 import { subscribeToChat } from '../services/chatWs';
 import BackButton from '../components/BackButton';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../styles/mantenimientos.css';
 
 const Correctivo = () => {
@@ -455,11 +456,7 @@ const Correctivo = () => {
   return (
     <Container fluid className="mantenimiento-container">
       {isLoading ? (
-        <div className="custom-div">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
+        <LoadingSpinner />
       ) : (
         <div className="page-content">
           <Row className="main-row">

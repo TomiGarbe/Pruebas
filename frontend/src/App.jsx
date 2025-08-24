@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import LocationProvider from './context/LocationContext';
 import Login from './pages/Login';
-import { mapsApiKey } from './config';
+import { config } from './config';
 import { LoadScript } from '@react-google-maps/api';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'leaflet/dist/leaflet.css';
@@ -27,7 +27,7 @@ const AppContent = () => {
   }, [currentEntity, loading, verifying, location, navigate]);
 
   return (
-    <LoadScript googleMapsApiKey={mapsApiKey} libraries={googleMapsLibraries}>
+    <LoadScript googleMapsApiKey={config.mapsApiKey} libraries={googleMapsLibraries}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

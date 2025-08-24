@@ -13,6 +13,7 @@ import { BsSave } from 'react-icons/bs';
 import { getChatPreventivo, sendMessagePreventivo } from '../services/chats';
 import { subscribeToChat } from '../services/chatWs';
 import BackButton from '../components/BackButton';
+import LoadingSpinner from '../components/LoadingSpinner';
 import '../styles/mantenimientos.css';
 
 const Preventivo = () => {
@@ -430,11 +431,7 @@ const Preventivo = () => {
   return (
     <Container fluid className="mantenimiento-container">
       {isLoading ? (
-        <div className="custom-div">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
+        <LoadingSpinner />
       ) : (
         <div className="page-content">
           <Row className="main-row">
