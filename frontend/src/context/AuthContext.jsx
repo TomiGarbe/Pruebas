@@ -3,7 +3,7 @@ import { auth, signOut, getPushSubscription, signInWithCredential, GoogleAuthPro
 import { saveSubscription, deleteSubscription } from '../services/notificaciones';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { googleClientId } from '../config';
+import { config } from '../config';
 
 const AuthContext = createContext();
 
@@ -142,7 +142,7 @@ const AuthProvider = ({ children }) => {
       script.onload = () => {
         try {
           window.google.accounts.id.initialize({
-            client_id: googleClientId,
+            client_id: config.googleClientId,
             callback: async (response) => {
               try {
                 const idToken = response.credential;
