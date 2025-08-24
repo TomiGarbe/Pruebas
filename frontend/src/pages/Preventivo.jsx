@@ -1,19 +1,22 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Container, Row, Col, Button, Form, Alert, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Button, Modal } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { BsUpload, BsTrashFill, BsPencilFill, BsX } from 'react-icons/bs';
 import { updateMantenimientoPreventivo, deleteMantenimientoPhoto, deleteMantenimientoPlanilla, getMantenimientoPreventivo } from '../services/mantenimientoPreventivoService';
 import { getCuadrillas } from '../services/cuadrillaService';
 import { getSucursales } from '../services/sucursalService';
 import { selectPreventivo, deletePreventivo } from '../services/maps';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import { FiSend, FiArrowLeft, FiMessageSquare } from "react-icons/fi";
+import { FiArrowLeft, FiMessageSquare } from "react-icons/fi";
 import { getChatPreventivo, sendMessagePreventivo } from '../services/chats';
-import { subscribeToChat } from '../services/chatWs';
 import BackButton from '../components/BackButton';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MantenimientoInfo from '../components/MantenimientoInfo';
+import ChatSection from '../components/ChatSection';
+import useChat from '../hooks/useChat';
+import PlanillaSection from '../components/PlanillaSection';
+import PhotoSection from '../components/PhotoSection';
+import useIsMobile from '../hooks/useIsMobile';
 import '../styles/mantenimientos.css';
 
 const Preventivo = () => {
@@ -29,12 +32,6 @@ const Preventivo = () => {
     fecha_cierre: null,
     extendido: null,
   });
-  const [isSelectingPhotos, setIsSelectingPhotos] = useState(false);
-  const [isSelectingPlanillas, setIsSelectingPlanillas] = useState(false);
-  const [planillaPreviews, setPlanillaPreviews] = useState([]);
-  const [fotoPreviews, setFotoPreviews] = useState([]);
-  const [selectedPlanillas, setSelectedPlanillas] = useState([]);
-  const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [error, setError] = useState('');
@@ -45,15 +42,9 @@ const Preventivo = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState('');
   const [archivoAdjunto, setArchivoAdjunto] = useState(null);
   const [previewArchivoAdjunto, setPreviewArchivoAdjunto] = useState(null);
-  const chatBoxRef = React.useRef(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const isMobile = useIsMobile();
   const [isChatOpen, setIsChatOpen] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const { chatBoxRef, scrollToBottom } = useChat(mantenimiento.id, setMensajes);
 
   const fetchMantenimiento = async () => {
     setIsLoading(true);
@@ -96,69 +87,13 @@ const Preventivo = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    let socket;
-    let reconnectTimeout;
-
-    const connect = () => {
-      if (!mantenimiento.id) return;
-
-      socket = subscribeToChat(mantenimiento.id, (data) => {
-        setMensajes((prev) => (Array.isArray(data) ? data : [...prev, data]));
-        scrollToBottom();
-      });
-
-      if (socket) {
-        socket.onclose = () => {
-          reconnectTimeout = setTimeout(connect, 5000);
-        };
-
-        socket.onerror = () => {
-          socket.close();
-        };
-      }
-    };
-
-    connect();
-
-    return () => {
-      if (socket) socket.close();
-      if (reconnectTimeout) clearTimeout(reconnectTimeout);
-    };
-  }, [mantenimiento.id]);
-
-  const handleFileChange = (e, field) => {
-    const files = Array.from(e.target.files);
-    setFormData({ ...formData, [field]: files });
-
-    const previews = files.map(file => URL.createObjectURL(file));
-    if (field === 'planillas') {
-      setPlanillaPreviews(previews);
-    } else if (field === 'fotos') {
-      setFotoPreviews(previews);
-    }
+  const handlePhotoUpload = (files) => {
+    setFormData({ ...formData, fotos: files });
   };
 
   const handleExtendidoChange = (e) => {
     setFormData({ ...formData, extendido: e.target.value });
   };
-
-  const handlePlanillaSelect = (planillaUrl) => {
-    setSelectedPlanillas(prev =>
-      prev.includes(planillaUrl)
-        ? prev.filter(url => url !== planillaUrl)
-        : [...prev, planillaUrl]
-    );
-  };
-
-    const handlePhotoSelect = (photo) => {
-      setSelectedPhotos((prev) =>
-        prev.includes(photo)
-          ? prev.filter((p) => p !== photo)
-          : [...prev, photo]
-      );
-    };
-
 
   const handleImageClick = (imageUrl) => {
     setSelectedImage(imageUrl);
@@ -170,32 +105,13 @@ const Preventivo = () => {
     setSelectedImage(null);
   };
 
-  const handleDeleteSelectedPlanillas = async () => {
+  const handleDeleteSelectedPhotos = async (photos) => {
     setIsLoading(true);
     try {
-      for (const planillaUrl of selectedPlanillas) {
-        const fileName = planillaUrl.split('/').pop();
-        await deleteMantenimientoPlanilla(mantenimiento.id, fileName);
-      }
-      setSelectedPlanillas([]);
-      setSuccess('Planillas eliminadas correctamente.');
-      await fetchMantenimiento();
-    } catch (error) {
-      console.error('Error deleting planillas:', error);
-      setError('Error al eliminar las planillas.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteSelectedPhotos = async () => {
-    setIsLoading(true);
-    try {
-      for (const photoUrl of selectedPhotos) {
+      for (const photoUrl of photos) {
         const fileName = photoUrl.split('/').pop();
         await deleteMantenimientoPhoto(mantenimiento.id, fileName);
       }
-      setSelectedPhotos([]);
       setSuccess('Fotos eliminadas correctamente.');
       await fetchMantenimiento();
     } catch (error) {
@@ -228,7 +144,6 @@ const Preventivo = () => {
       await updateMantenimientoPreventivo(mantenimiento.id, formDataToSend);
       setSuccess('Archivos y datos actualizados correctamente.');
       setFormData({ planillas: [], fotos: [], fecha_cierre: '', extendido: '' });
-      setPlanillaPreviews([]);
       setFotoPreviews([]);
       await fetchMantenimiento();
     } catch (error) {
@@ -344,90 +259,6 @@ const Preventivo = () => {
     }
   };
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      if (chatBoxRef.current) {
-        chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
-      }
-    }, 100);
-  };
-
-  const renderChatContent = () => (
-    <>
-      <div className="chat-box" ref={chatBoxRef}>
-        {mensajes.map((msg, index) => {
-          const esPropio = msg.firebase_uid === currentEntity.data.uid;
-          const esImagen = msg.archivo?.match(/\.(jpeg|jpg|png|gif)$/i);
-          return (
-            <div key={index} className={`chat-message ${esPropio ? 'chat-message-sent' : 'chat-message-received'}`}>
-              {msg.texto && <p className="chat-message-text">{msg.texto}</p>}
-              {msg.archivo && (
-                esImagen ? (
-                  <img src={msg.archivo} alt="Adjunto" className="chat-image-preview" />
-                ) : (
-                  <a href={msg.archivo} target="_blank" rel="noopener noreferrer" className="chat-file-link">
-                    Archivo adjunto
-                  </a>
-                )
-              )}
-              <span className="chat-info">
-                {msg.nombre_usuario} · {new Date(msg.fecha).toLocaleString()}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      {archivoAdjunto && (
-        <div style={{ marginTop: '0.5rem' }}>
-          <strong>Archivo a enviar:</strong><br />
-          {archivoAdjunto.type.startsWith('image/') && (
-            <img src={previewArchivoAdjunto} alt="preview" style={{ maxWidth: '100px', borderRadius: '8px' }} />
-          )}
-          {archivoAdjunto.type.startsWith('video/') && (
-            <video controls style={{ maxWidth: '120px', borderRadius: '8px' }}>
-              <source src={previewArchivoAdjunto} type={archivoAdjunto.type} />
-              Tu navegador no soporta videos.
-            </video>
-          )}
-          {!archivoAdjunto.type.startsWith('image/') && !archivoAdjunto.type.startsWith('video/') && (
-            <span>{archivoAdjunto.name}</span>
-          )}
-        </div>
-      )}
-      <div className="chat-input-form">
-        <input
-          type="text"
-          placeholder="Escribe un mensaje..."
-          className="chat-input"
-          value={nuevoMensaje}
-          onChange={(e) => setNuevoMensaje(e.target.value)}
-        />
-        <input
-          type="file"
-          onChange={(e) => {
-            const file = e.target.files[0];
-            setArchivoAdjunto(file);
-            if (file && file.type.startsWith('image/')) {
-              setPreviewArchivoAdjunto(URL.createObjectURL(file));
-            } else if (file && file.type.startsWith('video/')) {
-              setPreviewArchivoAdjunto(URL.createObjectURL(file));
-            } else {
-              setPreviewArchivoAdjunto(file ? file.name : null);
-            }
-          }}
-          style={{ display: 'none' }}
-          id="archivoAdjunto"
-        />
-        <label htmlFor="archivoAdjunto" className="chat-attach-btn">
-          📎
-        </label>
-        <Button variant="light" className="chat-send-btn" onClick={handleEnviarMensaje}>
-          <FiSend size={20} color="black" />
-        </Button>
-      </div>
-    </>
-  );
-
   return (
     <Container fluid className="mantenimiento-container">
       {isLoading ? (
@@ -455,216 +286,39 @@ const Preventivo = () => {
             />
             {!isMobile && (
               <Col className="chat-section">
-                {renderChatContent()}
+                <ChatSection
+                  mensajes={mensajes}
+                  nuevoMensaje={nuevoMensaje}
+                  setNuevoMensaje={setNuevoMensaje}
+                  archivoAdjunto={archivoAdjunto}
+                  setArchivoAdjunto={setArchivoAdjunto}
+                  previewArchivoAdjunto={previewArchivoAdjunto}
+                  setPreviewArchivoAdjunto={setPreviewArchivoAdjunto}
+                  onEnviarMensaje={handleEnviarMensaje}
+                  chatBoxRef={chatBoxRef}
+                  currentUid={currentEntity.data.uid}
+                />
               </Col>
             )}
-            <Col xs={12} md={4} className="planilla-section">
-              <h4 className="planilla-section-title">Planillas</h4>
-              <Form.Group>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  id="planillaUpload"
-                  style={{ display: 'none' }} // Ocultamos el input de archivo
-                  onChange={(e) => handleFileChange(e, 'planillas')}
-                />
-                <div className="d-flex justify-content-center mb-2">
-                  <Button
-                    variant="warning"
-                    className="d-flex align-items-center gap-2"
-                    onClick={() => document.getElementById('planillaUpload').click()}
-                  >
-                    <BsUpload />
-                    Cargar
-                  </Button>
-                </div>
-                {formData.planillas.length > 0 && (
-                  <div className="text-center mb-2">
-                    <strong>Archivos seleccionados:</strong>
-                    <ul className="list-unstyled mb-0">
-                      {formData.planillas.map((file, index) => (
-                        <li key={index}>{file.name}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </Form.Group>
-              {planillaPreviews.length > 0 && (
-                <Row className="gallery-section mt-3">
-                  {planillaPreviews.map((preview, index) => (
-                    <Col md={3} key={index} className="gallery-item">
-                      <div className="photo-container">
-                        <img
-                          src={preview}
-                          alt={`Nueva planilla ${index + 1}`}
-                          className="gallery-thumbnail"
-                          onClick={() => handleImageClick(preview)}
-                        />
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-              )}
-              {mantenimiento.planillas?.length > 0 && (
-              <div className="d-flex justify-content-center gap-2 mt-2">
-                {isSelectingPlanillas ? (
-                  <>
-                    <Button className="icon-button" variant="danger" onClick={handleDeleteSelectedPlanillas}>
-                      <BsTrashFill />
-                    </Button>
-                    <Button className="icon-button" variant="secondary" onClick={() => {
-                      setIsSelectingPlanillas(false);
-                      setSelectedPlanillas([]);
-                    }}>
-                      <BsX />
-                    </Button>
-                  </>
-                ) : (
-                  <Button className="icon-button" variant="light" onClick={() => setIsSelectingPlanillas(true)}>
-                    <BsPencilFill />
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {mantenimiento.planillas?.length > 0 ? (
-              <>
-                <Row className="gallery-section mt-3">
-                  {mantenimiento.planillas.map((planilla, index) => (
-                    <Col md={3} key={index} className="gallery-item">
-                      <div
-                        className={`photo-container ${isSelectingPlanillas ? 'selectable' : ''} ${
-                          selectedPlanillas.includes(planilla) ? 'selected' : ''
-                        }`}
-                        onClick={() => {
-                          if (isSelectingPlanillas) {
-                            handlePlanillaSelect(planilla);
-                          } else {
-                            handleImageClick(planilla);
-                          }
-                        }}
-                      >
-                        <img
-                          src={planilla}
-                          alt={`Planilla ${index + 1}`}
-                          className="gallery-thumbnail"
-                        />
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-              </>
-            ) : (
-              <p className="mt-3">No hay planillas cargadas.</p>
-            )}
-            </Col>
+            <PlanillaSection
+              multiple
+              mantenimiento={mantenimiento}
+              formData={formData}
+              setFormData={setFormData}
+              deletePlanilla={deleteMantenimientoPlanilla}
+              handleImageClick={handleImageClick}
+              fetchMantenimiento={fetchMantenimiento}
+              setIsLoading={setIsLoading}
+              setSuccess={setSuccess}
+              setError={setError}
+            />
           </Row>
-
-          <Row className="photos-section mt-5"> 
-            <h4 className="photos-title">Fotos de la obra</h4>
-            <Form.Group className="text-center"> {/* Añadido text-center para centrar */}
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                id="fotoUpload"
-                style={{ display: 'none' }} // Ocultamos el input de archivo
-                onChange={(e) => handleFileChange(e, 'fotos')}
-              />
-              <div className="d-flex justify-content-center mb-2">
-                <Button
-                  variant="warning"
-                  className="d-flex align-items-center gap-2"
-                  onClick={() => document.getElementById('fotoUpload').click()} // Simulamos clic en el input oculto
-                >
-                  <BsUpload />
-                  Cargar
-                </Button>
-              </div>
-              {/* Mostrar nombres de archivos seleccionados */}
-              {formData.fotos.length > 0 && (
-                <div className="text-center mb-2">
-                  <strong>Archivos seleccionados:</strong>
-                  <ul className="list-unstyled mb-0">
-                    {formData.fotos.map((file, index) => (
-                      <li key={index}>{file.name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </Form.Group>
-            {fotoPreviews.length > 0 && (
-              <Row className="gallery-section mt-3">
-                {fotoPreviews.map((preview, index) => (
-                  <Col md={3} key={index} className="gallery-item">
-                    <div className="photo-container">
-                      <img
-                        src={preview}
-                        alt={`Nueva foto ${index + 1}`}
-                        className="gallery-thumbnail"
-                        onClick={() => handleImageClick(preview)}
-                      />
-                    </div>
-                  </Col>
-                ))}
-              </Row>
-            )}
-            {mantenimiento.fotos?.length > 0 && (
-              <div className="d-flex justify-content-center mt-2 gap-2">
-                {isSelectingPhotos ? (
-                <>
-                  <Button className="icon-button" variant="danger" onClick={handleDeleteSelectedPhotos}>
-                    <BsTrashFill />
-                  </Button>
-                  <Button className="icon-button" variant="secondary" onClick={() => {
-                      setIsSelectingPhotos(false);
-                      setSelectedPhotos([]);
-                    }}>
-                      <BsX />
-                  </Button>
-                 </> 
-                ) : (
-                  <Button className="icon-button" variant="light" onClick={() => setIsSelectingPhotos(true)}>
-                    <BsPencilFill />
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {mantenimiento.fotos?.length > 0 ? (
-              <>
-                <Row className="gallery-section mt-3">
-                  {mantenimiento.fotos.map((photo, index) => {
-                    const isSelected = selectedPhotos.includes(photo);
-                    return (
-                      <Col md={3} key={index} className="gallery-item">
-                        <div
-                          className={`photo-container ${isSelectingPhotos ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
-                          onClick={() => {
-                            if (isSelectingPhotos) {
-                              handlePhotoSelect(photo);
-                            } else {
-                              handleImageClick(photo);
-                            }
-                          }}
-                        >
-                          <img
-                            src={photo}
-                            alt={`Foto ${index + 1}`}
-                            className="gallery-thumbnail"
-                          />
-                        </div>
-                      </Col>
-                    );
-                  })}
-                </Row>
-
-              </>
-            ) : (
-              <p className="mt-3 text-center">No hay fotos cargadas.</p>
-            )}
-          </Row>
+          <PhotoSection
+            fotos={mantenimiento.fotos || []}
+            onUpload={handlePhotoUpload}
+            onDelete={handleDeleteSelectedPhotos}
+            titulo="Fotos de la obra"
+          />
           <Modal show={showModal} onHide={handleCloseModal} centered>
             <Modal.Body>
               {selectedImage && (
@@ -697,7 +351,18 @@ const Preventivo = () => {
                   <FiArrowLeft size={28} color="black" />
                 </button>
                 <div className="chat-section">
-                  {renderChatContent()}
+                  <ChatSection
+                    mensajes={mensajes}
+                    nuevoMensaje={nuevoMensaje}
+                    setNuevoMensaje={setNuevoMensaje}
+                    archivoAdjunto={archivoAdjunto}
+                    setArchivoAdjunto={setArchivoAdjunto}
+                    previewArchivoAdjunto={previewArchivoAdjunto}
+                    setPreviewArchivoAdjunto={setPreviewArchivoAdjunto}
+                    onEnviarMensaje={handleEnviarMensaje}
+                    chatBoxRef={chatBoxRef}
+                    currentUid={currentEntity.data.uid}
+                  />
                 </div>
               </div>
             </>
