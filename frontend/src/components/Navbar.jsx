@@ -4,12 +4,15 @@ import { Navbar as BootstrapNavbar, Nav, Container, Image, Modal, Button } from 
 import logoInversur from '../assets/logo_inversur.png';
 import { FaBell, FaTimes } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
+import { useAuthRoles } from '../hooks/useAuthRoles';
 import { get_notificaciones_correctivos, get_notificaciones_preventivos, correctivo_leido, preventivo_leido, delete_notificacion } from '../services/notificaciones';
 import { subscribeToNotifications } from '../services/notificationWs';
 import '../styles/navbar.css';
 
 const Navbar = () => {
   const { currentEntity, logOut } = useContext(AuthContext);
+  const { isAdmin, isUser, isCuadrilla } = useAuthRoles();
+  const isLogged = isUser || isCuadrilla;
   const socketRef = useRef(null);
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -217,25 +220,25 @@ const Navbar = () => {
          {/* <BootstrapNavbar.Toggle aria-controls="basic-navbar-nav" />*/}
           {/*<BootstrapNavbar.Collapse id="basic-navbar-nav">*/}
             <Nav className="me-auto custom-nav-links">
-              {currentEntity && currentEntity.type === 'usuario' && currentEntity.data.rol === 'Administrador' && (
+              {isAdmin && (
                 <>
                   <Nav.Link as={Link} to="/users">Usuarios</Nav.Link>
                 </>
               )}
-              {currentEntity && currentEntity.type === 'usuario' && (
+              {isUser && (
                 <>
                   <Nav.Link as={Link} to="/cuadrillas">Cuadrillas</Nav.Link>
                   <Nav.Link as={Link} to="/sucursales">Sucursales</Nav.Link>
                 </>
               )}
-              {currentEntity && (
+              {isLogged && (
                 <>
                   <Nav.Link as={Link} to="/mantenimientos-preventivos">Mantenimientos Preventivos</Nav.Link>
                   <Nav.Link as={Link} to="/mantenimientos-correctivos">Mantenimientos Correctivos</Nav.Link>
                   <Nav.Link /*as={Link} to="/mapas"*/>Mapa</Nav.Link>
                 </>
               )}
-              {currentEntity && currentEntity.type === 'usuario' && currentEntity.data.rol === 'Administrador' && (
+              {isAdmin && (
                 <>
                   <Nav.Link /*as={Link} to="/reportes"*/>Reportes</Nav.Link>
                 </>
