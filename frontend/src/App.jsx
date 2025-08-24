@@ -18,7 +18,7 @@ import Mapa from './pages/Mapa';
 import Ruta from './pages/Ruta';
 import Reportes from './pages/Reportes';
 import BackButton from './components/BackButton';
-import { mapsApiKey } from './config';
+import { config } from './config';
 import { LoadScript } from '@react-google-maps/api';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'leaflet/dist/leaflet.css';
@@ -74,7 +74,7 @@ const AppContent = () => {
   }, [currentEntity, loading, verifying, isLoginPage, navigate, location]);
 
   return (
-    <LoadScript googleMapsApiKey={mapsApiKey} libraries={googleMapsLibraries}>
+    <LoadScript googleMapsApiKey={config.mapsApiKey} libraries={googleMapsLibraries}>
       <div className="d-flex flex-column min-vh-100">
         {!isLoginPage && <Navbar />}
         <main className="flex-grow-1">
