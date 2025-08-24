@@ -31,7 +31,7 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background-color: #ffc107; 
+  background-color: #ffc107;
   color: #000;
   border-radius: 50%;
   padding: 2px 6px;
@@ -39,6 +39,12 @@
   font-weight: bold;
   min-width: 18px;
   text-align: center;
+}
+
+.notification-indicator {
+  width: 10px;
+  height: 10px;
+  margin-left: 10px;
 }
 
 .mark-read-btn {
