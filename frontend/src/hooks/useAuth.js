@@ -56,7 +56,7 @@ export default function useAuth() {
   const isVerifiedRef = useRef(false);
   const { subscription, subscribe, unsubscribe } = usePushSubscription();
 
-  const verifyUser = async (user, idToken) => {
+  const verifyUser = async (idToken) => {
     isVerifyingRef.current = true;
     for (let i = 0; i < 3; i++) {
       try {

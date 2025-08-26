@@ -55,35 +55,40 @@ const AuthProvider = ({ children }) => {
     });
   };
 
-  const handleGoogleSignIn = async (isOnload) => {
+  const handleGoogleSignIn = async () => {
     try {
       const result = await retrySignIn();
       const user = result?.user;
       if (user) {
         const firebaseToken = await user.getIdToken();
-        await verifyUser(user, firebaseToken);
+        await verifyUser(firebaseToken);
       } else {
-        if (isOnload) {
-          await logOut();
-        } else {
-          await logOut('No se pudo obtener el usuario.');
-        }
+        await logOut('No se pudo obtener el usuario.');
       }
     } catch (error) {
-      if (isOnload) {
-        await logOut();
-      } else {
-        const userMessage = buildUserAuthError(error, 'No se pudo completar el inicio de sesión.');
-        await logOut(userMessage);
-      }
+      const userMessage = buildUserAuthError(error, 'No se pudo completar el inicio de sesión.');
+      await logOut(userMessage);
     }
   };
 
   // Ejecutar al cargar la página
   useEffect(() => {
-    if (!currentEntity) {
-      handleGoogleSignIn();
-    }
+    const validateSession = async () => {
+      if (currentEntity) {
+        const token =
+          sessionStorage.getItem('authToken') ||
+          localStorage.getItem('authToken');
+        if (token) {
+          await verifyUser(token);
+        } else {
+          await logOut();
+        }
+      } else {
+        await handleGoogleSignIn();
+      }
+    };
+
+    validateSession();
   }, []);
 
   // Ejecutar cuando se establece un nuevo token
