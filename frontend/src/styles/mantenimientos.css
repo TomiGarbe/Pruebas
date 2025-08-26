@@ -501,7 +501,7 @@ margin-top: 0.5rem;
 .floating-chat-btn {
   position: fixed;
   right: 0.5rem;
-  bottom: 13.7rem;
+  bottom: 8.3rem;
   background-color: #ffc720;
   border: none;
   border-radius: 50% !important;
@@ -524,9 +524,9 @@ margin-top: 0.5rem;
 .chat-overlay {
   position: fixed;
   left: 0; right: 0; bottom: 0;
-  height: 47rem;
+  height: 41rem; /* para mantener el boton de volver debajo del navbar */
   background: #fff;
-  z-index: 1050;             /* por debajo del navbar */
+  z-index: 1050; /* por arriba del footer y pagina */
   transform: translateX(100%);
   transition: transform .25s ease;
   display: flex; flex-direction: column;
@@ -547,13 +547,34 @@ margin-top: 0.5rem;
 .chat-overlay .chat-section {
   flex: 1;
   width: 100%;
-  box-shadow: none;
 }
 
 .navbar{
   position: sticky; 
   top: 0;
   z-index: 1100;
+}
+
+/* Botones de guardado por sección */
+.section-save-btn {
+  background-color: #ffc720;   
+  border-color: #ffc720;
+  color: #111;            
+  border: none;
+  font-weight: 500;
+  padding: .55rem 1rem;
+  /* icono */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.section-save-btn:hover:not(:disabled) {
+  background-color: #e0ad1e;
+  border-color: #e0ad1e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,.14);
 }
 
 /* Pantallas pequeñas: móviles (hasta 768px) */
@@ -587,10 +608,6 @@ margin-top: 0.5rem;
 
 /* botones en pantallas de telefono */
 @media (max-width: 398px) {
-  .floating-save-btn {
-    margin-bottom: 1.4rem;
-  }
-
   .floating-chat-btn {
     margin-bottom: 1.6rem;
   }
