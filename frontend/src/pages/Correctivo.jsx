@@ -5,18 +5,14 @@ import { useLocation } from "react-router-dom"
 import { Container, Row, Col, Modal, Button } from "react-bootstrap"
 import { AuthContext } from "../context/AuthContext"
 import { FiMessageSquare, FiArrowLeft } from "react-icons/fi"
-import {
-  updateMantenimientoCorrectivo,
-  deleteMantenimientoPhoto,
-  deleteMantenimientoPlanilla,
-  getMantenimientoCorrectivo,
-} from "../services/mantenimientoCorrectivoService"
+import { updateMantenimientoCorrectivo, deleteMantenimientoPhoto, deleteMantenimientoPlanilla, getMantenimientoCorrectivo} from "../services/mantenimientoCorrectivoService"
 import { getSucursales } from "../services/sucursalService"
 import { getCuadrillas } from "../services/cuadrillaService"
 import { selectCorrectivo, deleteCorrectivo } from "../services/maps"
 import { getChatCorrectivo, sendMessageCorrectivo } from "../services/chats"
 import { subscribeToChat } from "../services/chatWs"
 import BackButton from "../components/BackButton"
+import LoadingSpinner from '../components/LoadingSpinner';
 import MantenimientoInfo from "../components/MantenimientoInfo"
 import ChatSection from "../components/ChatSection"
 import PlanillaSection from "../components/PlanillaSection"
@@ -429,11 +425,7 @@ const Correctivo = () => {
   return (
     <Container fluid className="mantenimiento-container">
       {isLoading ? (
-        <div className="custom-div">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
+        <LoadingSpinner />
       ) : (
         <div className="page-content">
           <Row className="main-row">
