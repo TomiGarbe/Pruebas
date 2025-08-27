@@ -1,4 +1,3 @@
-"use client"
 import { Form, Button, Row, Col } from "react-bootstrap"
 import { BsUpload, BsTrashFill, BsPencilFill, BsX, BsSave } from "react-icons/bs"
 

@@ -2,6 +2,10 @@
 import { Form, Button, Row, Col } from "react-bootstrap"
 import { BsUpload, BsTrashFill, BsPencilFill, BsX, BsSave } from "react-icons/bs"
 
+/**
+ * Componente para gestionar planillas de mantenimiento.
+ * Soporta modo simple (una planilla) y múltiple mediante la prop `multiple`.
+ */
 const PlanillaSection = ({
   mantenimiento,
   formData,

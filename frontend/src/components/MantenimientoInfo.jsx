@@ -1,4 +1,3 @@
-"use client"
 import { Form, Button, Alert } from "react-bootstrap"
 import { BsSave } from "react-icons/bs"
 import { FiPlusCircle, FiCheckCircle } from "react-icons/fi"
