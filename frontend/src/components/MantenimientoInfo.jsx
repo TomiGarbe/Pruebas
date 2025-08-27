@@ -4,6 +4,7 @@ import { BsSave } from "react-icons/bs"
 import { FiPlusCircle, FiCheckCircle } from "react-icons/fi"
 
 const MantenimientoInfo = ({
+  title,
   mantenimiento,
   formData,
   setFormData,
@@ -26,8 +27,7 @@ const MantenimientoInfo = ({
 
   return (
     <div>
-      <h4 className="info-section-title">Mantenimiento Correctivo</h4>
-
+      <h4 className="info-section-title">{title}</h4>
       <div className="info-field">
         <strong className="info-label">Sucursal:</strong>{" "}
         {mantenimiento.id_sucursal ? getSucursalNombre(mantenimiento.id_sucursal) : "N/A"}

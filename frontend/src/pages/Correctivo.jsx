@@ -431,6 +431,7 @@ const Correctivo = () => {
           <Row className="main-row">
             <Col className="info-section">
               <MantenimientoInfo
+                title="Mantenimiento Correctivo"
                 mantenimiento={mantenimiento}
                 formData={formData}
                 setFormData={setFormData}
