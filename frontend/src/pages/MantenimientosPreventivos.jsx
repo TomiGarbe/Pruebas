@@ -73,7 +73,6 @@ const MantenimientosPreventivos = () => {
         getSucursales(),
         getZonas(),
       ]);
-      console.log(mantenimientos);
       const sucursalesConMantenimientos = sucursalesResponse.data.filter(sucursal =>
         mantenimientos.some(m => m.id_sucursal === sucursal.id)
       );

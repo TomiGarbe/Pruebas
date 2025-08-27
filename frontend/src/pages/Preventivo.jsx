@@ -1,423 +1,262 @@
-"use client"
+import React, { useEffect, useState, useContext } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Container, Row, Col, Button, Modal } from 'react-bootstrap';
+import { AuthContext } from '../context/AuthContext';
+import { updateMantenimientoPreventivo, deleteMantenimientoPhoto, deleteMantenimientoPlanilla, getMantenimientoPreventivo } from '../services/mantenimientoPreventivoService';
+import { getCuadrillas } from '../services/cuadrillaService';
+import { getSucursales } from '../services/sucursalService';
+import { selectPreventivo, deletePreventivo } from '../services/maps';
+import { FiArrowLeft, FiMessageSquare } from "react-icons/fi";
+import { getChatPreventivo, sendMessagePreventivo } from '../services/chats';
+import BackButton from '../components/BackButton';
+import LoadingSpinner from '../components/LoadingSpinner';
+import MantenimientoInfo from '../components/MantenimientoInfo';
+import ChatSection from '../components/ChatSection';
+import useChat from '../hooks/useChat';
+import PlanillaSection from '../components/PlanillaSection';
+import PhotoSection from '../components/PhotoSection';
+import useIsMobile from '../hooks/useIsMobile';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import '../styles/mantenimientos.css';
 
-import { useEffect, useMemo, useRef, useState, useContext, useCallback } from "react"
-import { useLocation } from "react-router-dom"
-import { Container, Row, Col, Modal, Button } from "react-bootstrap"
-import { AuthContext } from "../context/AuthContext"
-import { FiMessageSquare, FiArrowLeft } from "react-icons/fi"
-import {
-  updateMantenimientoPreventivo,
-  deleteMantenimientoPhoto,
-  deleteMantenimientoPlanilla,
-  getMantenimientoPreventivo,
-} from "../services/mantenimientoPreventivoService"
-import { getSucursales } from "../services/sucursalService"
-import { getCuadrillas } from "../services/cuadrillaService"
-import { selectPreventivo, deletePreventivo } from "../services/maps"
-import { getChatPreventivo, sendMessagePreventivo } from "../services/chats"
-import { subscribeToChat } from "../services/chatWs"
-import BackButton from "../components/BackButton"
-import LoadingSpinner from "../components/LoadingSpinner"
-import MantenimientoInfo from "../components/MantenimientoInfo"
-import ChatSection from "../components/ChatSection"
-import PlanillaSection from "../components/PlanillaSection"
-import PhotoSection from "../components/PhotoSection"
-import "bootstrap-icons/font/bootstrap-icons.css"
-import "../styles/mantenimientos.css"
-
-/** -------------------------------------
- * Utils
- * --------------------------------------*/
-const todayYYYYMMDD = () => {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = String(now.getMonth() + 1).padStart(2, "0")
-  const d = String(now.getDate()).padStart(2, "0")
-  return `${y}-${m}-${d}`
-}
-
-const formatExtendido = (fechaIso) => {
-  if (!fechaIso) return ""
-  const date = new Date(fechaIso)
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, "0")
-  const d = String(date.getDate()).padStart(2, "0")
-  const hh = String(date.getHours()).padStart(2, "0")
-  const mm = String(date.getMinutes()).padStart(2, "0")
-  return `${y}-${m}-${d} ${hh}:${mm}`
-}
-
-const buildFormData = (payload) => {
-  const fd = new FormData()
-  Object.entries(payload || {}).forEach(([key, value]) => {
-    if (value === undefined || value === null) return
-
-    if (key === "planillas" && Array.isArray(value)) {
-      value.forEach((file) => fd.append("planillas", file))
-      return
-    }
-
-    if (key === "fotos" && Array.isArray(value)) {
-      value.forEach((file) => fd.append("fotos", file))
-      return
-    }
-
-    fd.append(key, value)
-  })
-  return fd
-}
-
-/** -------------------------------------
- * Component
- * --------------------------------------*/
 const Preventivo = () => {
-  const { currentEntity } = useContext(AuthContext)
-  const uid = currentEntity?.data?.uid
-  const displayName = currentEntity?.data?.nombre
-
-  const location = useLocation()
-  const mantenimientoId = location.state?.mantenimientoId
-
-  // ------------ state ---------------
-  const [mantenimiento, setMantenimiento] = useState({})
-  const [sucursales, setSucursales] = useState([])
-  const [cuadrillas, setCuadrillas] = useState([])
-
+  const { currentEntity } = useContext(AuthContext);
+  const location = useLocation();
+  const mantenimientoId = location.state?.mantenimientoId;
+  const [mantenimiento, setMantenimiento] = useState({});
+  const [cuadrillas, setCuadrillas] = useState([]);
+  const [sucursales, setSucursales] = useState([]);
   const [formData, setFormData] = useState({
     planillas: [],
     fotos: [],
-    fecha_cierre: "",
-    extendido: "",
-    estado: "",
-  })
+    fecha_cierre: null,
+    extendido: null,
+  });
+  const [showModal, setShowModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
+  const [mensajes, setMensajes] = useState([]);
+  const [nuevoMensaje, setNuevoMensaje] = useState('');
+  const [archivoAdjunto, setArchivoAdjunto] = useState(null);
+  const [previewArchivoAdjunto, setPreviewArchivoAdjunto] = useState(null);
+  const isMobile = useIsMobile();
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const { chatBoxRef, scrollToBottom } = useChat(mantenimiento.id, setMensajes);
 
-  const [isSelectingPhotos, setIsSelectingPhotos] = useState(false)
-  const [isSelectingPlanillas, setIsSelectingPlanillas] = useState(false)
-  const [planillaPreviews, setPlanillaPreviews] = useState([])
-  const [fotoPreviews, setFotoPreviews] = useState([])
-  const [selectedPhotos, setSelectedPhotos] = useState([])
-  const [selectedPlanillas, setSelectedPlanillas] = useState([])
-  const [showModal, setShowModal] = useState(false)
-  const [selectedImage, setSelectedImage] = useState("")
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSelected, setIsSelected] = useState(false)
-  const [mensajes, setMensajes] = useState([])
-  const [nuevoMensaje, setNuevoMensaje] = useState("")
-  const [archivoAdjunto, setArchivoAdjunto] = useState(null)
-  const [previewArchivoAdjunto, setPreviewArchivoAdjunto] = useState(null)
-  const [isChatOpen, setIsChatOpen] = useState(false)
-
-  const chatBoxRef = useRef(null)
-  const previewUrlsRef = useRef([]) // para revocar URLs
-
-  // ------------ responsive ---------------
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768)
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
-
-  // ------------ data fetch ---------------
-  const fetchMantenimiento = useCallback(async () => {
-    if (!mantenimientoId) return
-    setIsLoading(true)
+  const fetchMantenimiento = async () => {
+    setIsLoading(true);
     try {
-      const response = await getMantenimientoPreventivo(mantenimientoId)
-      const data = response.data
-      setMantenimiento(data)
-      setFormData((prev) => ({
-        ...prev,
+      const response = await getMantenimientoPreventivo(mantenimientoId);
+      setMantenimiento(response.data);
+      setFormData({
         planillas: [],
         fotos: [],
-        fecha_cierre: data.fecha_cierre?.split("T")[0] || "",
-        extendido: data.extendido || "",
-        estado: data.estado,
-      }))
-      await cargarMensajes(data.id)
-    } catch (err) {
-      console.error("Error fetching mantenimiento:", err)
-      setError("Error al cargar los datos actualizados.")
+        fecha_cierre: response.data.fecha_cierre?.split('T')[0] || null,
+        extendido: response.data.extendido || null,
+      });
+      await cargarMensajes(response.data.id);
+    } catch (error) {
+      console.error('Error fetching mantenimiento:', error);
+      setError('Error al cargar los datos actualizados.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [mantenimientoId])
+  };
 
-  const fetchCatalogs = useCallback(async () => {
-    setIsLoading(true)
+  const fetchData = async () => {
+    setIsLoading(true);
     try {
-      const [sucursalesResponse, cuadrillasResponse] = await Promise.all([getSucursales(), getCuadrillas()])
-      setSucursales(sucursalesResponse.data || [])
-      setCuadrillas(cuadrillasResponse.data || [])
-    } catch (err) {
-      console.error("Error fetching data:", err)
+      const [cuadrillasResponse, sucursalesResponse] = await Promise.all([
+        getCuadrillas(),
+        getSucursales(),
+      ]);
+      setCuadrillas(cuadrillasResponse.data);
+      setSucursales(sucursalesResponse.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [])
+  };
 
   useEffect(() => {
-    fetchMantenimiento()
-    fetchCatalogs()
-  }, [fetchMantenimiento, fetchCatalogs])
+    fetchMantenimiento();
+    fetchData();
+  }, []);
 
-  // ------------ chat (websocket + polling bootstrap) ---------------
-  useEffect(() => {
-    let socket
-    let reconnectTimeout
+  const handlePhotoUpload = (files) => {
+    setFormData({ ...formData, fotos: files });
+  };
 
-    const connect = () => {
-      if (!mantenimiento?.id) return
-      socket = subscribeToChat(mantenimiento.id, (data) => {
-        setMensajes((prev) => (Array.isArray(data) ? data : [...prev, data]))
-        scrollToBottom()
-      })
-
-      if (socket) {
-        socket.onclose = () => {
-          reconnectTimeout = setTimeout(connect, 5000)
-        }
-        socket.onerror = () => socket.close()
-      }
-    }
-
-    connect()
-    return () => {
-      if (socket) socket.close()
-      if (reconnectTimeout) clearTimeout(reconnectTimeout)
-    }
-  }, [mantenimiento?.id])
-
-  // ------------ helpers (selectors) ---------------
-  const sucursalById = useMemo(() => (id) => sucursales.find((s) => s.id === id), [sucursales])
-  const cuadrillaById = useMemo(() => (id) => cuadrillas.find((c) => c.id === id), [cuadrillas])
-
-  const getSucursalNombre = (id) => sucursalById(id)?.nombre || "Desconocida"
-  const getZonaNombre = (id) => sucursalById(id)?.zona || "Desconocida"
-  const getCuadrillaNombre = (id) => cuadrillaById(id)?.nombre || "Desconocida"
-
-  // ------------ file handlers ---------------
-  const revokeAllPreviewUrls = () => {
-    previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u))
-    previewUrlsRef.current = []
-  }
-
-  useEffect(() => () => revokeAllPreviewUrls(), [])
-
-  const handleFileChange = (e, field) => {
-    const { files } = e.target
-    if (!files || files.length === 0) return
-
-    if (field === "planillas") {
-      const list = Array.from(files)
-      const previews = list.map((f) => {
-        const url = URL.createObjectURL(f)
-        previewUrlsRef.current.push(url)
-        return url
-      })
-      setFormData((prev) => ({ ...prev, planillas: list }))
-      setPlanillaPreviews(previews)
-      return
-    }
-
-    if (field === "fotos") {
-      const list = Array.from(files)
-      const previews = list.map((f) => {
-        const url = URL.createObjectURL(f)
-        previewUrlsRef.current.push(url)
-        return url
-      })
-      setFormData((prev) => ({ ...prev, fotos: list }))
-      setFotoPreviews(previews)
-    }
-  }
-
-  const handlePlanillaSelect = (planillaUrl) => {
-    setSelectedPlanillas((prev) =>
-      prev.includes(planillaUrl) ? prev.filter((u) => u !== planillaUrl) : [...prev, planillaUrl],
-    )
-  }
-
-  const handlePhotoSelect = (photoUrl) => {
-    setSelectedPhotos((prev) => (prev.includes(photoUrl) ? prev.filter((u) => u !== photoUrl) : [...prev, photoUrl]))
-  }
+  const handleExtendidoChange = (e) => {
+    setFormData({ ...formData, extendido: e.target.value });
+  };
 
   const handleImageClick = (imageUrl) => {
-    setSelectedImage(imageUrl)
-    setShowModal(true)
-  }
+    setSelectedImage(imageUrl);
+    setShowModal(true);
+  };
 
   const handleCloseModal = () => {
-    setShowModal(false)
-    setSelectedImage(null)
-  }
+    setShowModal(false);
+    setSelectedImage(null);
+  };
 
-  const refreshAfterMutation = async (msgOk) => {
-    setSuccess(msgOk)
-    await fetchMantenimiento()
-  }
-
-  const handleDeleteSelectedPlanillas = async () => {
-    if (!selectedPlanillas.length || !mantenimiento?.id) return
-    setIsLoading(true)
+  const handleDeleteSelectedPhotos = async (photos) => {
+    setIsLoading(true);
     try {
-      for (const url of selectedPlanillas) {
-        const fileName = url.split("/").pop()
-        await deleteMantenimientoPlanilla(mantenimiento.id, fileName)
+      for (const photoUrl of photos) {
+        const fileName = photoUrl.split('/').pop();
+        await deleteMantenimientoPhoto(mantenimiento.id, fileName);
       }
-      setSelectedPlanillas([])
-      setIsSelectingPlanillas(false)
-      await refreshAfterMutation("Planillas eliminadas correctamente.")
-    } catch (err) {
-      console.error("Error al eliminar las planillas:", err)
-      setError("Error al eliminar las planillas.")
+      setSuccess('Fotos eliminadas correctamente.');
+      await fetchMantenimiento();
+    } catch (error) {
+      console.error('Error deleting photos:', error);
+      setError('Error al eliminar las fotos.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const handleDeleteSelectedPhotos = async () => {
-    if (!selectedPhotos.length || !mantenimiento?.id) return
-    setIsLoading(true)
+  const handleSubmit = async (e, overrideData = null) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    const data = overrideData || formData;
+
+    const formDataToSend = new FormData();
+    data.planillas.forEach(file => formDataToSend.append('planillas', file));
+    data.fotos.forEach(file => formDataToSend.append('fotos', file));
+    if (data.fecha_cierre) {
+      formDataToSend.append('fecha_cierre', data.fecha_cierre);
+    }
+    if (data.extendido) {
+      formDataToSend.append('extendido', data.extendido);
+    }
+
     try {
-      for (const url of selectedPhotos) {
-        const fileName = url.split("/").pop()
-        await deleteMantenimientoPhoto(mantenimiento.id, fileName)
-      }
-      setSelectedPhotos([])
-      await refreshAfterMutation("Fotos eliminadas correctamente.")
-    } catch (err) {
-      console.error("Error deleting photos:", err)
-      setError("Error al eliminar las fotos.")
+      await updateMantenimientoPreventivo(mantenimiento.id, formDataToSend);
+      setSuccess('Archivos y datos actualizados correctamente.');
+      setFormData({ planillas: [], fotos: [], fecha_cierre: '', extendido: '' });
+      await fetchMantenimiento();
+    } catch (error) {
+      console.error('Error updating mantenimiento:', error);
+      setError(error.response?.data?.detail || 'Error al actualizar los datos.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
-
-  const submitUpdate = async (payload, okMsg = "Archivos y datos actualizados correctamente.") => {
-    if (!mantenimiento?.id) return
-    setIsLoading(true)
-    setError("")
-    setSuccess("")
-    try {
-      const fd = buildFormData(payload)
-      await updateMantenimientoPreventivo(mantenimiento.id, fd)
-      await refreshAfterMutation(okMsg)
-    } catch (err) {
-      console.error("Error updating mantenimiento:", err)
-      setError(err?.response?.data?.detail || "Error al actualizar los datos.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const maybeAutoCloseDate = (estado, fecha_cierre) => {
-    if (fecha_cierre) return fecha_cierre
-    if (estado === "Finalizado" || estado === "Solucionado") return todayYYYYMMDD()
-    return ""
-  }
+  };
 
   const handleFinish = async () => {
-    const hasPlanillas = (mantenimiento?.planillas || []).length > 0
-    const hasFoto = (mantenimiento?.fotos || []).length > 0
+    const hasPlanilla = mantenimiento.planillas?.length > 0;
+    const hasFoto = mantenimiento.fotos?.length > 0;
 
-    if (!hasPlanillas || !hasFoto) {
-      setError("Debe cargar al menos una planilla y una foto para marcar como finalizado.")
-      return
+    if (!hasPlanilla || !hasFoto) {
+      alert('Debe cargar al menos una planilla y una foto para marcar como finalizado.');
+      setError('Debe cargar al menos una planilla y una foto para marcar como finalizado.');
+      return;
     }
 
-    const payload = { fecha_cierre: todayYYYYMMDD(), estado: "Solucionado" }
-    await submitUpdate(payload, "Mantenimiento marcado como finalizado correctamente.")
-  }
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      const updatedFormData = {
+        ...formData,
+        fecha_cierre: formattedDate,
+      };
+      await handleSubmit({ preventDefault: () => {} }, updatedFormData);
+      // Falta mandar notificacion al encargado de mantenimiento
+      setSuccess('Mantenimiento marcado como finalizado correctamente.');
+    } catch (error) {
+      console.error('Error marking as finished:', error);
+      setError('Error al marcar como finalizado.');
+    }
+  };
 
-  // Ruta
   const toggleRoute = () => {
-    if (!mantenimiento?.id) return
     if (isSelected) {
-      deletePreventivo(mantenimiento.id)
-      setSuccess("Mantenimiento eliminado de la ruta.")
+      setIsSelected(false);
+      handleRemoveFromRoute();
     } else {
-      const seleccion = { id_mantenimiento: mantenimiento.id, id_sucursal: mantenimiento.id_sucursal }
-      selectPreventivo(seleccion)
-      setSuccess("Mantenimiento agregado a la ruta.")
+      setIsSelected(true);
+      handleAddToRoute();
     }
-    setIsSelected((s) => !s)
+  };
+
+  const handleAddToRoute = () => {
+    const seleccion = {"id_mantenimiento": mantenimiento.id, "id_sucursal": mantenimiento.id_sucursal};
+    selectPreventivo(seleccion);
+    setSuccess('Mantenimiento agregado a la ruta.');
+  };
+
+  const handleRemoveFromRoute = () => {
+    deletePreventivo(mantenimiento.id);
+    setSuccess('Mantenimiento eliminado de la ruta.');
+  };
+
+  const getSucursalNombre = (id_sucursal) => {
+    const sucursal = sucursales.find((s) => s.id === id_sucursal);
+    return sucursal ? sucursal.nombre : 'Desconocida';
+  };
+
+  const getCuadrillaNombre = (id_cuadrilla) => {
+    const cuadrilla = cuadrillas.find((c) => c.id === id_cuadrilla);
+    return cuadrilla ? cuadrilla.nombre : 'Desconocida';
+  };
+
+  const getZonaNombre = (id_sucursal) => {
+    const sucursal = sucursales.find((s) => s.id === id_sucursal);
+    return sucursal ? sucursal.zona : 'Desconocida';
+  };
+
+  function formatExtendido(fechaIso) {
+    const date = new Date(fechaIso);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
   }
 
-  // ------------ Chat ---------------
   const cargarMensajes = async (id) => {
     try {
-      const response = await getChatPreventivo(id)
-      setMensajes(response.data || [])
-      scrollToBottom()
-    } catch (err) {
-      console.error("Error al cargar mensajes:", err)
+      const response = await getChatPreventivo(id);
+      setMensajes(response.data);
+      scrollToBottom();
+    } catch (error) {
+      console.error('Error al cargar mensajes:', error);
     }
-  }
-
+  };
+  
   const handleEnviarMensaje = async () => {
-    if (!uid) return
-    if (!nuevoMensaje && !archivoAdjunto) return
+    if (!nuevoMensaje && !archivoAdjunto) return;
 
-    const fd = new FormData()
-    fd.append("firebase_uid", uid)
-    fd.append("nombre_usuario", displayName || "Usuario")
-    if (nuevoMensaje) fd.append("texto", nuevoMensaje)
-    if (archivoAdjunto) fd.append("archivo", archivoAdjunto)
+    const formData = new FormData();
+    formData.append('firebase_uid', currentEntity.data.uid);
+    formData.append('nombre_usuario', currentEntity.data.nombre);
+    if (nuevoMensaje) formData.append('texto', nuevoMensaje);
+    if (archivoAdjunto) formData.append('archivo', archivoAdjunto);
 
     try {
-      await sendMessagePreventivo(mantenimiento.id, fd)
-      setNuevoMensaje("")
-      setArchivoAdjunto(null)
-      setPreviewArchivoAdjunto(null)
-    } catch (err) {
-      console.error("Error al enviar mensaje:", err)
-      setError("No se pudo enviar el mensaje")
+      await sendMessagePreventivo(mantenimiento.id, formData);
+      setNuevoMensaje('');
+      setArchivoAdjunto(null);
+    } catch (error) {
+      console.error('Error al enviar mensaje:', error);
+      setError('No se pudo enviar el mensaje');
     }
-  }
-
-  const scrollToBottom = () => {
-    // peq. delay para asegurar que el DOM ya pintó
-    setTimeout(() => {
-      if (chatBoxRef.current) chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight
-    }, 100)
-  }
-
-  // ------------ Secciones de guardado separadas ---------------
-  const handleSaveInfo = async (e) => {
-    e.preventDefault()
-    const payload = {}
-
-    // Permitir limpiar extendido si viene vacío
-    if (formData.extendido !== undefined) payload.extendido = formData.extendido || ""
-
-    if (formData.estado) {
-      payload.estado = formData.estado
-      if (!mantenimiento.fecha_cierre && (formData.estado === "Finalizado" || formData.estado === "Solucionado")) {
-        payload.fecha_cierre = todayYYYYMMDD()
-      }
-    }
-
-    await submitUpdate(payload, "Información actualizada correctamente.")
-  }
-
-  const handleSavePlanillas = async (e) => {
-    e.preventDefault()
-    if (!formData.planillas || formData.planillas.length === 0) return setError("Seleccione planillas para guardar.")
-    await submitUpdate({ planillas: formData.planillas }, "Planillas guardadas correctamente.")
-    setFormData((prev) => ({ ...prev, planillas: [] }))
-    setPlanillaPreviews([])
-  }
-
-  const handleSavePhotos = async (e) => {
-    e.preventDefault()
-    if ((formData.fotos || []).length === 0) return setError("Seleccione fotos para guardar.")
-    await submitUpdate({ fotos: formData.fotos }, "Fotos guardadas correctamente.")
-    setFormData((prev) => ({ ...prev, fotos: [] }))
-    setFotoPreviews([])
-  }
+  };
 
   return (
     <Container fluid className="mantenimiento-container">
@@ -426,28 +265,25 @@ const Preventivo = () => {
       ) : (
         <div className="page-content">
           <Row className="main-row">
-            <Col className="info-section">
-              <MantenimientoInfo
-                multiple
-                title="Mantenimiento Preventivo"
-                mantenimiento={mantenimiento}
-                formData={formData}
-                setFormData={setFormData}
-                currentEntity={currentEntity}
-                getSucursalNombre={getSucursalNombre}
-                getCuadrillaNombre={getCuadrillaNombre}
-                getZonaNombre={getZonaNombre}
-                formatExtendido={formatExtendido}
-                handleSaveInfo={handleSaveInfo}
-                handleFinish={handleFinish}
-                toggleRoute={toggleRoute}
-                isSelected={isSelected}
-                isLoading={isLoading}
-                error={error}
-                success={success}
-              />
-            </Col>
-
+            <MantenimientoInfo
+              title="Mantenimiento Preventivo"
+              mantenimiento={mantenimiento}
+              currentEntity={currentEntity}
+              formData={formData}
+              getSucursalNombre={getSucursalNombre}
+              getCuadrillaNombre={getCuadrillaNombre}
+              getZonaNombre={getZonaNombre}
+              formatExtendido={formatExtendido}
+              handleExtendidoChange={handleExtendidoChange}
+              handleSubmit={handleSubmit}
+              error={error}
+              success={success}
+              toggleRoute={toggleRoute}
+              isSelected={isSelected}
+              isLoading={isLoading}
+              showFinishButton={mantenimiento.fecha_cierre === null}
+              handleFinish={handleFinish}
+            />
             {!isMobile && (
               <Col className="chat-section">
                 <ChatSection
@@ -460,51 +296,38 @@ const Preventivo = () => {
                   setPreviewArchivoAdjunto={setPreviewArchivoAdjunto}
                   onEnviarMensaje={handleEnviarMensaje}
                   chatBoxRef={chatBoxRef}
-                  currentUid={uid}
+                  currentUid={currentEntity.data.uid}
                 />
               </Col>
             )}
-
-            <Col xs={12} md={4} className="planilla-section">
-              <PlanillaSection
-                mantenimiento={mantenimiento}
-                formData={formData}
-                planillaPreviews={planillaPreviews}
-                isSelectingPlanillas={isSelectingPlanillas}
-                setIsSelectingPlanillas={setIsSelectingPlanillas}
-                selectedPlanillas={selectedPlanillas}
-                setSelectedPlanillas={setSelectedPlanillas}
-                handleFileChange={handleFileChange}
-                handleSavePlanillas={handleSavePlanillas}
-                handleDeleteSelectedPlanillas={handleDeleteSelectedPlanillas}
-                handlePlanillaSelect={handlePlanillaSelect}
-                handleImageClick={handleImageClick}
-                isLoading={isLoading}
-              />
-            </Col>
-          </Row>
-
-          <Row>
-            <PhotoSection
+            <PlanillaSection
+              multiple
               mantenimiento={mantenimiento}
               formData={formData}
-              fotoPreviews={fotoPreviews}
-              isSelectingPhotos={isSelectingPhotos}
-              setIsSelectingPhotos={setIsSelectingPhotos}
-              selectedPhotos={selectedPhotos}
-              setSelectedPhotos={setSelectedPhotos}
-              handleFileChange={handleFileChange}
-              handleSavePhotos={handleSavePhotos}
-              handleDeleteSelectedPhotos={handleDeleteSelectedPhotos}
-              handlePhotoSelect={handlePhotoSelect}
+              setFormData={setFormData}
+              handleSubmit={handleSubmit}
+              deletePlanilla={deleteMantenimientoPlanilla}
               handleImageClick={handleImageClick}
+              fetchMantenimiento={fetchMantenimiento}
+              setIsLoading={setIsLoading}
               isLoading={isLoading}
+              setSuccess={setSuccess}
+              setError={setError}
             />
           </Row>
-
+          <PhotoSection
+            handleSubmit={handleSubmit}
+            isLoading={isLoading}
+            fotos={mantenimiento.fotos || []}
+            onUpload={handlePhotoUpload}
+            onDelete={handleDeleteSelectedPhotos}
+            titulo="Fotos de la obra"
+          />
           <Modal show={showModal} onHide={handleCloseModal} centered>
             <Modal.Body>
-              {selectedImage && <img src={selectedImage || "/placeholder.svg"} alt="Full size" className="img-fluid" />}
+              {selectedImage && (
+                <img src={selectedImage} alt="Full size" className="img-fluid" />
+              )}
             </Modal.Body>
             <Modal.Footer>
               <Button variant="secondary" onClick={handleCloseModal}>
@@ -512,16 +335,23 @@ const Preventivo = () => {
               </Button>
             </Modal.Footer>
           </Modal>
-
           {isMobile && (
             <>
               {!isChatOpen && (
-                <button type="button" className="floating-chat-btn" onClick={() => setIsChatOpen(true)}>
+                <button
+                  type="button"
+                  className="floating-chat-btn"
+                  onClick={() => setIsChatOpen(true)}
+                >
                   <FiMessageSquare size={28} color="white" />
                 </button>
               )}
-              <div className={`chat-overlay ${isChatOpen ? "open" : ""}`}>
-                <button type="button" className="close-chat-btn" onClick={() => setIsChatOpen(false)}>
+              <div className={`chat-overlay ${isChatOpen ? 'open' : ''}`}>
+                <button
+                  type="button"
+                  className="close-chat-btn"
+                  onClick={() => setIsChatOpen(false)}
+                >
                   <FiArrowLeft size={28} color="black" />
                 </button>
                 <div className="chat-section">
@@ -535,7 +365,7 @@ const Preventivo = () => {
                     setPreviewArchivoAdjunto={setPreviewArchivoAdjunto}
                     onEnviarMensaje={handleEnviarMensaje}
                     chatBoxRef={chatBoxRef}
-                    currentUid={uid}
+                    currentUid={currentEntity.data.uid}
                   />
                 </div>
               </div>
@@ -545,7 +375,7 @@ const Preventivo = () => {
       )}
       <BackButton to="/mantenimientos-preventivos" />
     </Container>
-  )
-}
+  );
+};
 
-export default Preventivo
+export default Preventivo;
