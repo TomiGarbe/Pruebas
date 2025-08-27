@@ -1,208 +1,130 @@
-import React, { useState } from 'react';
-import { Row, Col, Button, Form } from 'react-bootstrap';
-import { BsUpload, BsTrashFill, BsPencilFill, BsX } from 'react-icons/bs';
+"use client"
+import { Form, Button, Row, Col } from "react-bootstrap"
+import { BsUpload, BsTrashFill, BsPencilFill, BsX, BsSave } from "react-icons/bs"
 
-/**
- * Componente para gestionar planillas de mantenimiento.
- * Soporta modo simple (una planilla) y múltiple mediante la prop `multiple`.
- */
 const PlanillaSection = ({
-  multiple = false,
   mantenimiento,
   formData,
-  setFormData,
-  deletePlanilla,
+  planillaPreview,
+  isSelectingPlanilla,
+  setIsSelectingPlanilla,
+  selectedPlanilla,
+  handleFileChange,
+  handleSavePlanilla,
+  handleDeleteSelectedPlanilla,
+  handlePlanillaSelect,
   handleImageClick,
-  fetchMantenimiento,
-  setIsLoading,
-  setSuccess,
-  setError,
+  isLoading,
+  setSelectedPlanilla,
 }) => {
-  const [planillaPreviews, setPlanillaPreviews] = useState([]);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selected, setSelected] = useState(multiple ? [] : null);
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (multiple) {
-      setFormData(prev => ({ ...prev, planillas: files }));
-      setPlanillaPreviews(files.map(file => URL.createObjectURL(file)));
-    } else {
-      const file = files[0];
-      setFormData(prev => ({ ...prev, planilla: file || '' }));
-      setPlanillaPreviews(file ? [URL.createObjectURL(file)] : []);
-    }
-  };
-
-  const handleSelect = (planillaUrl) => {
-    if (multiple) {
-      setSelected(prev =>
-        prev.includes(planillaUrl)
-          ? prev.filter(url => url !== planillaUrl)
-          : [...prev, planillaUrl]
-      );
-    } else {
-      setSelected(prev => (prev === planillaUrl ? null : planillaUrl));
-    }
-  };
-
-  const handleDelete = async () => {
-    setIsLoading(true);
-    try {
-      if (multiple) {
-        for (const planillaUrl of selected) {
-          const fileName = planillaUrl.split('/').pop();
-          await deletePlanilla(mantenimiento.id, fileName);
-        }
-        setSelected([]);
-      } else if (selected) {
-        const fileName = selected.split('/').pop();
-        await deletePlanilla(mantenimiento.id, fileName);
-        setSelected(null);
-      }
-      setSuccess('Planilla(s) eliminada(s) correctamente.');
-      await fetchMantenimiento();
-    } catch (error) {
-      console.error('Error deleting planillas:', error);
-      setError('Error al eliminar las planillas.');
-    } finally {
-      setIsLoading(false);
-      setIsSelecting(false);
-    }
-  };
-
-  const existingPlanillas = multiple
-    ? mantenimiento.planillas || []
-    : mantenimiento.planilla
-    ? [mantenimiento.planilla]
-    : [];
-
   return (
-    <Col xs={12} md={4} className="planilla-section">
-      <h4 className="planilla-section-title">{multiple ? 'Planillas' : 'Planilla'}</h4>
-      <Form.Group>
-        <input
-          type="file"
-          accept="image/*"
-          multiple={multiple}
-          id="planillaUpload"
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
-        <div className="d-flex justify-content-center mb-2">
-          <Button
-            variant="warning"
-            className="d-flex align-items-center gap-2"
-            onClick={() => document.getElementById('planillaUpload').click()}
-          >
-            <BsUpload />
-            Cargar
-          </Button>
-        </div>
-        {multiple ? (
-          formData.planillas?.length > 0 && (
-            <div className="text-center mb-2">
-              <strong>Archivos seleccionados:</strong>
-              <ul className="list-unstyled mb-0">
-                {formData.planillas.map((file, index) => (
-                  <li key={index}>{file.name}</li>
-                ))}
-              </ul>
-            </div>
-          )
-        ) : (
-          formData.planilla && (
+    <div>
+      <h4 className="planilla-section-title">Planilla</h4>
+
+      <Form onSubmit={handleSavePlanilla}>
+        <Form.Group>
+          <input
+            type="file"
+            accept="image/*"
+            id="planillaUpload"
+            style={{ display: "none" }}
+            onChange={(e) => handleFileChange(e, "planilla")}
+          />
+          <div className="d-flex justify-content-center mb-2">
+            <Button
+              variant="warning"
+              className="d-flex align-items-center gap-2"
+              onClick={() => document.getElementById("planillaUpload")?.click()}
+            >
+              <BsUpload /> Cargar
+            </Button>
+          </div>
+
+          {formData.planilla && (
             <div className="selected-files mt-2">
               <strong>Archivo seleccionado:</strong>
               <ul>
                 <li>{formData.planilla.name}</li>
               </ul>
             </div>
-          )
-        )}
-      </Form.Group>
+          )}
 
-      {planillaPreviews.length > 0 && (
+          {formData.planilla && (
+            <div className="d-flex justify-content-center mt-2">
+              <Button type="submit" variant="success" className="section-save-btn" disabled={isLoading}>
+                <BsSave className="me-2" /> Guardar Planilla
+              </Button>
+            </div>
+          )}
+        </Form.Group>
+      </Form>
+
+      {planillaPreview && (
         <Row className="gallery-section mt-3">
-          {planillaPreviews.map((preview, index) => (
-            <Col md={3} key={index} className="gallery-item">
-              <div className="photo-container">
-                <img
-                  src={preview}
-                  alt={multiple ? `Nueva planilla ${index + 1}` : 'Nueva planilla'}
-                  className="gallery-thumbnail"
-                  onClick={() => handleImageClick(preview)}
-                />
-              </div>
-            </Col>
-          ))}
+          <Col md={3} className="gallery-item">
+            <div className="photo-container">
+              <img
+                src={planillaPreview || "/placeholder.svg"}
+                alt="Nueva planilla"
+                className="gallery-thumbnail"
+                onClick={() => handleImageClick(planillaPreview)}
+              />
+            </div>
+          </Col>
         </Row>
       )}
 
-      {existingPlanillas.length > 0 && (
+      {mantenimiento.planilla && (
         <div className="d-flex justify-content-center gap-2 mt-2">
-          {isSelecting ? (
+          {isSelectingPlanilla ? (
             <>
-              <Button className="icon-button" variant="danger" onClick={handleDelete}>
+              <Button className="icon-button" variant="danger" onClick={handleDeleteSelectedPlanilla}>
                 <BsTrashFill />
               </Button>
               <Button
                 className="icon-button"
                 variant="secondary"
                 onClick={() => {
-                  setIsSelecting(false);
-                  setSelected(multiple ? [] : null);
+                  setIsSelectingPlanilla(false)
+                  setSelectedPlanilla(null)
                 }}
               >
                 <BsX />
               </Button>
             </>
           ) : (
-            <Button className="icon-button" variant="light" onClick={() => setIsSelecting(true)}>
+            <Button className="icon-button" variant="light" onClick={() => setIsSelectingPlanilla(true)}>
               <BsPencilFill />
             </Button>
           )}
         </div>
       )}
 
-      {existingPlanillas.length > 0 ? (
+      {mantenimiento.planilla ? (
         <Row className="gallery-section mt-3">
-          {existingPlanillas.map((planilla, index) => (
-            <Col md={3} key={index} className="gallery-item">
-              <div
-                className={`photo-container ${isSelecting ? 'selectable' : ''} ${
-                  multiple
-                    ? selected.includes(planilla)
-                      ? 'selected'
-                      : ''
-                    : selected === planilla
-                    ? 'selected'
-                    : ''
-                }`}
-                onClick={() => {
-                  if (isSelecting) {
-                    handleSelect(planilla);
-                  } else {
-                    handleImageClick(planilla);
-                  }
-                }}
-              >
-                <img
-                  src={planilla}
-                  alt={multiple ? `Planilla ${index + 1}` : 'Planilla existente'}
-                  className="gallery-thumbnail"
-                />
-              </div>
-            </Col>
-          ))}
+          <Col md={3} className="gallery-item">
+            <div
+              className={`photo-container ${isSelectingPlanilla ? "selectable" : ""} ${
+                selectedPlanilla === mantenimiento.planilla ? "selected" : ""
+              }`}
+              onClick={() => {
+                if (isSelectingPlanilla) handlePlanillaSelect(mantenimiento.planilla)
+                else handleImageClick(mantenimiento.planilla)
+              }}
+            >
+              <img
+                src={mantenimiento.planilla || "/placeholder.svg"}
+                alt="Planilla existente"
+                className="gallery-thumbnail"
+              />
+            </div>
+          </Col>
         </Row>
       ) : (
-        <p className={`mt-3 ${multiple ? '' : 'text-center'}`}>
-          {multiple ? 'No hay planillas cargadas.' : 'No hay planilla cargada.'}
-        </p>
+        <p className="mt-3 text-center">No hay planilla cargada.</p>
       )}
-    </Col>
-  );
-};
+    </div>
+  )
+}
 
-export default PlanillaSection;
+export default PlanillaSection
