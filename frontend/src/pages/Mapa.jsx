@@ -7,6 +7,7 @@ import { FaMapMarkerAlt } from 'react-icons/fa';
 import { FiCompass } from 'react-icons/fi';
 import { FaUserAlt, FaTruck } from "react-icons/fa";
 import { renderToStaticMarkup } from "react-dom/server";
+import MapSidebar from '../components/MapSidebar';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
@@ -122,7 +123,6 @@ const Mapa = () => {
   const [preventivos, setPreventivos] = useState([]);
   const [error, setError] = useState(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [selectedCuadrillaId, setSelectedCuadrillaId] = useState(null);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const routeLayersRef = useRef({});
@@ -395,6 +395,36 @@ const Mapa = () => {
     );
   };
 
+  const handleEncargadoSelection = (user) => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setView([user.lat, user.lng], 13);
+      clearRoutes();
+      showPopup(
+        {
+          type: 'encargado',
+          name: user.name,
+        },
+        [user.lat, user.lng]
+      );
+    }
+  };
+
+  const handleSucursalSelection = (sucursal) => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setView([sucursal.lat, sucursal.lng], 13);
+      clearRoutes();
+      showPopup(
+        {
+          type: 'sucursal',
+          name: sucursal.name,
+          Correctivos: sucursal.Correctivos,
+          Preventivos: sucursal.Preventivos,
+        },
+        [sucursal.lat, sucursal.lng]
+      );
+    }
+  };
+
   const rotarNorte = () => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setBearing(0, { animate: true });
@@ -458,16 +488,7 @@ const Mapa = () => {
           title: user.name
         }).addTo(mapInstanceRef.current);
 
-        marker.on('click', () => {
-          clearRoutes();
-          showPopup(
-            {
-              type: 'encargado',
-              name: user.name,
-            },
-            [user.lat, user.lng]
-          )
-        });
+        marker.on('click', () => handleEncargadoSelection(user));
 
         usersMarkersRef.current.push(marker);
       });
@@ -505,18 +526,7 @@ const Mapa = () => {
           title: sucursal.name
         }).addTo(mapInstanceRef.current);
 
-        marker.on('click', () => {
-          clearRoutes();
-          showPopup(
-            {
-              type: 'sucursal',
-              name: sucursal.name,
-              Correctivos: sucursal.Correctivos,
-              Preventivos: sucursal.Preventivos
-            },
-            [sucursal.lat, sucursal.lng]
-          )
-        });
+        marker.on('click', () => handleSucursalSelection(sucursal));
 
         sucursalMarkersRef.current.push(marker);
       });
@@ -556,76 +566,14 @@ const Mapa = () => {
         <h2>Mapa de Usuarios y Sucursales</h2>
       </div>
       <div className="map-main">
-        <div className="map-sidebar-left">
-          <h4>Cuadrillas</h4>
-          {cuadrillas.length === 0 && <p>No hay cuadrillas activas.</p>}
-          {cuadrillas.map(cuadrilla => (
-            <div
-              key={cuadrilla.id}
-              className="obra-item"
-              onClick={() => handleCuadrillaSelection(cuadrilla)}
-            >
-              <strong>- {cuadrilla.name}</strong>
-              <br />
-              <small>{cuadrilla.correctivos?.length + cuadrilla.preventivos?.length || 0} obras asignadas</small>
-            </div>
-          ))}
-          <h4>Encargados</h4>
-          {users.length === 0 && <p>No hay encargados.</p>}
-          {users.map(user => (
-            <div
-              key={user.id}
-              className="obra-item"
-              onClick={() => {
-                if (mapInstanceRef.current) {
-                  mapInstanceRef.current.setView([user.lat, user.lng], 13);
-                  clearRoutes();
-                  showPopup(
-                    {
-                      type: 'encargado',
-                      name: user.name,
-                    },
-                    [user.lat, user.lng]
-                  );
-                }
-              }}
-            >
-              <strong>- {user.name}</strong>
-              <br />
-            </div>
-          ))}
-        </div>
-
-        <div className="map-sidebar-rigth">
-          <h4>Sucursales</h4>
-          {sucursales.length === 0 && <p>No hay sucursales activas.</p>}
-          {sucursales.map(sucursal => (
-            <div
-              key={sucursal.id}
-              className="obra-item"
-              onClick={() => {
-                if (mapInstanceRef.current) {
-                  mapInstanceRef.current.setView([sucursal.lat, sucursal.lng], 13);
-                  clearRoutes();
-                  showPopup(
-                    {
-                      type: 'sucursal',
-                      name: sucursal.name,
-                      Correctivos: sucursal.Correctivos,
-                      Preventivos: sucursal.Preventivos
-                    },
-                    [sucursal.lat, sucursal.lng]
-                  );
-                }
-              }}
-            >
-              <strong>- {sucursal.name}</strong>
-              <br />
-              <small>{sucursal.Correctivos?.length || 0} correctivos, {sucursal.Preventivos?.length || 0} preventivos</small>
-            </div>
-          ))}
-        </div>
-
+        <MapSidebar
+          cuadrillas={cuadrillas}
+          encargados={users}
+          sucursales={sucursales}
+          onSelectCuadrilla={handleCuadrillaSelection}
+          onSelectEncargado={handleEncargadoSelection}
+          onSelectSucursal={handleSucursalSelection}
+        />
         <div className="container-map">
           <div ref={mapRef} className="ruta-map"></div>
           <button onClick={toggleCuadrillas} className={`cuadrillas ${showCuadrillas ? "active" : ""}`}>
