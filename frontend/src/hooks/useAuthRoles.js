@@ -6,7 +6,10 @@ export const useAuthRoles = () => {
   const isUser = currentEntity?.type === 'usuario';
   const isCuadrilla = currentEntity?.type === 'cuadrilla';
   const isAdmin = isUser && currentEntity?.data?.rol === 'Administrador';
-  return { isAdmin, isUser, isCuadrilla };
+  const id = currentEntity?.data?.id;
+  const uid = currentEntity?.data?.uid;
+  const nombre = currentEntity?.data?.nombre;
+  return { id, uid, nombre, isAdmin, isUser, isCuadrilla };
 };
 
 export default useAuthRoles;

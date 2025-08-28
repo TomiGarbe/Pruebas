@@ -6,7 +6,7 @@ import { BsSave } from 'react-icons/bs';
 const MantenimientoInfo = ({
   title,
   mantenimiento,
-  currentEntity,
+  isUser,
   formData,
   getSucursalNombre,
   getCuadrillaNombre,
@@ -84,7 +84,7 @@ const MantenimientoInfo = ({
         ? `${formatExtendido(mantenimiento.extendido)} hs`
         : 'No hay extendido'}
     </div>
-    {currentEntity?.type !== 'usuario' && (
+    {!isUser && (
       <Form className="info-form" onSubmit={handleSubmit}>
         <Form.Group className="extendido-row">
           <Form.Label className="extendido-label">Extendido:</Form.Label>
@@ -106,7 +106,7 @@ const MantenimientoInfo = ({
         {success && <Alert variant="success">{success}</Alert>}
       </Form>
     )}
-    {currentEntity?.type !== 'usuario' && (
+    {!isUser && (
       <Button
         variant={isSelected ? 'danger' : 'success'}
         className="info-button-add"
@@ -116,12 +116,12 @@ const MantenimientoInfo = ({
         {isSelected ? 'Borrar de la ruta' : 'Agregar a la ruta actual'}
       </Button>
     )}
-    {showFinishButton && (
+    {!isUser && showFinishButton && (
       <Button variant="dark" className="info-button-finish" onClick={handleFinish}>
         <FiCheckCircle className="me-2" size={18} />Marcar como finalizado
       </Button>
     )}
-    {currentEntity?.type === 'usuario' && handleChange && (
+    {isUser && handleChange && (
       <Form className="info-form" onSubmit={handleSubmit}>
         <Form.Group className="extendido-row" controlId="estado">
           <Form.Label className="extendido-label">Estado</Form.Label>
