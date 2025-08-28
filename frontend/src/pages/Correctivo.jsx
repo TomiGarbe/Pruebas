@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import { updateMantenimientoCorrectivo, deleteMantenimientoPhoto, deleteMantenimientoPlanilla, getMantenimientoCorrectivo } from '../services/mantenimientoCorrectivoService';
 import { getSucursales } from '../services/sucursalService';
 import { getCuadrillas } from '../services/cuadrillaService';
-import { selectCorrectivo, deleteCorrectivo } from '../services/maps';
+import { getCorrectivos, selectCorrectivo, deleteCorrectivo } from '../services/maps';
 import { FiArrowLeft, FiMessageSquare } from "react-icons/fi";
 import { getChatCorrectivo, sendMessageCorrectivo } from '../services/chats';
 import BackButton from '../components/BackButton';
@@ -71,12 +71,17 @@ const Correctivo = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [sucursalesResponse, cuadrillasResponse] = await Promise.all([
+      const [sucursalesResponse, cuadrillasResponse, correctivosResponse] = await Promise.all([
         getSucursales(),
         getCuadrillas(),
+        getCorrectivos(parseInt(currentEntity.data.id)),
       ]);
       setSucursales(sucursalesResponse.data);
-      setCuadrillas(cuadrillasResponse.data);
+      setCuadrillas(cuadrillasResponse.data);const correctivoId = correctivosResponse.data.filter(c => c.id_mantenimiento === mantenimientoId);
+      if (correctivoId.length) {
+        setIsSelected(true);
+      }
+      
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

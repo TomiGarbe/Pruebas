@@ -52,8 +52,12 @@ const MantenimientosCorrectivos = () => {
       ]
     : [
         { key: 'sucursal', label: 'Sucursal' },
+        { key: 'zona', label: 'Zona' },
         { key: 'rubro', label: 'Rubro' },
+        { key: 'numero_caso', label: 'Número de Caso' },
         { key: 'fecha_apertura', label: 'Fecha Apertura' },
+        { key: 'fecha_cierre', label: 'Fecha Cierre' },
+        { key: 'incidente', label: 'Incidente' },
         { key: 'estado', label: 'Estado' },
         { key: 'prioridad', label: 'Prioridad' },
       ];

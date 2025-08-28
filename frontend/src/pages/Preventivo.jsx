@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import { updateMantenimientoPreventivo, deleteMantenimientoPhoto, deleteMantenimientoPlanilla, getMantenimientoPreventivo } from '../services/mantenimientoPreventivoService';
 import { getCuadrillas } from '../services/cuadrillaService';
 import { getSucursales } from '../services/sucursalService';
-import { selectPreventivo, deletePreventivo } from '../services/maps';
+import { getPreventivos, selectPreventivo, deletePreventivo } from '../services/maps';
 import { FiArrowLeft, FiMessageSquare } from "react-icons/fi";
 import { getChatPreventivo, sendMessagePreventivo } from '../services/chats';
 import BackButton from '../components/BackButton';
@@ -69,12 +69,17 @@ const Preventivo = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [cuadrillasResponse, sucursalesResponse] = await Promise.all([
+      const [cuadrillasResponse, sucursalesResponse, preventivosResponse] = await Promise.all([
         getCuadrillas(),
         getSucursales(),
+        getPreventivos(parseInt(currentEntity.data.id)),
       ]);
       setCuadrillas(cuadrillasResponse.data);
       setSucursales(sucursalesResponse.data);
+      const preventivoId = preventivosResponse.data.filter(p => p.id_mantenimiento === mantenimientoId);
+      if (preventivoId.length) {
+        setIsSelected(true);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

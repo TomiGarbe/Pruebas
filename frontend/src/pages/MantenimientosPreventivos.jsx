@@ -44,7 +44,9 @@ const MantenimientosPreventivos = () => {
       ]
     : [
         { key: 'preventivo', label: 'Preventivo' },
+        { key: 'zona', label: 'Zona' },
         { key: 'fecha_apertura', label: 'Fecha Apertura' },
+        { key: 'fecha_cierre', label: 'Fecha Cierre' },
       ];
   const [selectedColumns, setSelectedColumns] = useState(
     availableColumns.map((c) => c.key)
