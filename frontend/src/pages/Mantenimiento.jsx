@@ -12,7 +12,7 @@ const Mantenimiento = () => {
   return (
     <Container>
       <div className="page-content">
-        <BackButton to="/home" />
+        <BackButton to="/" />
         <div className="button-obras-container">
           {currentEntity && currentEntity.type === 'usuario' && (
             <Link to="/cuadrillas" className="obras-button">

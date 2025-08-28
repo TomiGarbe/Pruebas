@@ -22,7 +22,7 @@ const routes = [
   { path: '/mantenimientos-correctivos', element: <MantenimientoCorrectivo />, hideBackButton: true },
   { path: '/preventivo', element: <Preventivo />, hideBackButton: true },
   { path: '/correctivo', element: <Correctivo />, hideBackButton: true },
-  { path: '/mapa', element: <Mapa />, usersOnly: true },
+  { path: '/mapa', element: <Mapa />, usersOnly: true, hideBackButton: true },
   { path: '/ruta', element: <Ruta />, hideBackButton: true },
   { path: '/reportes', element: <Reportes />, adminOnly: true },
 ];

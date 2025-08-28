@@ -1,13 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getUsersLocations, getSucursalesLocations, getCorrectivos, getPreventivos } from '../services/maps';
 import { getMantenimientosCorrectivos } from '../services/mantenimientoCorrectivoService';
 import { getMantenimientosPreventivos } from '../services/mantenimientoPreventivoService';
 import { renderToString } from 'react-dom/server';
 import { FaMapMarkerAlt } from 'react-icons/fa';
-import { FiCompass } from 'react-icons/fi';
-import { FaUserAlt, FaTruck } from "react-icons/fa";
+import { FiArrowLeft, FiCompass } from 'react-icons/fi';
+import { FaUserAlt, FaTruck, FaBars } from "react-icons/fa";
 import { renderToStaticMarkup } from "react-dom/server";
 import MapSidebar from '../components/MapSidebar';
+import MapInfoPanel from '../components/MapInfoPanel';
+import useIsMobile from '../hooks/useIsMobile';
+import BackButton from '../components/BackButton';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
@@ -121,8 +125,8 @@ const Mapa = () => {
   const [sucursalesLocations, setSucursalesLocations] = useState([]);
   const [correctivos, setCorrectivos] = useState([]);
   const [preventivos, setPreventivos] = useState([]);
-  const [error, setError] = useState(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const navigate = useNavigate();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const routeLayersRef = useRef({});
@@ -130,13 +134,16 @@ const Mapa = () => {
   const cuadrillasMarkersRef = useRef([]);
   const sucursalMarkersRef = useRef([]);
   const compassRef = useRef(null);
+  const isMobile = useIsMobile();
   const [showEncargados, setShowEncargados] = useState(true);
   const [showCuadrillas, setShowCuadrillas] = useState(true);
   const [showSucursales, setShowSucursales] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleEncargados = () => setShowEncargados(prev => !prev);
   const toggleCuadrillas = () => setShowCuadrillas(prev => !prev);
   const toggleSucursales = () => setShowSucursales(prev => !prev);
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
 
   const fetchData = async () => {
     try {
@@ -236,7 +243,6 @@ const Mapa = () => {
       setCuadrillas(updatedCuadrillas);
     } catch (error) {
       console.error('Error fetching cuadrilla data:', error);
-      setError('Error al cargar datos de cuadrillas');
     }
   };
 
@@ -275,7 +281,6 @@ const Mapa = () => {
       setSucursales(updatedSucursales.filter(sucursal => !isNaN(sucursal.lat) && !isNaN(sucursal.lng) && sucursal.lat !== 0 && sucursal.lng !== 0));
     } catch (error) {
       console.error('Error fetching sucursal data:', error);
-      setError('Error al cargar datos de sucursales');
     }
   };
 
@@ -393,36 +398,39 @@ const Mapa = () => {
       },
       [cuadrilla.lat, cuadrilla.lng]
     );
+    if (isMobile) toggleSidebar();
   };
 
   const handleEncargadoSelection = (user) => {
+    clearRoutes();
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setView([user.lat, user.lng], 13);
-      clearRoutes();
-      showPopup(
-        {
-          type: 'encargado',
-          name: user.name,
-        },
-        [user.lat, user.lng]
-      );
     }
+    showPopup(
+      {
+        type: 'encargado',
+        name: user.name,
+      },
+      [user.lat, user.lng]
+    );
+    if (isMobile) toggleSidebar();
   };
 
   const handleSucursalSelection = (sucursal) => {
+    clearRoutes();
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setView([sucursal.lat, sucursal.lng], 13);
-      clearRoutes();
-      showPopup(
-        {
-          type: 'sucursal',
-          name: sucursal.name,
-          Correctivos: sucursal.Correctivos,
-          Preventivos: sucursal.Preventivos,
-        },
-        [sucursal.lat, sucursal.lng]
-      );
     }
+    showPopup(
+      {
+        type: 'sucursal',
+        name: sucursal.name,
+        Correctivos: sucursal.Correctivos,
+        Preventivos: sucursal.Preventivos,
+      },
+      [sucursal.lat, sucursal.lng]
+    );
+    if (isMobile) toggleSidebar();
   };
 
   const rotarNorte = () => {
@@ -558,46 +566,96 @@ const Mapa = () => {
   }, []);
 
 
-  return (
-  <div className="map-container">
-    {error && <div className="alert alert-danger">{error}</div>}
-    <div className="contenido-wrapper">
-      <div className="map-controls">
-        <h2>Mapa de Usuarios y Sucursales</h2>
-      </div>
-      <div className="map-main">
-        <MapSidebar
-          cuadrillas={cuadrillas}
-          encargados={users}
-          sucursales={sucursales}
-          onSelectCuadrilla={handleCuadrillaSelection}
-          onSelectEncargado={handleEncargadoSelection}
-          onSelectSucursal={handleSucursalSelection}
-        />
-        <div className="container-map">
-          <div ref={mapRef} className="ruta-map"></div>
-          <button onClick={toggleCuadrillas} className={`cuadrillas ${showCuadrillas ? "active" : ""}`}>
-            <FaTruck size={20} color="currentColor" />
-          </button>
-          <button onClick={toggleEncargados} className={`encargados ${showEncargados ? "active" : ""}`}>
-            <FaUserAlt size={20} color="currentColor" />
-          </button>
-          <button onClick={toggleSucursales} className={`sucursales ${showSucursales ? "active" : ""}`}>
-            <FaMapMarkerAlt size={20} color="currentColor" />
-          </button>
-          <div
-            ref={compassRef}
-            className="compass"
-            onClick={rotarNorte}
-            aria-label="Orientar al norte"
-            title="Orientar al norte"
-          >
-            <FiCompass className="compass-needle" size={22} />
+return (
+  <>
+    {!isMobile && (
+      <div className="map-container">
+        <BackButton to="/" />
+        <div className="contenido-wrapper">
+          <div className="map-controls">
+            <h2>Mapa de Usuarios y Sucursales</h2>
+          </div>
+          <div className="map-main">
+            <MapSidebar
+              cuadrillas={cuadrillas}
+              encargados={users}
+              sucursales={sucursales}
+              onSelectCuadrilla={handleCuadrillaSelection}
+              onSelectEncargado={handleEncargadoSelection}
+              onSelectSucursal={handleSucursalSelection}
+            />
+            <div className="container-map">
+              <div ref={mapRef} className="ruta-map"></div>
+              <button onClick={toggleCuadrillas} className={`cuadrillas ${showCuadrillas ? "active" : ""}`}>
+                <FaTruck size={20} color="currentColor" />
+              </button>
+              <button onClick={toggleEncargados} className={`encargados ${showEncargados ? "active" : ""}`}>
+                <FaUserAlt size={20} color="currentColor" />
+              </button>
+              <button onClick={toggleSucursales} className={`sucursales ${showSucursales ? "active" : ""}`}>
+                <FaMapMarkerAlt size={20} color="currentColor" />
+              </button>
+              <div
+                ref={compassRef}
+                className="compass"
+                onClick={rotarNorte}
+                aria-label="Orientar al norte"
+                title="Orientar al norte"
+              >
+                <FiCompass className="compass-needle" size={22} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    )}
+    {isMobile && (
+      <div className="ruta-container">
+        <div className="ruta-main">
+          <div className="container-ruta">
+            <div ref={mapRef} className="ruta-map"></div>
+            <div className={`map-mobile-sidebar ${isSidebarOpen ? 'open' : ''}`}>
+              <MapInfoPanel
+                cuadrillas={cuadrillas}
+                encargados={users}
+                sucursales={sucursales}
+                onSelectCuadrilla={handleCuadrillaSelection}
+                onSelectEncargado={handleEncargadoSelection}
+                onSelectSucursal={handleSucursalSelection}
+              />
+            </div>
+            <button
+              onClick={() => navigate('/')}
+              className="ruta-btn danger boton-volver"
+            >
+              <FiArrowLeft size={28} color="white" />
+            </button>
+            <button onClick={toggleCuadrillas} className={`cuadrillas ${showCuadrillas ? "active" : ""}`}>
+              <FaTruck size={20} color="currentColor" />
+            </button>
+            <button onClick={toggleEncargados} className={`encargados ${showEncargados ? "active" : ""}`}>
+              <FaUserAlt size={20} color="currentColor" />
+            </button>
+            <button onClick={toggleSucursales} className={`sucursales ${showSucursales ? "active" : ""}`}>
+              <FaMapMarkerAlt size={20} color="currentColor" />
+            </button>
+            <div
+              ref={compassRef}
+              className="compass compass-map"
+              onClick={rotarNorte}
+              aria-label="Orientar al norte"
+              title="Orientar al norte"
+            >
+              <FiCompass className="compass-needle" size={22} />
+            </div>
+            <button onClick={toggleSidebar} className="sidebar-toggle">
+              <FaBars size={20} color="white" />
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
 );
 
 };
