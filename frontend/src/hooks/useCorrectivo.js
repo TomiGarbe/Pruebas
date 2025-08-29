@@ -10,7 +10,7 @@ import useChat from './useChat';
 import useMantenimientos from './useMantenimientos';
 
 const useCorrectivo = (mantenimientoId) => {
-  const { id, uid, nombre, isUser } = useAuthRoles();
+  const { id, uid, nombre, isUser, isCuadrilla } = useAuthRoles();
   const [mantenimiento, setMantenimiento] = useState({});
   const [sucursales, setSucursales] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
@@ -229,6 +229,7 @@ const useCorrectivo = (mantenimientoId) => {
   return {
     uid,
     isUser,
+    isCuadrilla,
     mantenimiento,
     sucursales,
     cuadrillas,

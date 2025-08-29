@@ -20,6 +20,7 @@ const Correctivo = () => {
   const {
     uid,
     isUser,
+    isCuadrilla,
     mantenimiento,
     formData,
     error,
@@ -83,7 +84,7 @@ const Correctivo = () => {
               toggleRoute={toggleRoute}
               isSelected={isSelected}
               isLoading={isLoading}
-              showFinishButton={isUser && mantenimiento.estado !== 'Finalizado' && mantenimiento.estado !== 'Solucionado'}
+              showFinishButton={isCuadrilla && mantenimiento.estado !== 'Finalizado' && mantenimiento.estado !== 'Solucionado'}
               handleFinish={handleFinish}
               handleChange={handleChange}
             />

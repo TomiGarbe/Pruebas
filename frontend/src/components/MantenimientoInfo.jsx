@@ -116,7 +116,7 @@ const MantenimientoInfo = ({
         {isSelected ? 'Borrar de la ruta' : 'Agregar a la ruta actual'}
       </Button>
     )}
-    {!isUser && showFinishButton && (
+    {showFinishButton && (
       <Button variant="dark" className="info-button-finish" onClick={handleFinish}>
         <FiCheckCircle className="me-2" size={18} />Marcar como finalizado
       </Button>
