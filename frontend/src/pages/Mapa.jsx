@@ -337,8 +337,6 @@ const Mapa = () => {
       : data.type === 'encargado' ? buildEncargadoPopup(data)
       : buildSucursalPopup(data);
 
-    const isMobile = window.innerWidth < 768;
-
     const popup = L.popup({
       className: 'inversur-popup',
       maxWidth: isMobile ? 280 : 420,
