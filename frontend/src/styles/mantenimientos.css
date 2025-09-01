@@ -112,7 +112,7 @@ font-weight: bold;
 .info-button-add,
 .info-button-finish {
   width: 100%;
-  margin-top: 1rem;
+  margin-top: -0.7rem;
   padding: 0.7rem;
   font-weight: 600;
   border-radius: 12px;
@@ -155,7 +155,7 @@ margin-top: 0.5rem;
 .chat-box {
   flex-grow: 1;
   overflow-y: auto;
-  max-height: 452px; 
+  max-height: 22rem; 
   margin-bottom: 1rem;
   width: 100%;
   display: flex;
@@ -528,13 +528,15 @@ margin-top: 0.5rem;
 
 .chat-overlay {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: 41rem; /* para mantener el boton de volver debajo del navbar */
+  inset: 0; 
+  height: 105dvh;   /* para mantener el boton de volver debajo del navbar */
   background: #fff;
   z-index: 1050; /* por arriba del footer y pagina */
   transform: translateX(100%);
   transition: transform .25s ease;
-  display: flex; flex-direction: column;
+  display: flex; 
+  flex-direction: column;
+  padding-top: 13dvh; 
 }
 
 .chat-overlay.open {
@@ -609,12 +611,28 @@ margin-top: 0.5rem;
   .planilla-button {
     max-width: 100%;
   }
+
+  .chat-box {
+    max-height: 73.6dvh; 
+  }
+
+  .chat-overlay {
+    padding-top: 9.5dvh; 
+  }
 }
 
 /* botones en pantallas de telefono */
 @media (max-width: 398px) {
   .floating-chat-btn {
     margin-bottom: 1.6rem;
+  }
+
+.chat-box {
+    max-height: 65dvh; 
+  }
+
+  .chat-overlay {
+    padding-top: 11.5dvh; 
   }
 }
 
