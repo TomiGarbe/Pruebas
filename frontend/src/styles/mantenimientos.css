@@ -155,7 +155,7 @@ margin-top: 0.5rem;
 .chat-box {
   flex-grow: 1;
   overflow-y: auto;
-  max-height: 22rem; 
+  max-height: 21rem; 
   margin-bottom: 1rem;
   width: 100%;
   display: flex;
@@ -395,6 +395,9 @@ margin-top: 0.5rem;
   border-radius: 8px;
   background-color: #f8f9fa;
   margin-left: 1.3rem;
+  flex: 1 1 200px;      
+  max-width: 192px;      
+  margin-left: 0;       
 }
 
 .gallery-thumbnail {
