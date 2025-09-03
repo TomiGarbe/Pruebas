@@ -1,3 +1,8 @@
+:root {
+  --thumb-w: 180px;
+  --thumb-h: 200px;
+}
+
 /* Contenedor principal de la página Preventivo */
 .mantenimiento-container {
   padding-top: 8rem;
@@ -112,7 +117,7 @@ font-weight: bold;
 .info-button-add,
 .info-button-finish {
   width: 100%;
-  margin-top: 1rem;
+  margin-top: -0.7rem;
   padding: 0.7rem;
   font-weight: 600;
   border-radius: 12px;
@@ -153,9 +158,9 @@ margin-top: 0.5rem;
 
 /* Contenedor del historial de mensajes */
 .chat-box {
-  flex-grow: 1;
+  flex: 1 1 auto;         
   overflow-y: auto;
-  max-height: 452px; 
+  max-height: 36rem; 
   margin-bottom: 1rem;
   width: 100%;
   display: flex;
@@ -290,10 +295,10 @@ margin-top: 0.5rem;
 .planilla-section .btn-primary {
   background-color: #ffc720;
   border-color: #ffc720;
-  color: #000000; /* Texto negro para contraste */
-  display: block; /* Asegura que el botón ocupe su propio espacio */
-  margin: 0 auto; /* Centra el botón horizontalmente */
-  width: fit-content; /* Ajusta el ancho al contenido */
+  color: #000000; 
+  display: block;
+  margin: 0 auto; 
+  width: fit-content; 
 }
 
 .planilla-section .btn-primary:hover {
@@ -304,7 +309,7 @@ margin-top: 0.5rem;
 
 .planilla-section .btn-primary:focus,
 .planilla-section .btn-primary:active {
-  background-color: #ffc720 !important; /* Mantiene el color original al presionar */
+  background-color: #ffc720 !important; 
   border-color: #ffc720 !important;
   color: #000000 !important;
 }
@@ -341,6 +346,56 @@ margin-top: 0.5rem;
   max-width: 300px;
 }
 
+/* Carrusel horizontal de Planillas */
+.planilla-carousel {
+  width: 100%;
+  position: relative;
+  margin-top: .85rem;
+}
+
+.planilla-viewport {
+  overflow-x: hidden; 
+  overflow-y: hidden; 
+  width: 100%;
+  height: 15.6rem;
+}
+
+.planilla-track {
+  display: flex;
+  gap: 12px;
+  padding: 20px 1px;
+}
+
+.planilla-slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.planilla-slide {
+  max-width: 180px;
+  max-height: 200px;
+}
+
+/* Flechas */
+.planilla-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  z-index: 2; 
+}
+
+.planilla-nav:hover { background: #fff; }
+.planilla-nav:disabled { opacity: .35; cursor: default; }
+
+.planilla-nav.prev { left: -2.2rem; }
+.planilla-nav.next { right: -2.2rem; }
+
 /* Estilos para la sección de fotos */
 .photos-section {
   width: 100%;
@@ -356,14 +411,14 @@ margin-top: 0.5rem;
   text-align: center;
 }
 
-/* Estilo personalizado para el botón Cargar Fotos */
+/* Estilo botón Cargar Fotos */
 .photos-section .btn-primary {
   background-color: #ffc720;
   border-color: #ffc720;
-  color: #000000; /* Texto negro para contraste */
-  display: block; /* Asegura que el botón ocupe su propio espacio */
-  margin: 0 auto; /* Centra el botón horizontalmente */
-  width: fit-content; /* Ajusta el ancho al contenido */
+  color: #000000; 
+  display: block; 
+  margin: 0 auto; 
+  width: fit-content; 
 }
 
 .photos-section .btn-primary:hover {
@@ -395,6 +450,9 @@ margin-top: 0.5rem;
   border-radius: 8px;
   background-color: #f8f9fa;
   margin-left: 1.3rem;
+  flex: 1 1 200px;      
+  max-width: 192px;      
+  margin-left: 0;       
 }
 
 .gallery-thumbnail {
@@ -528,13 +586,15 @@ margin-top: 0.5rem;
 
 .chat-overlay {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: 41rem; /* para mantener el boton de volver debajo del navbar */
+  inset: 0; 
+  height: 105dvh;   /* para mantener el boton de volver debajo del navbar */
   background: #fff;
   z-index: 1050; /* por arriba del footer y pagina */
   transform: translateX(100%);
   transition: transform .25s ease;
-  display: flex; flex-direction: column;
+  display: flex; 
+  flex-direction: column;
+  padding-top: 13dvh; 
 }
 
 .chat-overlay.open {
@@ -609,12 +669,31 @@ margin-top: 0.5rem;
   .planilla-button {
     max-width: 100%;
   }
+
+  .planilla-nav.prev { left: -1.5rem; }
+  .planilla-nav.next { right: -1.5rem; }
+
+  .chat-box {
+    max-height: 73.6dvh; 
+  }
+
+  .chat-overlay {
+    padding-top: 9.5dvh; 
+  }
 }
 
 /* botones en pantallas de telefono */
 @media (max-width: 398px) {
   .floating-chat-btn {
     margin-bottom: 1.6rem;
+  }
+
+.chat-box {
+    max-height: 65dvh; 
+  }
+
+  .chat-overlay {
+    padding-top: 11.5dvh; 
   }
 }
 
