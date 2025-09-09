@@ -7,8 +7,6 @@ import DataTable from '../components/DataTable';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MantenimientoPreventivoForm from '../components/forms/MantenimientoPreventivoForm';
 import useMantenimientoPreventivo from '../hooks/forms/useMantenimientoPreventivo';
-import MantenimientoPreventivoForm from '../components/forms/MantenimientoPreventivoForm';
-import useMantenimientoPreventivo from '../hooks/forms/useMantenimientoPreventivo';
 import '../styles/botones_forms.css';
 
 const MantenimientosPreventivos = () => {
@@ -72,7 +70,6 @@ const MantenimientosPreventivos = () => {
               <h2>Gestión de Mantenimientos Preventivos</h2>
             </Col>
             <Col className="text-end">
-              {isUser && (
               {isUser && (
                 <Button className="custom-button" onClick={() => setShowForm(true)}>
                   <FaPlus />
@@ -163,8 +160,6 @@ const MantenimientosPreventivos = () => {
             columns={availableColumns}
             data={tableData}
             entityKey="mantenimientos_preventivos"
-            onEdit={isUser ? handleEdit : undefined}
-            onDelete={isUser ? handleDelete : undefined}
             onEdit={isUser ? handleEdit : undefined}
             onDelete={isUser ? handleDelete : undefined}
             onRowClick={(row) => handleRowClick(row.id)}
