@@ -58,6 +58,79 @@ const MantenimientosPreventivos = () => {
     fecha_cierre: m.fecha_cierre ? m.fecha_cierre?.split('T')[0] : 'No hay Fecha',
   }));
 
+  const filterButton = (
+    <Button
+      className={`filters-toggle ${showFilters ? "is-open" : ""}`}
+      onClick={() => setShowFilters(!showFilters)}
+      aria-controls="filters-collapse"
+      aria-expanded={showFilters}
+    >
+      <FiFilter />
+      Filtros
+    </Button>
+  );
+
+  const filterContent = (
+    <Collapse in={showFilters}>
+      <div id="filters-collapse" className="filters-container">
+        <div className='filters-row'>
+          {isUser && (
+            <div className='filter-item'>
+              <Form.Group className='mb-0'>
+                <Form.Label>Cuadrilla</Form.Label>
+                <Form.Select name="cuadrilla" value={filters.cuadrilla} onChange={handleFilterChange}>
+                  <option value="">Todas</option>
+                  {cuadrillas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </div>
+          )}
+          <div className='filter-item'>
+            <Form.Group className='mb-0'>
+              <Form.Label>Sucursal</Form.Label>
+              <Form.Select name="sucursal" value={filters.sucursal} onChange={handleFilterChange}>
+                <option value="">Todas</option>
+                {sucursales.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </div>
+          {isUser && (
+            <div className='filter-item'>
+              <Form.Group className='mb-0'>
+                <Form.Label>Zona</Form.Label>
+                <Form.Select name="zona" value={filters.zona} onChange={handleFilterChange}>
+                  <option value="">Todas</option>
+                  {zonas.map((z) => (
+                    <option key={z.id} value={z.nombre}>
+                      {z.nombre}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </div>
+          )}
+          <div className='filter-item'>
+            <Form.Group className='mb-0'>
+              <Form.Label>Ordenar por Fecha</Form.Label>
+              <Form.Select name="sortByDate" value={filters.sortByDate} onChange={handleFilterChange}>
+                <option value="desc">Más reciente</option>
+                <option value="asc">Más antiguo</option>
+              </Form.Select>
+            </Form.Group>
+          </div>
+        </div>
+      </div>
+    </Collapse>
+  );
+
   return (
     <Container className="custom-container">
       <BackButton to="/mantenimiento" />
@@ -78,78 +151,6 @@ const MantenimientosPreventivos = () => {
               )}
             </Col>
           </Row>
-          <Row className="mb-3 justify-content-center">
-            <Col>
-              <Button
-                className={`filters-toggle ${showFilters ? "is-open" : ""}`}
-                onClick={() => setShowFilters(!showFilters)}
-                aria-controls="filters-collapse"
-                aria-expanded={showFilters}
-              >
-                <FiFilter />
-                Filtros
-              </Button>
-
-              <Collapse in={showFilters}>
-                <div id="filters-collapse" className="filters-container">
-                  <div className='filters-row'>
-                    {isUser && (
-                      <div className='filter-item'>
-                        <Form.Group className='mb-0'>
-                          <Form.Label>Cuadrilla</Form.Label>
-                          <Form.Select name="cuadrilla" value={filters.cuadrilla} onChange={handleFilterChange}>
-                            <option value="">Todas</option>
-                            {cuadrillas.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.nombre}
-                              </option>
-                            ))}
-                          </Form.Select>
-                        </Form.Group>
-                      </div>
-                    )}
-                    <div className='filter-item'>
-                      <Form.Group className='mb-0'>
-                        <Form.Label>Sucursal</Form.Label>
-                        <Form.Select name="sucursal" value={filters.sucursal} onChange={handleFilterChange}>
-                          <option value="">Todas</option>
-                          {sucursales.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.nombre}
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </Form.Group>
-                    </div>
-                    {isUser && (
-                      <div className='filter-item'>
-                        <Form.Group className='mb-0'>
-                          <Form.Label>Zona</Form.Label>
-                          <Form.Select name="zona" value={filters.zona} onChange={handleFilterChange}>
-                            <option value="">Todas</option>
-                            {zonas.map((z) => (
-                              <option key={z.id} value={z.nombre}>
-                                {z.nombre}
-                              </option>
-                            ))}
-                          </Form.Select>
-                        </Form.Group>
-                      </div>
-                    )}
-                    <div className='filter-item'>
-                      <Form.Group className='mb-0'>
-                        <Form.Label>Ordenar por Fecha</Form.Label>
-                        <Form.Select name="sortByDate" value={filters.sortByDate} onChange={handleFilterChange}>
-                          <option value="desc">Más reciente</option>
-                          <option value="asc">Más antiguo</option>
-                        </Form.Select>
-                      </Form.Group>
-                    </div>
-                  </div>
-                </div>
-              </Collapse>
-            </Col>
-          </Row>
           {showForm && (
             <MantenimientoPreventivoForm
               mantenimiento={selectedMantenimiento}
@@ -163,6 +164,8 @@ const MantenimientosPreventivos = () => {
             onEdit={isUser ? handleEdit : undefined}
             onDelete={isUser ? handleDelete : undefined}
             onRowClick={(row) => handleRowClick(row.id)}
+            filterButton={filterButton}
+            filterContent={filterContent}
           />
         </div>
       )}
