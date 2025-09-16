@@ -45,6 +45,7 @@ const DataTable = ({ columns = [], data = [], entityKey, onEdit, onDelete, onRow
         availableColumns={columns}
         selectedColumns={selectedColumns}
         onSave={handleSaveColumns}
+        buttonClass="custom-col-selector"
       />
     </div>
     {filterContent && <div className="mb-2">{filterContent}</div>}
