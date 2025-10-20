@@ -4,8 +4,8 @@ __pycache__/
 .DS_Store
 env.config
 env.config.test
-*.env
-*.env.test
+.env
+.env.test
 test.db
 .pytest_cache
 .coverage
