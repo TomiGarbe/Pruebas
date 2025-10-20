@@ -27,6 +27,56 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Create Backend Environment File
+        run: |
+          cd backend/src
+          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
+          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config
+          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
+      - name: Create Backend Environment Test File
+        run: |
+          cd backend/src
+          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config.test
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config.test
+          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config.test
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config.test
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config.test
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config.test
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config.test
+          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config.test
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config.test
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config.test
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config.test
+          echo "E2E_TESTING=true" >> env.config.test
+      - name: Run Backend Tests with Coverage
+        run: |
+          cd backend
+          pytest -v --cov=src --cov-report=xml --junitxml=pytest-report.xml
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Pytest Results
+          path: backend/pytest-report.xml
+          reporter: java-junit
+      - name: Code Coverage Summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: backend/coverage.xml
+          format: markdown
+          output: file
+          fail_below_min: false
+      - name: Write Coverage to Summary
+        run: |
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
       - name: Prepare Backend Artifact
         run: |
           mkdir -p backend-artifact
@@ -66,6 +116,90 @@ jobs:
           echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env
           echo "VITE_WEB_PUSH_PUBLIC_KEY_QA=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
           echo "VITE_WEB_PUSH_PUBLIC_KEY_PROD=${{ secrets.VAPID_PRIVATE_KEY }}" >> .env
+      - name: Create Frontend .env.test File
+        run: |
+          cd frontend
+          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env.test
+          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env.test
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env.test
+          echo "VITE_FIREBASE_CONFIG_QA=${{ secrets.FIREBASE_CONFIG_QA }}" >> .env.test
+          echo "VITE_GOOGLE_CLIENT_ID_QA=${{ secrets.GOOGLE_CLIENT_ID_QA }}" >> .env.test
+          echo "VITE_FIREBASE_CONFIG_PROD=${{ secrets.FIREBASE_CONFIG_PROD }}" >> .env.test
+          echo "VITE_GOOGLE_CLIENT_ID_PROD=${{ secrets.GOOGLE_CLIENT_ID_PROD }}" >> .env.test
+          echo "VITE_GOOGLE_MAPS_API_KEY_QA=${{ secrets.GOOGLE_MAPS_API_KEY_QA }}" >> .env.test
+          echo "VITE_GOOGLE_MAPS_API_KEY_PROD=${{ secrets.GOOGLE_MAPS_API_KEY_PROD }}" >> .env.test
+          echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env.test
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_QA=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env.test
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_PROD=${{ secrets.VAPID_PRIVATE_KEY }}" >> .env.test
+          echo "VITE_NODE_ENV=test" >> .env.test
+      - name: Run Frontend Tests with Coverage
+        run: |
+          cd frontend
+          cp .env.test .env
+          npm run coverage
+          rm .env
+      - name: Publish Vitest Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Vitest Results
+          path: frontend/junit.xml
+          reporter: junit
+      - name: Install xmlstarlet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xmlstarlet
+      - name: Write Frontend Coverage to Summary
+        run: |
+          echo "## Frontend Unit Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Line Rate | Complexity | Health |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------------|------------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f frontend/coverage/clover.xml ]; then
+            xmlstarlet sel -t -m "//file" -v "concat(@name,'|',metrics/@statements,'|',metrics/@coveredstatements)" -n frontend/coverage/clover.xml |
+            while IFS='|' read -r FILE STATEMENTS COVERED_STATEMENTS; do
+              if [ -z "$STATEMENTS" ] || [ "$STATEMENTS" = "0" ]; then
+                LINE_RATE="0%"
+                HEALTH="❌"
+              else
+                LINE_RATE_INT=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $STATEMENTS" | bc)
+                LINE_RATE=$(printf "%.0f%%" "$LINE_RATE_INT")
+                if [ "$LINE_RATE_INT" -ge 80 ]; then
+                  HEALTH="✔"
+                elif [ "$LINE_RATE_INT" -ge 50 ]; then
+                  HEALTH="➖"
+                else
+                  HEALTH="❌"
+                fi
+              fi
+              echo "| $FILE | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+            done
+
+            TOTAL_STATEMENTS=$(xmlstarlet sel -t -v "//project/metrics/@statements" frontend/coverage/clover.xml)
+            COVERED_STATEMENTS=$(xmlstarlet sel -t -v "//project/metrics/@coveredstatements" frontend/coverage/clover.xml)
+            if [ -z "$TOTAL_STATEMENTS" ] || [ "$TOTAL_STATEMENTS" -eq 0 ]; then
+              LINE_RATE="0%"
+              HEALTH="❌"
+              SUMMARY="0% (0 / 0)"
+            else
+              LINE_RATE_INT=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
+              LINE_RATE=$(printf "%.0f%%" "$LINE_RATE_INT")
+              SUMMARY="$LINE_RATE ($COVERED_STATEMENTS / $TOTAL_STATEMENTS)"
+              if [ "$LINE_RATE_INT" -ge 80 ]; then
+                HEALTH="✔"
+              elif [ "$LINE_RATE_INT" -ge 50 ]; then
+                HEALTH="➖"
+              else
+                HEALTH="❌"
+              fi
+            fi
+            echo "| All files | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Summary | $SUMMARY | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No se encontró clover.xml para Vitest" >> $GITHUB_STEP_SUMMARY
+            echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
+            echo "| Summary | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
+          fi
       - name: Build Frontend
         run: |
           cd frontend
@@ -89,19 +223,6 @@ jobs:
         with:
           name: backend-artifact
           path: .
-      - name: Create Backend Environment File
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
-          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config
-          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config
-          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config
-          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config
-          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config
-          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config
-          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
-          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
-          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -133,12 +254,53 @@ jobs:
           action: "upload"
           app_location: "frontend/dist"
           skip_app_build: true
+  
+  integration-tests:
+    needs: [deploy-backend-qa, deploy-frontend-qa]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
+      - name: Change env.config File for Testing
+        run: |
+          cd backend/src
+          cp .env.config.test .env.config
+      - name: Change env File for Testing
+        run: |
+          cd frontend
+          cp .env.test .env
+      - name: Run Cypress Tests with Coverage
+        run: |
+          cd frontend
+          npm run cy:run --reporter mocha-junit-reporter --reporter-options "mochaFile=cypress/results.xml"
+      - name: Revert env.config File
+        run: |
+          cd backend/src
+          rm .env.config
+      - name: Revert env File
+        run: |
+          cd frontend
+          rm .env
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Cypress Results
+          path: frontend/cypress/results.xml
+          reporter: java-junit
 
   #=======================
   # STAGE: DEPLOY TO PROD
   #=======================
   deploy-backend-prod:
-    needs: deploy-backend-qa
+    needs: integration-tests
     environment: production
     runs-on: ubuntu-latest
     steps:
@@ -147,19 +309,6 @@ jobs:
         with:
           name: backend-artifact
           path: .
-      - name: Create Backend Environment File
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_PROD_URL }}" > env.config
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
-          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_PROD }}" >> env.config
-          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_PROD }}" >> env.config
-          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_PROD }}" >> env.config
-          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_PROD }}" >> env.config
-          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_PROD }}" >> env.config
-          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_PROD }}" >> env.config
-          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_PROD }}" >> env.config
-          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
-          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -176,7 +325,7 @@ jobs:
             az webapp start --name Inversur --resource-group Inversur
 
   deploy-frontend-prod:
-    needs: deploy-frontend-qa
+    needs: integration-tests
     environment: production
     runs-on: ubuntu-latest
     steps:
