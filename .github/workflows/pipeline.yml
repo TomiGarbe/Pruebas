@@ -81,6 +81,8 @@ jobs:
         run: |
           mkdir -p backend-artifact
           cp -r backend/src/* backend-artifact/
+          cp backend/src/env.config backend-artifact/src/env.config
+          cp backend/src/env.config.test backend-artifact/src/env.config.test
           cp backend/requirements.txt backend-artifact/
       - name: Upload Backend Artifact
         uses: actions/upload-artifact@v4
