@@ -4,6 +4,7 @@
     "version": "0.1.0",
     "scripts": {
         "dev": "vite",
+        "dev:test": "vite --mode test",
         "build": "vite build",
         "preview": "vite preview",
         "test": "vitest",
@@ -11,6 +12,7 @@
         "test:ui": "vitest --ui",
         "cypress": "cypress open",
         "cy:run": "cypress run",
+        "test:e2e": "start-server-and-test dev http://localhost:5173 cy:run",
         "coverage": "vitest run --coverage"
     },
     "dependencies": {
