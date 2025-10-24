@@ -154,8 +154,8 @@ jobs:
       - name: Write Frontend Coverage to Summary
         run: |
           echo "## Frontend Unit Test Coverage" >> $GITHUB_STEP_SUMMARY
-          echo "| File | Line Rate | Complexity | Health |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|------------|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Line Rate | Health |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------------|--------|" >> $GITHUB_STEP_SUMMARY
 
           if [ -f frontend/coverage/clover.xml ]; then
             xmlstarlet sel -t -m "//file" -v "concat(@name,'|',metrics/@statements,'|',metrics/@coveredstatements)" -n frontend/coverage/clover.xml |
@@ -164,8 +164,8 @@ jobs:
                 LINE_RATE="0%"
                 HEALTH="❌"
               else
-                LINE_RATE_INT=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $STATEMENTS" | bc)
-                LINE_RATE=$(printf "%.0f%%" "$LINE_RATE_INT")
+                LINE_RATE_INT=$(echo "($COVERED_STATEMENTS * 100) / $STATEMENTS" | bc)
+                LINE_RATE=$(printf "%s%%" "$LINE_RATE_INT")
                 if [ "$LINE_RATE_INT" -ge 80 ]; then
                   HEALTH="✔"
                 elif [ "$LINE_RATE_INT" -ge 50 ]; then
@@ -174,18 +174,19 @@ jobs:
                   HEALTH="❌"
                 fi
               fi
-              echo "| $FILE | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+              echo "| $FILE | $LINE_RATE | $HEALTH |" >> $GITHUB_STEP_SUMMARY
             done
 
             TOTAL_STATEMENTS=$(xmlstarlet sel -t -v "//project/metrics/@statements" frontend/coverage/clover.xml)
             COVERED_STATEMENTS=$(xmlstarlet sel -t -v "//project/metrics/@coveredstatements" frontend/coverage/clover.xml)
+
             if [ -z "$TOTAL_STATEMENTS" ] || [ "$TOTAL_STATEMENTS" -eq 0 ]; then
               LINE_RATE="0%"
               HEALTH="❌"
               SUMMARY="0% (0 / 0)"
             else
-              LINE_RATE_INT=$(echo "scale=2; ($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
-              LINE_RATE=$(printf "%.0f%%" "$LINE_RATE_INT")
+              LINE_RATE_INT=$(echo "($COVERED_STATEMENTS * 100) / $TOTAL_STATEMENTS" | bc)
+              LINE_RATE=$(printf "%s%%" "$LINE_RATE_INT")
               SUMMARY="$LINE_RATE ($COVERED_STATEMENTS / $TOTAL_STATEMENTS)"
               if [ "$LINE_RATE_INT" -ge 80 ]; then
                 HEALTH="✔"
@@ -195,12 +196,13 @@ jobs:
                 HEALTH="❌"
               fi
             fi
-            echo "| All files | $LINE_RATE | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
-            echo "| Summary | $SUMMARY | 0 | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+
+            echo "| **All files** | $LINE_RATE | $HEALTH |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Summary** | $SUMMARY | $HEALTH |" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ No se encontró clover.xml para Vitest" >> $GITHUB_STEP_SUMMARY
-            echo "| All files | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
-            echo "| Summary | N/A | 0 | ❌ |" >> $GITHUB_STEP_SUMMARY
+            echo "| All files | N/A | ❌ |" >> $GITHUB_STEP_SUMMARY
+            echo "| Summary | N/A | ❌ |" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Build Frontend
         run: |
