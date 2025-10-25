@@ -3,6 +3,7 @@ source = src
 omit =
     src/__init__.py
     src/init_admin.py
+    src/main.py
     */__init__.py
 
 [report]
