@@ -27,35 +27,6 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Create Backend Environment File
-        run: |
-          cd backend/src
-          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
-          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config
-          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config
-          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config
-          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config
-          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config
-          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config
-          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
-          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
-          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
-      - name: Create Backend Environment Test File
-        run: |
-          cd backend/src
-          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config.test
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config.test
-          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config.test
-          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config.test
-          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config.test
-          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config.test
-          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config.test
-          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config.test
-          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config.test
-          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config.test
-          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config.test
-          echo "E2E_TESTING=true" >> env.config.test
       - name: Run Backend Tests with Coverage
         run: |
           cd backend
@@ -227,6 +198,33 @@ jobs:
         with:
           name: backend-artifact
           path: .
+      - name: Create Backend Environment File
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
+          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config
+          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
+      - name: Create Backend Environment Test File
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config.test
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config.test
+          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config.test
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config.test
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config.test
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config.test
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config.test
+          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config.test
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config.test
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config.test
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config.test
+          echo "E2E_TESTING=true" >> env.config.test
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -313,6 +311,19 @@ jobs:
         with:
           name: backend-artifact
           path: .
+      - name: Create Backend Environment File
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_PROD_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
+          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_PROD }}" >> env.config
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_PROD }}" >> env.config
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_PROD }}" >> env.config
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_PROD }}" >> env.config
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_PROD }}" >> env.config
+          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_PROD }}" >> env.config
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_PROD }}" >> env.config
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:
