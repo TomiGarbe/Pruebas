@@ -264,13 +264,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Verify Backend Test Env File
+        run: |
+          cd backend
+          ls -la
       - name: Install Frontend Dependencies
         run: |
           cd frontend
           npm install
       - name: Change env.config File for Testing
         run: |
-          cd backend/src
+          cd backend
           cp .env.config.test .env.config
       - name: Change env File for Testing
         run: |
@@ -282,7 +286,7 @@ jobs:
           npm run cy:run --reporter mocha-junit-reporter --reporter-options "mochaFile=cypress/results.xml"
       - name: Revert env.config File
         run: |
-          cd backend/src
+          cd backend
           rm .env.config
       - name: Revert env File
         run: |
