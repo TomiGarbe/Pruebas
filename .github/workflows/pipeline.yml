@@ -234,6 +234,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
       - name: Run Cypress Tests with Coverage
         run: |
           cd frontend
