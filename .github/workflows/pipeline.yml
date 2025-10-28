@@ -27,6 +27,49 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Create Backend QA Environment File
+        run: |
+          cd backend/src
+          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
+          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config
+          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
+      - name: Create Backend PROD Environment File
+        run: |
+          cd backend/src
+          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config.prod
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config.prod
+          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config.prod
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config.prod
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config.prod
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config.prod
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config.prod
+          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config.prod
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config.prod
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config.prod
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config.prod
+      - name: Create Backend Environment Test File
+        run: |
+          cd backend/src
+          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config.test
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config.test
+          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config.test
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config.test
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config.test
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config.test
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config.test
+          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config.test
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config.test
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config.test
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config.test
+          echo "E2E_TESTING=true" >> env.config.test
       - name: Run Backend Tests with Coverage
         run: |
           cd backend
@@ -48,6 +91,10 @@ jobs:
       - name: Write Coverage to Summary
         run: |
           cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+      - name: Verify Backend Test Env File
+        run: |
+          cd backend/src
+          ls -la
       - name: Prepare Backend Artifact
         run: |
           mkdir -p backend-artifact
@@ -196,33 +243,6 @@ jobs:
         with:
           name: backend-artifact
           path: .
-      - name: Create Backend Environment File
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
-          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config
-          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config
-          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config
-          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config
-          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config
-          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config
-          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
-          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
-          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
-      - name: Create Backend Environment Test File
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config.test
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config.test
-          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config.test
-          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config.test
-          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config.test
-          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config.test
-          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config.test
-          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config.test
-          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config.test
-          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config.test
-          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config.test
-          echo "E2E_TESTING=true" >> env.config.test
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -255,50 +275,87 @@ jobs:
           app_location: "frontend/dist"
           skip_app_build: true
   
-  integration-tests:
-    needs: [deploy-backend-qa, deploy-frontend-qa]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Verify Backend Test Env File
-        run: |
-          cd backend
-          ls -la
-      - name: Install Frontend Dependencies
-        run: |
-          cd frontend
-          npm install
-      - name: Change env.config File for Testing
-        run: |
-          cd backend
-          cp .env.config.test .env.config
-      - name: Change env File for Testing
-        run: |
-          cd frontend
-          cp .env.test .env
-      - name: Run Cypress Tests with Coverage
-        run: |
-          cd frontend
-          npm run cy:run --reporter mocha-junit-reporter --reporter-options "mochaFile=cypress/results.xml"
-      - name: Revert env.config File
-        run: |
-          cd backend
-          rm .env.config
-      - name: Revert env File
-        run: |
-          cd frontend
-          rm .env
-      - name: Publish Test Results
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: Cypress Results
-          path: frontend/cypress/results.xml
-          reporter: java-junit
+    integration-tests:
+      needs: [deploy-backend-qa, deploy-frontend-qa]
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - name: Set up Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '20'
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: '3.12'
+        - name: Install Frontend Dependencies
+          run: |
+            cd frontend
+            npm install
+        - name: Create Backend Test Environment File
+          run: |
+            python backend/scripts/render_env_file.py \
+              --output backend/src/env.config.test \
+              --keys DATABASE_URL FRONTEND_URL FIREBASE_CREDENTIALS FIREBASE_DATABASE_URL \
+              EMAIL_ADMIN NOMBRE_ADMIN PASSWORD_ADMIN GOOGLE_CREDENTIALS \
+              GOOGLE_CLOUD_BUCKET_NAME GOOGLE_SHEET_ID VAPID_PRIVATE_KEY \
+              --append TESTING=true E2E_TESTING=true
+          env:
+            DATABASE_URL: ${{ secrets.DATABASE_TEST_URL }}
+            FRONTEND_URL: ${{ secrets.FRONTEND_TEST_URL }}
+            FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS_JSON_TEST }}
+            FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL_TEST }}
+            EMAIL_ADMIN: ${{ secrets.EMAIL_ADMIN_TEST }}
+            NOMBRE_ADMIN: ${{ secrets.NOMBRE_ADMIN_TEST }}
+            PASSWORD_ADMIN: ${{ secrets.PASSWORD_ADMIN_TEST }}
+            GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_JSON_TEST }}
+            GOOGLE_CLOUD_BUCKET_NAME: ${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_TEST }}
+            GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID_TEST }}
+            VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY_TEST }}
+        - name: Create Frontend Test Environment File
+          run: |
+            python backend/scripts/render_env_file.py \
+              --output frontend/.env.test \
+              --keys VITE_API_URL_QA VITE_API_URL_PROD VITE_FRONTEND_URL \
+              VITE_FIREBASE_CONFIG_QA VITE_GOOGLE_CLIENT_ID_QA \
+              VITE_FIREBASE_CONFIG_PROD VITE_GOOGLE_CLIENT_ID_PROD \
+              VITE_GOOGLE_MAPS_API_KEY_QA VITE_GOOGLE_MAPS_API_KEY_PROD \
+              VITE_OSRM_URL VITE_WEB_PUSH_PUBLIC_KEY_QA VITE_WEB_PUSH_PUBLIC_KEY_PROD \
+              --append VITE_NODE_ENV=test
+          env:
+            VITE_API_URL_QA: ${{ secrets.VITE_API_URL_QA_TEST }}
+            VITE_API_URL_PROD: ${{ secrets.VITE_API_URL_PROD_TEST }}
+            VITE_FRONTEND_URL: ${{ secrets.VITE_FRONTEND_URL_TEST }}
+            VITE_FIREBASE_CONFIG_QA: ${{ secrets.VITE_FIREBASE_CONFIG_QA_TEST }}
+            VITE_GOOGLE_CLIENT_ID_QA: ${{ secrets.VITE_GOOGLE_CLIENT_ID_QA_TEST }}
+            VITE_FIREBASE_CONFIG_PROD: ${{ secrets.VITE_FIREBASE_CONFIG_PROD_TEST }}
+            VITE_GOOGLE_CLIENT_ID_PROD: ${{ secrets.VITE_GOOGLE_CLIENT_ID_PROD_TEST }}
+            VITE_GOOGLE_MAPS_API_KEY_QA: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY_QA_TEST }}
+            VITE_GOOGLE_MAPS_API_KEY_PROD: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY_PROD_TEST }}
+            VITE_OSRM_URL: ${{ secrets.VITE_OSRM_URL_TEST }}
+            VITE_WEB_PUSH_PUBLIC_KEY_QA: ${{ secrets.VITE_WEB_PUSH_PUBLIC_KEY_QA_TEST }}
+            VITE_WEB_PUSH_PUBLIC_KEY_PROD: ${{ secrets.VITE_WEB_PUSH_PUBLIC_KEY_PROD_TEST }}
+        - name: Run Cypress Tests with Coverage
+          env:
+            APP_ENV: test
+            ENV_CONFIG_FILE: backend/src/env.config.test
+            TESTING: "true"
+            E2E_TESTING: "true"
+          run: |
+            cd frontend
+            npm run cy:run --reporter mocha-junit-reporter --reporter-options "mochaFile=cypress/results.xml"
+        - name: Cleanup Test Environment Files
+          if: always()
+          run: |
+            rm -f backend/src/env.config.test
+            rm -f frontend/.env.test
+        - name: Publish Test Results
+          uses: dorny/test-reporter@v1
+          if: always()
+          with:
+            name: Cypress Results
+            path: frontend/cypress/results.xml
+            reporter: java-junit
 
   #=======================
   # STAGE: DEPLOY TO PROD
@@ -313,19 +370,6 @@ jobs:
         with:
           name: backend-artifact
           path: .
-      - name: Create Backend Environment File
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_PROD_URL }}" > env.config
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_PROD_URL }}" >> env.config
-          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_PROD }}" >> env.config
-          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_PROD }}" >> env.config
-          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_PROD }}" >> env.config
-          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_PROD }}" >> env.config
-          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_PROD }}" >> env.config
-          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_PROD }}" >> env.config
-          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_PROD }}" >> env.config
-          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
-          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:

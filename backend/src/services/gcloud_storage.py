@@ -1,11 +1,16 @@
-from google.cloud import storage
-from google.api_core.exceptions import GoogleAPIError
-from fastapi import HTTPException, UploadFile
-import uuid
-import os
 import json
+import os
+import uuid
 
-GOOGLE_CREDENTIALS = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+from fastapi import HTTPException, UploadFile
+from google.api_core.exceptions import GoogleAPIError
+from google.cloud import storage
+
+from config.env_loader import load_environment
+
+load_environment()
+_credentials_raw = os.getenv("GOOGLE_CREDENTIALS")
+GOOGLE_CREDENTIALS = json.loads(_credentials_raw) if _credentials_raw else None
 
 def create_folder_if_not_exists(bucket_name: str, folder_path: str):
     try:

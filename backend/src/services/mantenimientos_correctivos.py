@@ -1,12 +1,22 @@
-from sqlalchemy.orm import Session
-from api.models import MantenimientoCorrectivo, MantenimientoCorrectivoFoto, Sucursal, Cuadrilla
-from fastapi import HTTPException, UploadFile
-from datetime import date, datetime
-from typing import Optional, List
-from services.gcloud_storage import upload_file_to_gcloud, delete_file_in_folder
-from services.google_sheets import append_correctivo, update_correctivo, delete_correctivo
-from services.notificaciones import notify_user, notify_users_correctivo
 import os
+from datetime import date, datetime
+from typing import List, Optional
+
+from fastapi import HTTPException, UploadFile
+from sqlalchemy.orm import Session
+
+from api.models import (
+    Cuadrilla,
+    MantenimientoCorrectivo,
+    MantenimientoCorrectivoFoto,
+    Sucursal,
+)
+from config.env_loader import load_environment
+from services.gcloud_storage import delete_file_in_folder, upload_file_to_gcloud
+from services.google_sheets import append_correctivo, delete_correctivo, update_correctivo
+from services.notificaciones import notify_user, notify_users_correctivo
+
+load_environment()
 
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
 

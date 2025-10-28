@@ -1,9 +1,14 @@
-import os
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-from api.models import MantenimientoCorrectivo, MantenimientoPreventivo
-from google.cloud import storage
 import json
+import os
+
+import gspread
+from google.cloud import storage
+from oauth2client.service_account import ServiceAccountCredentials
+
+from api.models import MantenimientoCorrectivo, MantenimientoPreventivo
+from config.env_loader import load_environment
+
+load_environment()
 
 GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
