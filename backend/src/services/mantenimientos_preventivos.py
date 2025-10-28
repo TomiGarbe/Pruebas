@@ -1,23 +1,12 @@
-import os
-from datetime import date, datetime
-from typing import List, Optional
-
-from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
-
-from api.models import (
-    Cuadrilla,
-    MantenimientoPreventivo,
-    MantenimientoPreventivoFoto,
-    MantenimientoPreventivoPlanilla,
-    Preventivo,
-)
-from config.env_loader import load_environment
-from services.gcloud_storage import delete_file_in_folder, upload_file_to_gcloud
-from services.google_sheets import append_preventivo, delete_preventivo, update_preventivo
+from api.models import MantenimientoPreventivo, MantenimientoPreventivoPlanilla, MantenimientoPreventivoFoto, Preventivo, Cuadrilla
+from fastapi import HTTPException, UploadFile
+from datetime import date, datetime
+from typing import Optional, List
+from services.gcloud_storage import upload_file_to_gcloud, delete_file_in_folder
+from services.google_sheets import append_preventivo, update_preventivo, delete_preventivo
 from services.notificaciones import notify_users_preventivo
-
-load_environment()
+import os
 
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
 

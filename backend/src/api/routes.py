@@ -3,16 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from controllers import users, cuadrillas, sucursales, zonas, auth, preventivos, mantenimientos_preventivos, mantenimientos_correctivos, maps, notificaciones, push, chats, preferences
 from config.database import get_db
-from config.env_loader import load_environment
 from services.auth import verify_user_token
 from services.chat_ws import chat_manager
 from services.notification_ws import notification_manager
 from auth.firebase import initialize_firebase
 from init_admin import init_admin
+from dotenv import load_dotenv
 import os
 from starlette.responses import JSONResponse
 
-load_environment()
+load_dotenv(dotenv_path="./env.config")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 EMAIL_ADMIN = os.getenv("EMAIL_ADMIN")
 NOMBRE_ADMIN = os.getenv("NOMBRE_ADMIN")

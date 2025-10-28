@@ -1,15 +1,10 @@
-import os
-from typing import Optional
-
-from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
-
 from api.models import MensajeCorrectivo, MensajePreventivo
-from config.env_loader import load_environment
-from services.chat_ws import chat_manager
+from fastapi import HTTPException, UploadFile
+from typing import Optional
 from services.gcloud_storage import upload_chat_file_to_gcloud
-
-load_environment()
+from services.chat_ws import chat_manager
+import os
 
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
 

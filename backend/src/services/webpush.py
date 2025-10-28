@@ -1,13 +1,11 @@
 import json
 import os
-
 from pywebpush import webpush
+from dotenv import load_dotenv
 from sqlalchemy.orm import Session
-
 from api.models import PushSubscription
-from config.env_loader import load_environment
 
-load_environment()
+load_dotenv(dotenv_path="./env.config")
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
 
 
