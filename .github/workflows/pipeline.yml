@@ -91,6 +91,22 @@ jobs:
           echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env
           echo "VITE_WEB_PUSH_PUBLIC_KEY_QA=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
           echo "VITE_WEB_PUSH_PUBLIC_KEY_PROD=${{ secrets.VAPID_PRIVATE_KEY }}" >> .env
+      - name: Create Frontend .env.test File
+        run: |
+          cd frontend
+          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env.test
+          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env.test
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env.test
+          echo "VITE_FIREBASE_CONFIG_QA=${{ secrets.FIREBASE_CONFIG_QA }}" >> .env.test
+          echo "VITE_GOOGLE_CLIENT_ID_QA=${{ secrets.GOOGLE_CLIENT_ID_QA }}" >> .env.test
+          echo "VITE_FIREBASE_CONFIG_PROD=${{ secrets.FIREBASE_CONFIG_PROD }}" >> .env.test
+          echo "VITE_GOOGLE_CLIENT_ID_PROD=${{ secrets.GOOGLE_CLIENT_ID_PROD }}" >> .env.test
+          echo "VITE_GOOGLE_MAPS_API_KEY_QA=${{ secrets.GOOGLE_MAPS_API_KEY_QA }}" >> .env.test
+          echo "VITE_GOOGLE_MAPS_API_KEY_PROD=${{ secrets.GOOGLE_MAPS_API_KEY_PROD }}" >> .env.test
+          echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env.test
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_QA=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env.test
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_PROD=${{ secrets.VAPID_PRIVATE_KEY }}" >> .env.test
+          echo "VITE_NODE_ENV=test" >> .env.test
       - name: Run Frontend Tests with Coverage
         run: |
           cd frontend
