@@ -7,6 +7,7 @@ env.config.test
 .env
 .env.test
 test.db
+test.db-journal
 .pytest_cache
 .coverage
 dist
