@@ -6,6 +6,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { useMapsData } from "./useMapsData";
 import { useMapRoutes } from "./useMapRoutes";
 import { usePopups } from "./usePopups";
+import { getClientes } from "../../services/clienteService";
+import { getSucursales } from "../../services/sucursalService";
 
 const useMapa = (mapInstanceRef, createRoutingControl, isMobile) => {
   const {
@@ -20,6 +22,9 @@ const useMapa = (mapInstanceRef, createRoutingControl, isMobile) => {
   );
   const { showPopup } = usePopups(mapInstanceRef, isMobile);
 
+  const [clientes, setClientes] = useState([]);
+  const [sucursalMeta, setSucursalMeta] = useState({});
+  const [clienteFilter, setClienteFilter] = useState("");
   const [showEncargados, setShowEncargados] = useState(true);
   const [showCuadrillas, setShowCuadrillas] = useState(true);
   const [showSucursales, setShowSucursales] = useState(true);
@@ -58,7 +63,30 @@ const useMapa = (mapInstanceRef, createRoutingControl, isMobile) => {
   };
 
   useEffect(() => {
-    if (!mapInstanceRef.current || !sucursales.length) return;
+    const fetchClientesData = async () => {
+      try {
+        const [clientesResponse, sucursalesResponse] = await Promise.all([getClientes(), getSucursales()]);
+        setClientes(clientesResponse.data || []);
+        const meta = {};
+        (sucursalesResponse.data || []).forEach((sucursal) => {
+          meta[sucursal.id] = sucursal;
+        });
+        setSucursalMeta(meta);
+      } catch (error) {
+        console.error("Error fetching clientes para el mapa:", error);
+      }
+    };
+    fetchClientesData();
+  }, []);
+
+  const filteredSucursales = sucursales.filter((sucursal) => {
+    if (!clienteFilter) return true;
+    const meta = sucursalMeta[sucursal.id];
+    return meta && String(meta.cliente_id) === clienteFilter;
+  });
+
+  useEffect(() => {
+    if (!mapInstanceRef.current || !filteredSucursales.length) return;
 
     usersMarkersRef.current.forEach((m) => m?.remove());
     cuadrillasMarkersRef.current.forEach((m) => m?.remove());
@@ -96,8 +124,8 @@ const useMapa = (mapInstanceRef, createRoutingControl, isMobile) => {
       });
     }
 
-    if (sucursales.length && showSucursales) {
-      sucursales.forEach((s) => {
+    if (filteredSucursales.length && showSucursales) {
+      filteredSucursales.forEach((s) => {
         const marker = L.marker([s.lat, s.lng], {
           icon: L.divIcon({
             html: renderToStaticMarkup(
@@ -119,7 +147,7 @@ const useMapa = (mapInstanceRef, createRoutingControl, isMobile) => {
       cuadrillasMarkersRef.current.forEach(marker => marker?.remove());
       sucursalMarkersRef.current.forEach(marker => marker?.remove());
     };
-  }, [users, cuadrillas, sucursales, showEncargados, showCuadrillas, showSucursales]);
+  }, [users, cuadrillas, filteredSucursales, showEncargados, showCuadrillas, showSucursales]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !compassRef.current) return;
@@ -142,7 +170,10 @@ const useMapa = (mapInstanceRef, createRoutingControl, isMobile) => {
   return {
     users,
     cuadrillas,
-    sucursales,
+    sucursales: filteredSucursales,
+    clientes,
+    clienteFilter,
+    setClienteFilter,
     compassRef,
     showEncargados,
     showCuadrillas,

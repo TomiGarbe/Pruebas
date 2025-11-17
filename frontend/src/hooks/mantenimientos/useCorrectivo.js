@@ -8,10 +8,12 @@ import { useAuthRoles } from '../useAuthRoles';
 import useIsMobile from '../useIsMobile';
 import useChat from './useChat';
 import useMantenimientos from './useMantenimientos';
+import { getClientes } from '../../services/clienteService';
 
 const useCorrectivo = (mantenimientoId) => {
   const { id, uid, nombre, isUser, isCuadrilla } = useAuthRoles();
   const [mantenimiento, setMantenimiento] = useState({});
+  const [clientes, setClientes] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
   const [formData, setFormData] = useState({
@@ -51,7 +53,15 @@ const useCorrectivo = (mantenimientoId) => {
     setSuccess('Mantenimiento eliminado de la ruta.');
   };
 
-  const common = useMantenimientos(sucursales, cuadrillas, isSelected, setIsSelected, handleAddToRoute, handleRemoveFromRoute);
+  const common = useMantenimientos(
+    sucursales,
+    cuadrillas,
+    clientes,
+    isSelected,
+    setIsSelected,
+    handleAddToRoute,
+    handleRemoveFromRoute
+  );
 
   const fetchMantenimiento = async () => {
     setIsLoading(true);
@@ -77,11 +87,13 @@ const useCorrectivo = (mantenimientoId) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [sucursalesResponse, cuadrillasResponse, correctivosResponse] = await Promise.all([
+      const [clientesResponse, sucursalesResponse, cuadrillasResponse, correctivosResponse] = await Promise.all([
+        getClientes(),
         getSucursales(),
         getCuadrillas(),
         getCorrectivos(parseInt(id)),
       ]);
+      setClientes(clientesResponse.data || []);
       setSucursales(sucursalesResponse.data);
       setCuadrillas(cuadrillasResponse.data);
       const correctivoId = correctivosResponse.data.filter(c => c.id_mantenimiento === mantenimientoId);
@@ -158,6 +170,8 @@ const useCorrectivo = (mantenimientoId) => {
     if (data.extendido) {
       formDataToSend.append('extendido', data.extendido);
     }
+    formDataToSend.append('cliente_id', mantenimiento.cliente_id || mantenimiento.id_cliente || '');
+    formDataToSend.append('id_sucursal', data.id_sucursal || mantenimiento.id_sucursal);
     if (data.estado) {
       formDataToSend.append('estado', data.estado);
     }

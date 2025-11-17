@@ -1,17 +1,46 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Button, Form, InputGroup, Dropdown } from 'react-bootstrap';
+import { useEffect, useRef, useState } from 'react';
+import { Modal, Button, Form, InputGroup, Dropdown, Card } from 'react-bootstrap';
+import { FaPlus } from 'react-icons/fa';
 import { createSucursal, updateSucursal } from '../../services/sucursalService';
 import { getZonas, createZona, deleteZona } from '../../services/zonaService';
-import { FaPlus } from 'react-icons/fa';
 import DireccionAutocomplete from '../DireccionAutocomplete';
 import '../../styles/formularios.css';
 
-const SucursalForm = ({ sucursal, onClose }) => {
+const emptyDireccion = { address: '', lat: '', lng: '' };
+const frecuenciaOptions = [
+  { value: '', label: 'Sin preventivo' },
+  { value: 'Mensual', label: 'Mensual' },
+  { value: 'Trimestral', label: 'Trimestral' },
+  { value: 'Cuatrimestral', label: 'Cuatrimestral' },
+  { value: 'Semestral', label: 'Semestral' },
+];
+
+const normalizeDireccion = (direccion) => {
+  if (!direccion) return { ...emptyDireccion };
+  if (typeof direccion === 'string') {
+    return { ...emptyDireccion, address: direccion };
+  }
+  return {
+    address: direccion.address || '',
+    lat: direccion.lat || '',
+    lng: direccion.lng || '',
+  };
+};
+
+const SucursalForm = ({
+  sucursal,
+  clienteId,
+  inline = false,
+  onClose,
+  onSaved,
+  title,
+}) => {
   const [formData, setFormData] = useState({
     nombre: '',
     zona: '',
-    direccion: { address: '', lat: '', lng: '' },
+    direccion: { ...emptyDireccion },
     superficie: '',
+    frecuencia_preventivo: '',
   });
   const [zonas, setZonas] = useState([]);
   const [newZona, setNewZona] = useState('');
@@ -27,24 +56,47 @@ const SucursalForm = ({ sucursal, onClose }) => {
       try {
         const response = await getZonas();
         setZonas(response.data);
-      } catch (error) {
-        console.error('Error fetching zonas:', error);
+      } catch (err) {
+        console.error('Error fetching zonas:', err);
         setError('Error al cargar las zonas.');
       } finally {
         setIsLoading(false);
       }
     };
     fetchZonas();
+  }, []);
 
+  useEffect(() => {
     if (sucursal) {
       setFormData({
         nombre: sucursal.nombre || '',
         zona: sucursal.zona || '',
-        direccion: sucursal.direccion || { address: '', lat: '', lng: '' },
+        direccion: normalizeDireccion(sucursal.direccion),
         superficie: sucursal.superficie || '',
+        frecuencia_preventivo: sucursal.frecuencia_preventivo || '',
+      });
+    } else {
+      setFormData({
+        nombre: '',
+        zona: '',
+        direccion: { ...emptyDireccion },
+        superficie: '',
+        frecuencia_preventivo: '',
       });
     }
   }, [sucursal]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,30 +113,29 @@ const SucursalForm = ({ sucursal, onClose }) => {
   const handleZonaSelect = (zonaNombre) => {
     if (zonaNombre === 'new') {
       setShowNewZonaInput(true);
-      setFormData({ ...formData, zona: '' });
+      setFormData((prev) => ({ ...prev, zona: '' }));
     } else {
       setShowNewZonaInput(false);
-      setFormData({ ...formData, zona: zonaNombre });
+      setFormData((prev) => ({ ...prev, zona: zonaNombre }));
     }
     setDropdownOpen(false);
   };
 
   const handleNewZonaSubmit = async () => {
+    if (!newZona.trim()) return;
     setIsLoading(true);
-    if (newZona.trim()) {
-      try {
-        const response = await createZona({ nombre: newZona });
-        setZonas([...zonas, response.data]);
-        setFormData({ ...formData, zona: newZona });
-        setNewZona('');
-        setShowNewZonaInput(false);
-        setError(null);
-      } catch (error) {
-        console.error('Error creating zona:', error);
-        setError('Error al crear la zona. Puede que ya exista.');
-      } finally {
-        setIsLoading(false);
-      }
+    try {
+      const response = await createZona({ nombre: newZona.trim() });
+      setZonas((prev) => [...prev, response.data]);
+      setFormData((prev) => ({ ...prev, zona: newZona.trim() }));
+      setNewZona('');
+      setShowNewZonaInput(false);
+      setError(null);
+    } catch (err) {
+      console.error('Error creating zona:', err);
+      setError('No se pudo crear la zona. Puede que ya exista.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -92,15 +143,11 @@ const SucursalForm = ({ sucursal, onClose }) => {
     setIsLoading(true);
     try {
       await deleteZona(id);
-      setZonas(zonas.filter((zona) => zona.id !== id));
-      if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
-        setFormData({ ...formData, zona: '' });
-      }
+      setZonas((prev) => prev.filter((zona) => zona.id !== id));
       setError(null);
-    } catch (error) {
-      console.error('Error deleting zona:', error);
-      const errorMessage = error.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.';
-      setError(errorMessage);
+    } catch (err) {
+      console.error('Error deleting zona:', err);
+      setError(err.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.');
     } finally {
       setIsLoading(false);
     }
@@ -109,37 +156,182 @@ const SucursalForm = ({ sucursal, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    if (!formData.direccion.lat || !formData.direccion.lng) {
-      setError('Debe proporcionar coordenadas válidas.');
+    setError(null);
+
+    if (!sucursal && !clienteId) {
+      setError('Seleccione un cliente antes de crear una sucursal.');
       setIsLoading(false);
       return;
     }
+
+    if (!formData.nombre || !formData.zona) {
+      setError('Los campos Nombre y Zona son obligatorios.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.direccion.lat || !formData.direccion.lng) {
+      setError('Debe seleccionar una dirección válida en el mapa.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const submitData = {
-        ...formData,
+      const payload = {
+        nombre: formData.nombre,
+        zona: formData.zona,
         direccion: {
           address: formData.direccion.address,
           lat: formData.direccion.lat,
           lng: formData.direccion.lng,
         },
+        superficie: formData.superficie,
+        frecuencia_preventivo: formData.frecuencia_preventivo || null,
       };
+
       if (sucursal) {
-        await updateSucursal(sucursal.id, submitData);
+        await updateSucursal(sucursal.id, payload);
       } else {
-        await createSucursal(submitData);
+        await createSucursal(clienteId, payload);
       }
-      onClose();
-    } catch (error) {
-      console.error('Error saving sucursal:', error);
-      setError('Error al guardar la sucursal.');
+
+      onSaved?.();
+      onClose?.();
+    } catch (err) {
+      console.error('Error saving sucursal:', err);
+      setError(err.response?.data?.detail || 'No se pudo guardar la sucursal.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
+  const formContent = (
+    <>
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
+      <Form onSubmit={handleSubmit}>
+        <Form.Group className="mb-3" controlId="sucursalNombre">
+          <Form.Label className="required required-asterisk">Nombre</Form.Label>
+          <Form.Control
+            type="text"
+            name="nombre"
+            value={formData.nombre}
+            onChange={handleChange}
+            required
+          />
+        </Form.Group>
+
+        <Form.Group className="mb-3" controlId="sucursalZona">
+          <Form.Label className="required required-asterisk">Zona</Form.Label>
+          <Dropdown show={dropdownOpen} onToggle={toggleDropdown} ref={dropdownRef}>
+            <Dropdown.Toggle id="dropdown-zona" className="custom-dropdown-toggle">
+              {formData.zona || 'Seleccione una zona'}
+            </Dropdown.Toggle>
+            <Dropdown.Menu className="w-100">
+              {zonas.map((zona) => (
+                <Dropdown.Item
+                  key={zona.id}
+                  as="div"
+                  className="custom-dropdown-item"
+                  onClick={() => handleZonaSelect(zona.nombre)}
+                >
+                  <span className="custom-dropdown-item-span">{zona.nombre}</span>
+                  <Button
+                    size="sm"
+                    className="custom-delete-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteZona(zona.id);
+                    }}
+                  >
+                    ×
+                  </Button>
+                </Dropdown.Item>
+              ))}
+              <Dropdown.Item onClick={() => handleZonaSelect('new')} className="custom-dropdown-item-add">
+                <span className="custom-dropdown-item-add-span">
+                  <FaPlus />
+                </span>{' '}
+                Agregar nueva zona...
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+          {showNewZonaInput && (
+            <InputGroup className="mt-2">
+              <Form.Control
+                type="text"
+                value={newZona}
+                onChange={(e) => setNewZona(e.target.value)}
+                placeholder="Escriba la nueva zona"
+              />
+              <Button className="custom-add-button" onClick={handleNewZonaSubmit} disabled={!newZona.trim()}>
+                Agregar
+              </Button>
+            </InputGroup>
+          )}
+        </Form.Group>
+
+        <Form.Group className="mb-3" controlId="sucursalDireccion">
+          <Form.Label className="required required-asterisk">Dirección</Form.Label>
+          <DireccionAutocomplete onSelect={handleDireccionSelect} />
+          {formData.direccion.address && (
+            <small className="text-muted">Seleccionado: {formData.direccion.address}</small>
+          )}
+        </Form.Group>
+
+        <Form.Group className="mb-3" controlId="sucursalSuperficie">
+          <Form.Label>Superficie</Form.Label>
+          <Form.Control
+            type="text"
+            name="superficie"
+            value={formData.superficie}
+            onChange={handleChange}
+          />
+        </Form.Group>
+
+        <Form.Group className="mb-3" controlId="sucursalFrecuencia">
+          <Form.Label>Frecuencia de preventivo</Form.Label>
+          <Form.Select
+            name="frecuencia_preventivo"
+            value={formData.frecuencia_preventivo}
+            onChange={handleChange}
+            className="form-select"
+          >
+            {frecuenciaOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Form.Select>
+          {formData.frecuencia_preventivo
+            ? <small className="text-muted">La sucursal tendrá preventivo {formData.frecuencia_preventivo.toLowerCase()}.</small>
+            : <small className="text-muted">Si dejas este campo vacío, la sucursal no tendrá preventivo.</small>}
+        </Form.Group>
+
+        <div className="d-flex gap-2">
+          <Button className="custom-save-button" type="submit" disabled={isLoading}>
+            {isLoading ? 'Guardando...' : 'Guardar'}
+          </Button>
+          {inline && (
+            <Button variant="outline-secondary" onClick={onClose} disabled={isLoading}>
+              Cancelar
+            </Button>
+          )}
+        </div>
+      </Form>
+    </>
+  );
+
+  if (inline) {
+    return (
+      <Card className="sucursal-inline-card mb-3">
+        <Card.Body>{isLoading ? <div className="text-center">Cargando...</div> : formContent}</Card.Body>
+      </Card>
+    );
+  }
 
   return (
     <Modal
@@ -152,116 +344,9 @@ const SucursalForm = ({ sucursal, onClose }) => {
       bodyClassName="suc-modal-body"
     >
       <Modal.Header closeButton className="suc-modal-header">
-        <Modal.Title>{sucursal ? 'Editar Sucursal' : 'Crear Sucursal'}</Modal.Title>
+        <Modal.Title>{title || (sucursal ? 'Editar Sucursal' : 'Crear Sucursal')}</Modal.Title>
       </Modal.Header>
-        <Modal.Body>
-          {isLoading ? (
-            <div className="custom-div">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-            </div>
-          ) : (
-            <div>
-              {error && (
-                <div className="alert alert-danger" role="alert">
-                  {error}
-                </div>
-              )}
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3" controlId="nombre">
-                  <Form.Label className="required required-asterisk">Nombre</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="nombre"
-                    value={formData.nombre || ''}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="zona">
-                  <Form.Label className="required required-asterisk">Zona</Form.Label>
-                  <Dropdown show={dropdownOpen} onToggle={toggleDropdown} ref={dropdownRef}>
-                    <Dropdown.Toggle
-                      id="dropdown-zona"
-                      className="custom-dropdown-toggle"
-                    >
-                      {formData.zona || 'Seleccione una zona'}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="w-100">
-                      {zonas.map((zona) => (
-                        <Dropdown.Item
-                          key={zona.id}
-                          as="div"
-                          className="custom-dropdown-item"
-                          onClick={() => handleZonaSelect(zona.nombre)}
-                        >
-                          <span
-                            className="custom-dropdown-item-span"
-                          >
-                            {zona.nombre}
-                          </span>
-                          <Button
-                            size="sm"
-                            className="custom-delete-button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteZona(zona.id);
-                            }}
-                          >
-                            ×
-                          </Button>
-                        </Dropdown.Item>
-                      ))}
-                      <Dropdown.Item
-                        onClick={() => handleZonaSelect('new')}
-                        className="custom-dropdown-item-add"
-                      >
-                        <span className="custom-dropdown-item-add-span"><FaPlus /></span> Agregar nueva zona...
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                  {showNewZonaInput && (
-                    <InputGroup className="mt-2">
-                      <Form.Control
-                        type="text"
-                        value={newZona}
-                        onChange={(e) => setNewZona(e.target.value)}
-                        placeholder="Escriba la nueva zona"
-                      />
-                      <Button
-                        className="custom-add-button"
-                        onClick={handleNewZonaSubmit}
-                        disabled={!newZona.trim()}
-                      >
-                        Agregar
-                      </Button>
-                    </InputGroup>
-                  )}
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="direccion">
-                  <Form.Label className="required required-asterisk">Dirección</Form.Label>
-                  <DireccionAutocomplete onSelect={handleDireccionSelect} />
-                  {formData.direccion.address && (
-                    <small className="text-muted">Seleccionado: {formData.direccion.address}</small>
-                  )}
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="superficie">
-                  <Form.Label>Superficie</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="superficie"
-                    value={formData.superficie || ''}
-                    onChange={handleChange}
-                  />
-                </Form.Group>
-                <Button className="custom-save-button" type="submit">
-                  Guardar
-                </Button>
-              </Form>
-            </div>
-          )}
-        </Modal.Body>
+      <Modal.Body>{isLoading ? <div className="text-center">Cargando...</div> : formContent}</Modal.Body>
     </Modal>
   );
 };

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { getCuadrillas } from '../services/cuadrillaService';
 import { getMantenimientosCorrectivos } from '../services/mantenimientoCorrectivoService';
 import { getMantenimientosPreventivos } from '../services/mantenimientoPreventivoService';
 import { getSucursales } from '../services/sucursalService';
 import { getZonas } from '../services/zonaService';
+import { getClientes } from '../services/clienteService';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import logoImg from '../assets/logo_inversur.png';
@@ -17,24 +18,55 @@ const useReportes = () => {
   const [zonas, setZonas] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [reportData, setReportData] = useState({});
+  const [clientes, setClientes] = useState([]);
+  const [clienteFilter, setClienteFilter] = useState('');
+  const [zonaFilter, setZonaFilter] = useState('');
+  const [sucursalFilter, setSucursalFilter] = useState('');
+  const [cuadrillaFilter, setCuadrillaFilter] = useState('');
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [shouldGenerateReports, setShouldGenerateReports] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      const [cuadrillasRes, correctivosRes, preventivosRes, zonasRes, sucursalesRes] = await Promise.all([
-        getCuadrillas(),
-        getMantenimientosCorrectivos(),
-        getMantenimientosPreventivos(),
-        getZonas(),
-        getSucursales(),
-      ]);
-      setCuadrillas(cuadrillasRes.data);
-      setCorrectivos(correctivosRes.data);
-      setPreventivos(preventivosRes.data);
-      setZonas(zonasRes.data);
-      setSucursales(sucursalesRes.data);
+      setIsLoadingData(true);
+      try {
+        const [
+          cuadrillasRes,
+          correctivosRes,
+          preventivosRes,
+          zonasRes,
+          sucursalesRes,
+          clientesRes,
+        ] = await Promise.all([
+          getCuadrillas(),
+          getMantenimientosCorrectivos(),
+          getMantenimientosPreventivos(),
+          getZonas(),
+          getSucursales(),
+          getClientes(),
+        ]);
+        setCuadrillas(cuadrillasRes.data);
+        setCorrectivos(correctivosRes.data);
+        setPreventivos(preventivosRes.data);
+        setZonas(zonasRes.data);
+        setSucursales(sucursalesRes.data);
+        setClientes(clientesRes.data || []);
+      } catch (error) {
+        console.error('Error al cargar datos de reportes', error);
+      } finally {
+        setIsLoadingData(false);
+      }
     };
     fetchData();
   }, []);
+
+  const sucursalMap = useMemo(() => {
+    const map = {};
+    sucursales.forEach((s) => {
+      map[s.id] = s;
+    });
+    return map;
+  }, [sucursales]);
 
   const filterByMonthYear = (items, dateField) => {
     return items.filter(item => {
@@ -51,36 +83,84 @@ const useReportes = () => {
     });
   };
 
-  const generatePreventivoReport = () => {
-    const filteredPreventivos = filterByMonthYear(preventivos, 'fecha_apertura');
-    return cuadrillas.map(cuadrilla => {
-      const asignados = filteredPreventivos.filter(p => p.id_cuadrilla === cuadrilla.id).length;
-      const resueltos = filteredPreventivos.filter(p => p.id_cuadrilla === cuadrilla.id && p.fecha_cierre).length;
-      return {
-        nombre: cuadrilla.nombre,
-        ratio: asignados ? (resueltos / asignados).toFixed(2) : 0,
-        resueltos,
-        asignados,
-      };
-    });
-  };
+  const applyFilters = useCallback((items, dateField = 'fecha_apertura') => {
+    let filtered = filterByMonthYear(items, dateField);
+    if (clienteFilter) {
+      filtered = filtered.filter((item) => {
+        const sucursal = sucursalMap[item.id_sucursal];
+        return sucursal && String(sucursal.cliente_id) === clienteFilter;
+      });
+    }
+    if (zonaFilter) {
+      filtered = filtered.filter((item) => {
+        const sucursal = sucursalMap[item.id_sucursal];
+        return sucursal?.zona === zonaFilter;
+      });
+    }
+    if (sucursalFilter) {
+      filtered = filtered.filter((item) => String(item.id_sucursal) === sucursalFilter);
+    }
+    if (cuadrillaFilter) {
+      filtered = filtered.filter((item) => String(item.id_cuadrilla) === cuadrillaFilter);
+    }
+    return filtered;
+  }, [clienteFilter, cuadrillaFilter, month, sucursalFilter, sucursalMap, zonaFilter, year]);
 
-  const generateCorrectivoReport = () => {
-    const filteredCorrectivos = filterByMonthYear(correctivos, 'fecha_apertura');
-    return cuadrillas.map(cuadrilla => {
-      const asignados = filteredCorrectivos.filter(c => c.id_cuadrilla === cuadrilla.id).length;
-      const resueltos = filteredCorrectivos.filter(c => c.id_cuadrilla === cuadrilla.id && c.estado === 'Finalizado').length;
-      return {
-        nombre: cuadrilla.nombre,
-        ratio: asignados ? (resueltos / asignados).toFixed(2) : 0,
-        resueltos,
-        asignados,
-      };
-    });
-  };
+  const generatePreventivoReport = useCallback(() => {
+    const filteredPreventivos = applyFilters(preventivos, 'fecha_apertura');
+    if (filteredPreventivos.length === 0) return [];
 
-  const generateRubroReport = () => {
-    const filtered = filterByMonthYear(correctivos.filter(c => c.estado === 'Finalizado'), 'fecha_apertura');
+    const targetCuadrillas = cuadrillaFilter
+      ? cuadrillas.filter((cuadrilla) => String(cuadrilla.id) === cuadrillaFilter)
+      : cuadrillas.filter((cuadrilla) => filteredPreventivos.some((p) => p.id_cuadrilla === cuadrilla.id));
+
+    return targetCuadrillas
+      .map((cuadrilla) => {
+        const asignados = filteredPreventivos.filter((p) => p.id_cuadrilla === cuadrilla.id).length;
+        if (asignados === 0) {
+          return null;
+        }
+        const resueltos = filteredPreventivos.filter((p) => p.id_cuadrilla === cuadrilla.id && p.fecha_cierre).length;
+        return {
+          nombre: cuadrilla.nombre,
+          ratio: asignados ? (resueltos / asignados).toFixed(2) : 0,
+          resueltos,
+          asignados,
+        };
+      })
+      .filter(Boolean);
+  }, [applyFilters, cuadrillaFilter, cuadrillas, preventivos]);
+
+  const generateCorrectivoReport = useCallback(() => {
+    const filteredCorrectivos = applyFilters(correctivos, 'fecha_apertura');
+    if (filteredCorrectivos.length === 0) return [];
+
+    const targetCuadrillas = cuadrillaFilter
+      ? cuadrillas.filter((cuadrilla) => String(cuadrilla.id) === cuadrillaFilter)
+      : cuadrillas.filter((cuadrilla) => filteredCorrectivos.some((c) => c.id_cuadrilla === cuadrilla.id));
+
+    return targetCuadrillas
+      .map((cuadrilla) => {
+        const asignados = filteredCorrectivos.filter((c) => c.id_cuadrilla === cuadrilla.id).length;
+        if (asignados === 0) {
+          return null;
+        }
+        const resueltos = filteredCorrectivos.filter((c) => c.id_cuadrilla === cuadrilla.id && c.estado === 'Finalizado').length;
+        return {
+          nombre: cuadrilla.nombre,
+          ratio: asignados ? (resueltos / asignados).toFixed(2) : 0,
+          resueltos,
+          asignados,
+        };
+      })
+      .filter(Boolean);
+  }, [applyFilters, cuadrillaFilter, cuadrillas, correctivos]);
+
+  const generateRubroReport = useCallback(() => {
+    const filtered = applyFilters(
+      correctivos.filter((c) => c.estado === 'Finalizado'),
+      'fecha_apertura'
+    );
     const rubros = [...new Set(filtered.map(c => c.rubro))];
     const report = rubros.map(rubro => {
       const items = filtered.filter(c => c.rubro === rubro);
@@ -94,27 +174,89 @@ const useReportes = () => {
     const totalCount = filtered.length;
 
     return { rubros: report, totalAvgDays, totalCount };
-  };
+  }, [applyFilters, correctivos]);
 
-  const generateZonaReport = () => {
-    const filtered = filterByMonthYear(correctivos, 'fecha_apertura');
-    return zonas.map(zona => {
-      const sucZona = sucursales.filter(s => s.zona === zona.nombre);
-      const corrZona = filtered.filter(c => sucZona.some(s => s.id === c.id_sucursal));
-      const avg = sucZona.length ? (corrZona.length / sucZona.length).toFixed(2) : 0;
-      return { zona: zona.nombre, totalCorrectivos: corrZona.length, avgCorrectivos: avg };
-    });
-  };
+  const generateZonaReport = useCallback(() => {
+    const filtered = applyFilters(correctivos, 'fecha_apertura');
+    if (filtered.length === 0) return [];
 
-  const generateSucursalReport = () => {
-    const filtered = filterByMonthYear(correctivos, 'fecha_apertura');
-    return sucursales.map(sucursal => {
-      const count = filtered.filter(c => c.id_sucursal === sucursal.id).length;
-      return { sucursal: sucursal.nombre, zona: sucursal.zona, totalCorrectivos: count };
+    const zoneMap = new Map();
+
+    filtered.forEach((item) => {
+      const sucursal = sucursalMap[item.id_sucursal];
+      if (!sucursal) return;
+      const zoneName = sucursal.zona || 'Sin zona';
+
+      if (!zoneMap.has(zoneName)) {
+        const relevantSucursales = sucursales.filter((s) => {
+          if (s.zona !== zoneName) return false;
+          if (clienteFilter && String(s.cliente_id) !== clienteFilter) return false;
+          if (sucursalFilter && String(s.id) !== sucursalFilter) return false;
+          return true;
+        });
+
+        zoneMap.set(zoneName, {
+          zona: zoneName,
+          totalCorrectivos: 0,
+          sucursalesCount: relevantSucursales.length || 1,
+        });
+      }
+
+      const entry = zoneMap.get(zoneName);
+      entry.totalCorrectivos += 1;
     });
-  };
+
+    if (zonaFilter) {
+      const filteredZone = zoneMap.get(zonaFilter);
+      return filteredZone
+        ? [{
+          zona: filteredZone.zona,
+          totalCorrectivos: filteredZone.totalCorrectivos,
+          avgCorrectivos: (filteredZone.totalCorrectivos / filteredZone.sucursalesCount).toFixed(2),
+        }]
+        : [];
+    }
+
+    return Array.from(zoneMap.values()).map((entry) => ({
+      zona: entry.zona,
+      totalCorrectivos: entry.totalCorrectivos,
+      avgCorrectivos: (entry.totalCorrectivos / entry.sucursalesCount).toFixed(2),
+    }));
+  }, [applyFilters, clienteFilter, correctivos, sucursalFilter, sucursalMap, sucursales, zonaFilter]);
+
+  const generateSucursalReport = useCallback(() => {
+    const filtered = applyFilters(correctivos, 'fecha_apertura');
+    if (filtered.length === 0) return [];
+
+    const totals = {};
+
+    filtered.forEach((item) => {
+      const sucursal = sucursalMap[item.id_sucursal];
+      if (!sucursal) return;
+
+      if (!totals[sucursal.id]) {
+        totals[sucursal.id] = {
+          sucursal: sucursal.nombre,
+          zona: sucursal.zona,
+          totalCorrectivos: 0,
+        };
+      }
+
+      totals[sucursal.id].totalCorrectivos += 1;
+    });
+
+    return Object.values(totals);
+  }, [applyFilters, correctivos, sucursalMap]);
 
   const handleGenerateReports = () => {
+    setShouldGenerateReports(true);
+  };
+
+  useEffect(() => {
+    if (!shouldGenerateReports || isLoadingData) {
+      return;
+    }
+
     setReportData({
       preventivos: generatePreventivoReport(),
       correctivos: generateCorrectivoReport(),
@@ -122,7 +264,16 @@ const useReportes = () => {
       zonas: generateZonaReport(),
       sucursales: generateSucursalReport(),
     });
-  };
+    setShouldGenerateReports(false);
+  }, [
+    shouldGenerateReports,
+    isLoadingData,
+    generatePreventivoReport,
+    generateCorrectivoReport,
+    generateRubroReport,
+    generateZonaReport,
+    generateSucursalReport,
+  ]);
 
   const generatePieChartData = (report, type) => {
     return report.map(item => ({
@@ -248,6 +399,18 @@ const useReportes = () => {
     year,
     years,
     setYear, 
+    clientes,
+    zonas,
+    sucursales,
+    cuadrillas,
+    clienteFilter,
+    setClienteFilter,
+    zonaFilter,
+    setZonaFilter,
+    sucursalFilter,
+    setSucursalFilter,
+    cuadrillaFilter,
+    setCuadrillaFilter,
     reportData,
     handleGenerateReports,
     generatePieChartData,

@@ -17,6 +17,9 @@ const MapaDesktop = ({
   cuadrillas,
   users,
   sucursales,
+  clientes,
+  clienteFilter,
+  onClienteChange,
   onSelectCuadrilla,
   onSelectEncargado,
   onSelectSucursal,
@@ -33,6 +36,9 @@ const MapaDesktop = ({
           cuadrillas={cuadrillas}
           encargados={users}
           sucursales={sucursales}
+          clientes={clientes}
+          clienteFilter={clienteFilter}
+          onClienteChange={onClienteChange}
           onSelectCuadrilla={onSelectCuadrilla}
           onSelectEncargado={onSelectEncargado}
           onSelectSucursal={onSelectSucursal}

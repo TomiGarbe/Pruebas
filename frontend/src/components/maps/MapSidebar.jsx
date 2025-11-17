@@ -4,6 +4,9 @@ const MapSidebar = ({
   cuadrillas,
   encargados,
   sucursales,
+  clientes = [],
+  clienteFilter = '',
+  onClienteChange = () => {},
   onSelectCuadrilla,
   onSelectEncargado,
   onSelectSucursal
@@ -21,7 +24,7 @@ const MapSidebar = ({
           <strong>- {cuadrilla.name}</strong>
           <br />
           <small>
-            {(cuadrilla.correctivos?.length + cuadrilla.preventivos?.length) || 0} obras asignadas
+            {(cuadrilla.correctivos?.length + cuadrilla.preventivos?.length) || 0} obras en ruta
           </small>
         </div>
       ))}
@@ -41,7 +44,21 @@ const MapSidebar = ({
     </div>
 
     <div className="map-sidebar-rigth">
-      <h4>Sucursales</h4>
+      <div className="d-flex flex-column align-items-start gap-2">
+        <h4 className="mb-0">Sucursales</h4>
+        <select
+          value={clienteFilter}
+          onChange={(e) => onClienteChange(e.target.value)}
+          className="map-client-filter"
+        >
+          <option value="">Todos los clientes</option>
+          {clientes.map((cliente) => (
+            <option key={cliente.id} value={cliente.id}>
+              {cliente.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
       {sucursales.length === 0 && <p>No hay sucursales activas.</p>}
       {sucursales.map(sucursal => (
         <div

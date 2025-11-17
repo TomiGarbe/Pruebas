@@ -3,7 +3,8 @@ from unittest.mock import patch, MagicMock, AsyncMock
 def test_list_mantenimientos_correctivos(client):
     m = MagicMock(
         id=1,
-        id_sucursal=1,
+        cliente_id=10,
+        sucursal_id=1,
         id_cuadrilla=1,
         fecha_apertura="2025-01-01",
         fecha_cierre=None,
@@ -21,7 +22,8 @@ def test_list_mantenimientos_correctivos(client):
     assert resp.status_code == 200
     assert resp.json()[0] == {
         "id": 1,
-        "id_sucursal": 1,
+        "cliente_id": 10,
+        "sucursal_id": 1,
         "id_cuadrilla": 1,
         "fecha_apertura": "2025-01-01",
         "fecha_cierre": None,
@@ -38,7 +40,8 @@ def test_list_mantenimientos_correctivos(client):
 def test_get_mantenimiento_correctivo(client):
     m = MagicMock(
         id=1,
-        id_sucursal=1,
+        cliente_id=10,
+        sucursal_id=1,
         id_cuadrilla=1,
         fecha_apertura="2025-01-01",
         fecha_cierre=None,
@@ -56,7 +59,8 @@ def test_get_mantenimiento_correctivo(client):
     assert resp.status_code == 200
     assert resp.json() == {
         "id": 1,
-        "id_sucursal": 1,
+        "cliente_id": 10,
+        "sucursal_id": 1,
         "id_cuadrilla": 1,
         "fecha_apertura": "2025-01-01",
         "fecha_cierre": None,
@@ -73,7 +77,8 @@ def test_get_mantenimiento_correctivo(client):
 def test_create_mantenimiento_correctivo(client):
     m = MagicMock(
         id=1,
-        id_sucursal=1,
+        cliente_id=10,
+        sucursal_id=1,
         id_cuadrilla=1,
         fecha_apertura="2025-01-01",
         numero_caso="1",
@@ -84,7 +89,8 @@ def test_create_mantenimiento_correctivo(client):
     )
     with patch("controllers.mantenimientos_correctivos.create_mantenimiento_correctivo", AsyncMock(return_value=m)):
         payload = {
-            "id_sucursal": 1,
+            "cliente_id": 10,
+            "sucursal_id": 1,
             "id_cuadrilla": 1,
             "fecha_apertura": "2025-01-01",
             "numero_caso": "1",
@@ -97,7 +103,8 @@ def test_create_mantenimiento_correctivo(client):
     assert resp.status_code == 200
     assert resp.json() == {
         "id": 1,
-        "id_sucursal": 1,
+        "cliente_id": 10,
+        "sucursal_id": 1,
         "id_cuadrilla": 1,
         "fecha_apertura": "2025-01-01",
         "numero_caso": "1",
@@ -110,7 +117,8 @@ def test_create_mantenimiento_correctivo(client):
 def test_update_mantenimiento_correctivo(client):
     m = MagicMock(
         id=1,
-        id_sucursal=1,
+        cliente_id=10,
+        sucursal_id=1,
         id_cuadrilla=1,
         fecha_apertura="2025-01-01",
         fecha_cierre="2025-02-01",
@@ -125,7 +133,8 @@ def test_update_mantenimiento_correctivo(client):
     )
     with patch("controllers.mantenimientos_correctivos.update_mantenimiento_correctivo", AsyncMock(return_value=m)):
         payload = {
-            "id_sucursal": 1,
+            "cliente_id": 10,
+            "sucursal_id": 1,
             "id_cuadrilla": 1,
             "fecha_apertura": "2025-01-01",
             "fecha_cierre": "2025-02-01",
@@ -139,7 +148,8 @@ def test_update_mantenimiento_correctivo(client):
     assert resp.status_code == 200
     assert resp.json() == {
         "id": 1,
-        "id_sucursal": 1,
+        "cliente_id": 10,
+        "sucursal_id": 1,
         "id_cuadrilla": 1,
         "fecha_apertura": "2025-01-01",
         "fecha_cierre": "2025-02-01",

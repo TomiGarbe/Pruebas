@@ -18,6 +18,9 @@ const MapaMobile = ({
   cuadrillas,
   users,
   sucursales,
+  clientes,
+  clienteFilter,
+  onClienteChange,
   onSelectCuadrilla,
   onSelectEncargado,
   onSelectSucursal,
@@ -32,6 +35,9 @@ const MapaMobile = ({
             cuadrillas={cuadrillas}
             encargados={users}
             sucursales={sucursales}
+            clientes={clientes}
+            clienteFilter={clienteFilter}
+            onClienteChange={onClienteChange}
             onSelectCuadrilla={onSelectCuadrilla}
             onSelectEncargado={onSelectEncargado}
             onSelectSucursal={onSelectSucursal}

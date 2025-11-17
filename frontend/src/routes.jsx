@@ -1,7 +1,7 @@
 import React from 'react';
 import Home from './pages/Home';
 import Users from './pages/Users';
-import Sucursales from './pages/Sucursales';
+import Clientes from './pages/Clientes';
 import Cuadrillas from './pages/Cuadrillas';
 import Mantenimiento from './pages/Mantenimiento';
 import MantenimientoPreventivo from './pages/MantenimientosPreventivos';
@@ -16,7 +16,7 @@ const routes = [
   { path: '/', element: <Home />, hideBackButton: true },
   { path: '/mantenimiento', element: <Mantenimiento />, hideBackButton: true },
   { path: '/users', element: <Users />, adminOnly: true },
-  { path: '/sucursales', element: <Sucursales />, usersOnly: true },
+  { path: '/clientes', element: <Clientes />, usersOnly: true },
   { path: '/cuadrillas', element: <Cuadrillas />, usersOnly: true },
   { path: '/mantenimientos-preventivos', element: <MantenimientoPreventivo />, hideBackButton: true },
   { path: '/mantenimientos-correctivos', element: <MantenimientoCorrectivo />, hideBackButton: true },

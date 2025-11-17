@@ -1,6 +1,9 @@
+from types import SimpleNamespace
 from unittest.mock import Mock
 from datetime import date
+
 from src.services import google_sheets
+from src.services.google_sheets import CellNotFound
 from src.api.models import MantenimientoCorrectivo, MantenimientoPreventivo
 
 def _mock_client_with_worksheet(worksheet):
@@ -11,9 +14,10 @@ def _mock_client_with_worksheet(worksheet):
     return client
 
 def _sample_correctivo():
-    return MantenimientoCorrectivo(
+    mantenimiento = MantenimientoCorrectivo(
         id=1,
-        id_sucursal=1,
+        cliente_id=10,
+        sucursal_id=1,
         id_cuadrilla=2,
         fecha_apertura=date(2024, 1, 1),
         fecha_cierre=None,
@@ -25,17 +29,26 @@ def _sample_correctivo():
         prioridad="alta",
         extendido=None,
     )
+    mantenimiento.cliente_nombre = "Cliente 1"
+    mantenimiento.sucursal_nombre = "Sucursal 1"
+    mantenimiento.cuadrilla_nombre = "Cuadrilla 1"
+    return mantenimiento
 
 def _sample_preventivo():
-    return MantenimientoPreventivo(
+    mantenimiento = MantenimientoPreventivo(
         id=1,
-        id_sucursal=1,
+        cliente_id=10,
+        sucursal_id=1,
         frecuencia="mensual",
         id_cuadrilla=2,
         fecha_apertura=date(2024, 1, 1),
         fecha_cierre=None,
         extendido=None,
     )
+    mantenimiento.cliente_nombre = "Cliente 1"
+    mantenimiento.sucursal_nombre = "Sucursal 1"
+    mantenimiento.cuadrilla_nombre = "Cuadrilla 1"
+    return mantenimiento
 
 def test_get_fotos_gallery_url(monkeypatch):
     monkeypatch.setattr(google_sheets, '_blob_exists', lambda p: True)
@@ -57,7 +70,7 @@ def test_get_planillas_gallery_url(monkeypatch):
 
 def test_append_correctivo(monkeypatch):
     worksheet = Mock()
-    worksheet.row_values.return_value = ["id"]
+    worksheet.row_values.return_value = ["cliente"]
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )
@@ -67,9 +80,9 @@ def test_append_correctivo(monkeypatch):
 
     worksheet.append_row.assert_called_once_with(
         [
-            1,
-            1,
-            2,
+            "Cliente 1",
+            "Sucursal 1",
+            "Cuadrilla 1",
             "2024-01-01",
             "",
             "NC",
@@ -79,6 +92,8 @@ def test_append_correctivo(monkeypatch):
             "open",
             "alta",
             "",
+            "",
+            google_sheets._tracking_token(1),
         ]
     )
 
@@ -87,6 +102,7 @@ def test_update_correctivo(monkeypatch):
     cell = Mock()
     cell.row = 2
     worksheet.find.return_value = cell
+    worksheet.row_values.return_value = google_sheets.CORRECTIVO_HEADER
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )
@@ -96,8 +112,23 @@ def test_update_correctivo(monkeypatch):
     google_sheets.update_correctivo(mantenimiento)
 
     worksheet.update.assert_called_once_with(
-        "A2:M2",
-        [[1, 1, 2, "2024-01-01", "", "NC", "Inc", "Rubro", "", "open", "alta", "", ""]],
+        "A2:N2",
+        [[
+            "Cliente 1",
+            "Sucursal 1",
+            "Cuadrilla 1",
+            "2024-01-01",
+            "",
+            "NC",
+            "Inc",
+            "Rubro",
+            "",
+            "open",
+            "alta",
+            "",
+            "",
+            google_sheets._tracking_token(1),
+        ]],
     )
 
 def test_delete_correctivo(monkeypatch):
@@ -105,6 +136,7 @@ def test_delete_correctivo(monkeypatch):
     cell = Mock()
     cell.row = 2
     worksheet.find.return_value = cell
+    worksheet.row_values.return_value = google_sheets.CORRECTIVO_HEADER
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )
@@ -116,7 +148,7 @@ def test_delete_correctivo(monkeypatch):
 
 def test_append_preventivo(monkeypatch):
     worksheet = Mock()
-    worksheet.row_values.return_value = ["id"]
+    worksheet.row_values.return_value = ["cliente"]
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )
@@ -125,7 +157,18 @@ def test_append_preventivo(monkeypatch):
     google_sheets.append_preventivo(_sample_preventivo())
 
     worksheet.append_row.assert_called_once_with(
-        [1, 1, "mensual", 2, "2024-01-01", "", ""]
+        [
+            "Cliente 1",
+            "Sucursal 1",
+            "mensual",
+            "Cuadrilla 1",
+            "2024-01-01",
+            "",
+            "",
+            "",
+            "",
+            google_sheets._tracking_token(1),
+        ]
     )
 
 def test_update_preventivo(monkeypatch):
@@ -133,6 +176,7 @@ def test_update_preventivo(monkeypatch):
     cell = Mock()
     cell.row = 2
     worksheet.find.return_value = cell
+    worksheet.row_values.return_value = google_sheets.PREVENTIVO_HEADER
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )
@@ -141,8 +185,19 @@ def test_update_preventivo(monkeypatch):
     google_sheets.update_preventivo(_sample_preventivo())
 
     worksheet.update.assert_called_once_with(
-        "A2:I2",
-        [[1, 1, "mensual", 2, "2024-01-01", "", "", "", ""]],
+        "A2:J2",
+        [[
+            "Cliente 1",
+            "Sucursal 1",
+            "mensual",
+            "Cuadrilla 1",
+            "2024-01-01",
+            "",
+            "",
+            "",
+            "",
+            google_sheets._tracking_token(1),
+        ]],
     )
 
 def test_delete_preventivo(monkeypatch):
@@ -150,6 +205,7 @@ def test_delete_preventivo(monkeypatch):
     cell = Mock()
     cell.row = 2
     worksheet.find.return_value = cell
+    worksheet.row_values.return_value = google_sheets.PREVENTIVO_HEADER
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )
@@ -173,7 +229,8 @@ def test_append_correctivo_adds_header(monkeypatch):
 
 def test_update_correctivo_not_found(monkeypatch):
     worksheet = Mock()
-    worksheet.find.return_value = None
+    worksheet.find.side_effect = CellNotFound("not found")
+    worksheet.row_values.return_value = google_sheets.CORRECTIVO_HEADER
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )
@@ -187,7 +244,8 @@ def test_update_correctivo_not_found(monkeypatch):
 
 def test_delete_correctivo_not_found(monkeypatch):
     worksheet = Mock()
-    worksheet.find.return_value = None
+    worksheet.find.side_effect = CellNotFound("not found")
+    worksheet.row_values.return_value = google_sheets.CORRECTIVO_HEADER
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )
@@ -211,7 +269,8 @@ def test_append_preventivo_adds_header(monkeypatch):
 
 def test_update_preventivo_not_found(monkeypatch):
     worksheet = Mock()
-    worksheet.find.return_value = None
+    worksheet.find.side_effect = CellNotFound("not found")
+    worksheet.row_values.return_value = google_sheets.PREVENTIVO_HEADER
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )
@@ -225,7 +284,8 @@ def test_update_preventivo_not_found(monkeypatch):
 
 def test_delete_preventivo_not_found(monkeypatch):
     worksheet = Mock()
-    worksheet.find.return_value = None
+    worksheet.find.side_effect = CellNotFound("not found")
+    worksheet.row_values.return_value = google_sheets.PREVENTIVO_HEADER
     monkeypatch.setattr(
         google_sheets, "get_client", lambda: _mock_client_with_worksheet(worksheet)
     )

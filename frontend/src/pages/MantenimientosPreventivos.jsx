@@ -13,6 +13,7 @@ const MantenimientosPreventivos = () => {
   const [showFilters, setShowFilters] = useState(false)
   const {
     filteredMantenimientos,
+    clientes,
     sucursales,
     cuadrillas,
     zonas,
@@ -27,6 +28,7 @@ const MantenimientosPreventivos = () => {
     handleRowClick,
     handleFormClose,
     getSucursalNombre,
+    getClienteNombre,
     getCuadrillaNombre,
     getZonaNombre,
     isUser
@@ -35,6 +37,7 @@ const MantenimientosPreventivos = () => {
   const availableColumns = isUser
     ? [
         { key: 'id', label: 'ID' },
+        { key: 'cliente', label: 'Cliente' },
         { key: 'preventivo', label: 'Preventivo' },
         { key: 'cuadrilla', label: 'Cuadrilla' },
         { key: 'zona', label: 'Zona' },
@@ -43,6 +46,7 @@ const MantenimientosPreventivos = () => {
         { key: 'acciones', label: 'Acciones' },
       ]
     : [
+        { key: 'cliente', label: 'Cliente' },
         { key: 'preventivo', label: 'Preventivo' },
         { key: 'zona', label: 'Zona' },
         { key: 'fecha_apertura', label: 'Fecha Apertura' },
@@ -51,12 +55,17 @@ const MantenimientosPreventivos = () => {
 
   const tableData = filteredMantenimientos.map((m) => ({
     ...m,
+    cliente: getClienteNombre(m.cliente_id || m.id_cliente),
     preventivo: `${getSucursalNombre(m.id_sucursal)} - ${m.frecuencia}`,
     cuadrilla: getCuadrillaNombre(m.id_cuadrilla),
     zona: getZonaNombre(m.id_sucursal),
     fecha_apertura: m.fecha_apertura?.split('T')[0],
     fecha_cierre: m.fecha_cierre ? m.fecha_cierre?.split('T')[0] : 'No hay Fecha',
   }));
+
+  const sucursalOptions = filters.cliente
+    ? sucursales.filter((s) => String(s.cliente_id) === filters.cliente)
+    : sucursales;
 
   const filterButton = (
     <Button
@@ -90,11 +99,22 @@ const MantenimientosPreventivos = () => {
             </div>
           )}
           <div className='maintenance-filter-item'>
+            <Form.Group className='mb-0' controlId="filterCliente">
+              <Form.Label>Cliente</Form.Label>
+              <Form.Select name="cliente" value={filters.cliente} onChange={handleFilterChange}>
+                <option value="">Todos</option>
+                {clientes.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </div>
+          <div className='maintenance-filter-item'>
             <Form.Group className='mb-0' controlId="filterSucursal">
               <Form.Label>Sucursal</Form.Label>
               <Form.Select name="sucursal" value={filters.sucursal} onChange={handleFilterChange}>
                 <option value="">Todas</option>
-                {sucursales.map((s) => (
+                {sucursalOptions.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nombre}
                   </option>

@@ -18,6 +18,9 @@ const Mapa = () => {
     users,
     cuadrillas,
     sucursales,
+    clientes,
+    clienteFilter,
+    setClienteFilter,
     compassRef,
     showEncargados,
     showCuadrillas,
@@ -49,6 +52,9 @@ const Mapa = () => {
           cuadrillas={cuadrillas}
           users={users}
           sucursales={sucursales}
+          clientes={clientes}
+          clienteFilter={clienteFilter}
+          onClienteChange={setClienteFilter}
           onSelectCuadrilla={handleCuadrillaSelection}
           onSelectEncargado={handleEncargadoSelection}
           onSelectSucursal={handleSucursalSelection}
@@ -71,6 +77,9 @@ const Mapa = () => {
           cuadrillas={cuadrillas}
           users={users}
           sucursales={sucursales}
+          clientes={clientes}
+          clienteFilter={clienteFilter}
+          onClienteChange={setClienteFilter}
           onSelectCuadrilla={handleCuadrillaSelection}
           onSelectEncargado={handleEncargadoSelection}
           onSelectSucursal={handleSucursalSelection}

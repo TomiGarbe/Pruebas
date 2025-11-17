@@ -53,7 +53,7 @@
 }
 
 .generate-button:hover {
-  background-color: #146c43;
+  background-color: #ffc720;
 }
 
 /* Grilla de gráficos */
@@ -139,17 +139,29 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
-.filters-container {
-  display: flex;
-  align-items: flex-end;
-  gap: 1rem;
+.report-filter-panel {
+  background: #f9fafa;
+  border: 1px solid #e6e6e6;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   margin-bottom: 2rem;
-  flex-wrap: wrap;
 }
 
-.filters-container > div {
+.report-filter-panel .maintenance-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.report-filter-panel .maintenance-filter-item {
+  flex: 1 1 200px;
   display: flex;
   flex-direction: column;
+}
+
+.report-filter-panel .form-select {
+  border-radius: 8px;
 }
 
 .download-button {

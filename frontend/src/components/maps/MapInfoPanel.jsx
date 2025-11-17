@@ -4,6 +4,9 @@ const MapInfoPanel = ({
   cuadrillas = [],
   encargados = [],
   sucursales = [],
+  clientes = [],
+  clienteFilter = '',
+  onClienteChange = () => {},
   onSelectCuadrilla = () => {},
   onSelectEncargado = () => {},
   onSelectSucursal = () => {},
@@ -58,6 +61,18 @@ const MapInfoPanel = ({
             <FaMapMarkerAlt size={18} color="#dfa700" />
             Sucursales
           </h4>
+          <select
+            value={clienteFilter}
+            onChange={(e) => onClienteChange(e.target.value)}
+            className="map-client-filter w-100 mb-2"
+          >
+            <option value="">Todos los clientes</option>
+            {clientes.map((cliente) => (
+              <option key={cliente.id} value={cliente.id}>
+                {cliente.nombre}
+              </option>
+            ))}
+          </select>
           {sucursales.length === 0 && <p>No hay sucursales activas.</p>}
           {sucursales.map((sucursal) => (
             <div key={sucursal.id} className="obra-item" onClick={() => onSelectSucursal(sucursal)}>

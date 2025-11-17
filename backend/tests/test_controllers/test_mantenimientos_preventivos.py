@@ -3,7 +3,8 @@ from unittest.mock import patch, MagicMock, AsyncMock
 def test_list_mantenimientos_preventivos(client):
     m = MagicMock(
         id=1,
-        id_sucursal=1,
+        cliente_id=10,
+        sucursal_id=1,
         frecuencia="Mensual",
         id_cuadrilla=1,
         fecha_apertura="2025-01-01",
@@ -18,7 +19,8 @@ def test_list_mantenimientos_preventivos(client):
     assert resp.status_code == 200
     assert resp.json()[0] == {
         "id": 1,
-        "id_sucursal": 1,
+        "cliente_id": 10,
+        "sucursal_id": 1,
         "frecuencia": "Mensual",
         "id_cuadrilla": 1,
         "fecha_apertura": "2025-01-01",
@@ -32,7 +34,8 @@ def test_list_mantenimientos_preventivos(client):
 def test_get_mantenimiento_preventivo(client):
     m = MagicMock(
         id=1,
-        id_sucursal=1,
+        cliente_id=10,
+        sucursal_id=1,
         frecuencia="Mensual",
         id_cuadrilla=1,
         fecha_apertura="2025-01-01",
@@ -47,7 +50,8 @@ def test_get_mantenimiento_preventivo(client):
     assert resp.status_code == 200
     assert resp.json() == {
         "id": 1,
-        "id_sucursal": 1,
+        "cliente_id": 10,
+        "sucursal_id": 1,
         "frecuencia": "Mensual",
         "id_cuadrilla": 1,
         "fecha_apertura": "2025-01-01",
@@ -59,14 +63,15 @@ def test_get_mantenimiento_preventivo(client):
     }
 
 def test_create_mantenimiento_preventivo(client):
-    m = MagicMock(id=1, id_sucursal=1, frecuencia="Mensual", id_cuadrilla=1, fecha_apertura="2025-01-01", estado="Pendiente")
+    m = MagicMock(id=1, cliente_id=10, sucursal_id=1, frecuencia="Mensual", id_cuadrilla=1, fecha_apertura="2025-01-01", estado="Pendiente")
     with patch("controllers.mantenimientos_preventivos.create_mantenimiento_preventivo", AsyncMock(return_value=m)):
-        payload = {"id_sucursal": 1, "frecuencia": "Mensual", "id_cuadrilla": 1, "fecha_apertura": "2025-01-01", "estado": "Pendiente"}
+        payload = {"cliente_id": 10, "sucursal_id": 1, "frecuencia": "Mensual", "id_cuadrilla": 1, "fecha_apertura": "2025-01-01", "estado": "Pendiente"}
         resp = client.post("/mantenimientos-preventivos/", json=payload)
     assert resp.status_code == 200
     assert resp.json() == {
         "id": 1,
-        "id_sucursal": 1,
+        "cliente_id": 10,
+        "sucursal_id": 1,
         "frecuencia": "Mensual",
         "id_cuadrilla": 1,
         "fecha_apertura": "2025-01-01",
@@ -76,7 +81,8 @@ def test_create_mantenimiento_preventivo(client):
 def test_update_mantenimiento_preventivo(client):
     m = MagicMock(
         id=1,
-        id_sucursal=1,
+        cliente_id=10,
+        sucursal_id=1,
         frecuencia="Mensual",
         id_cuadrilla=1,
         fecha_apertura="2025-01-01",
@@ -88,7 +94,8 @@ def test_update_mantenimiento_preventivo(client):
     )
     with patch("controllers.mantenimientos_preventivos.update_mantenimiento_preventivo", AsyncMock(return_value=m)):
         payload = {
-            "id_sucursal": 1,
+            "cliente_id": 10,
+            "sucursal_id": 1,
             "frecuencia": "Mensual",
             "id_cuadrilla": 1,
             "fecha_apertura": "2025-01-01",
@@ -99,7 +106,8 @@ def test_update_mantenimiento_preventivo(client):
     assert resp.status_code == 200
     assert resp.json() == {
         "id": 1,
-        "id_sucursal": 1,
+        "cliente_id": 10,
+        "sucursal_id": 1,
         "frecuencia": "Mensual",
         "id_cuadrilla": 1,
         "fecha_apertura": "2025-01-01",

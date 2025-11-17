@@ -5,17 +5,20 @@ import { getCuadrillas } from '../../services/cuadrillaService';
 import { getSucursales } from '../../services/sucursalService';
 import { getZonas } from '../../services/zonaService';
 import { useAuthRoles } from '../useAuthRoles';
+import { getClientes } from '../../services/clienteService';
 
 const useMantenimientoPreventivo = () => {
   const { id, isUser, isCuadrilla } = useAuthRoles();
   const [mantenimientos, setMantenimientos] = useState([]);
   const [filteredMantenimientos, setFilteredMantenimientos] = useState([]);
+  const [clientes, setClientes] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [zonas, setZonas] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [selectedMantenimiento, setSelectedMantenimiento] = useState(null);
   const [filters, setFilters] = useState({
+      cliente: '',
       cuadrilla: '',
       sucursal: '',
       zona: '',
@@ -42,16 +45,15 @@ const useMantenimientoPreventivo = () => {
 
   const fetchData = async () => {
     try {
-      const [cuadrillasResponse, sucursalesResponse, zonasResponse] = await Promise.all([
+      const [clientesResponse, cuadrillasResponse, sucursalesResponse, zonasResponse] = await Promise.all([
+        getClientes(),
         getCuadrillas(),
         getSucursales(),
         getZonas(),
       ]);
-      const sucursalesConMantenimientos = sucursalesResponse.data.filter(sucursal =>
-        mantenimientos.some(m => m.id_sucursal === sucursal.id)
-      );
 
-      setSucursales(sucursalesConMantenimientos);
+      setClientes(clientesResponse.data || []);
+      setSucursales(sucursalesResponse.data || []);
       setCuadrillas(cuadrillasResponse.data);
       setZonas(zonasResponse.data);
     } catch (error) {
@@ -73,6 +75,9 @@ const useMantenimientoPreventivo = () => {
 
     let filtered = [...mantenimientos];
 
+    if (newFilters.cliente) {
+      filtered = filtered.filter((m) => String(m.cliente_id || m.id_cliente) === newFilters.cliente);
+    }
     if (newFilters.cuadrilla) {
       filtered = filtered.filter(m => m.id_cuadrilla === parseInt(newFilters.cuadrilla));
     }
@@ -139,8 +144,14 @@ const useMantenimientoPreventivo = () => {
     return sucursal ? sucursal.zona : 'Desconocida';
   };
 
+  const getClienteNombre = (cliente_id) => {
+    const cliente = clientes.find((c) => c.id === cliente_id);
+    return cliente ? cliente.nombre : 'Sin cliente';
+  };
+
   return { 
     filteredMantenimientos,
+    clientes,
     sucursales,
     cuadrillas,
     zonas,
@@ -157,6 +168,7 @@ const useMantenimientoPreventivo = () => {
     getSucursalNombre,
     getCuadrillaNombre,
     getZonaNombre,
+    getClienteNombre,
     isUser
   };
 };
