@@ -7,7 +7,12 @@ import { getSucursalesByCliente } from '../../services/sucursalService';
 import { getCuadrillas } from '../../services/cuadrillaService';
 import '../../styles/formularios.css';
 
-const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
+const MantenimientoPreventivoForm = ({ 
+  mantenimiento, 
+  onClose,
+  setError,
+  setSuccess
+}) => {
   const [clientes, setClientes] = useState([]);
   const [clienteId, setClienteId] = useState('');
   const [sucursalesPorCliente, setSucursalesPorCliente] = useState({});
@@ -19,8 +24,6 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
     estado: 'Pendiente',
   });
   const [frecuenciaSucursal, setFrecuenciaSucursal] = useState(null);
-  const [error, setError] = useState(null);
-  const [backendError, setBackendError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSucursalesForCliente = async (id) => {
@@ -105,7 +108,6 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    setBackendError(null);
 
     if (!clienteId || !formData.id_sucursal || !formData.id_cuadrilla || !formData.fecha_apertura) {
       setError('Completá todos los campos obligatorios.');
@@ -134,10 +136,12 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
       } else {
         await createMantenimientoPreventivo(payload);
       }
+      setError(null);
+      setSuccess(mantenimiento ? 'Mantenimiento preventivo actualizado correctamente.' : 'Mantenimiento preventivo creado correctamente.');
       onClose();
     } catch (err) {
-      console.error('Error saving mantenimiento preventivo:', err);
-      setBackendError(err.response?.data?.detail || 'No se pudo guardar el mantenimiento preventivo.');
+      setError(err.response?.data?.detail || 'Error al guardar el mantenimiento preventivo.');
+      setSuccess(null);
     } finally {
       setIsLoading(false);
     }
@@ -172,8 +176,6 @@ const MantenimientoPreventivoForm = ({ mantenimiento, onClose }) => {
           </div>
         ) : (
           <div>
-            {error && <Alert variant="danger">{error}</Alert>}
-            {backendError && <Alert variant="danger">{backendError}</Alert>}
             <Form onSubmit={handleSubmit}>
               <Form.Group className="mb-3" controlId="cliente">
                 <Form.Label className="required required-asterisk">Cliente</Form.Label>

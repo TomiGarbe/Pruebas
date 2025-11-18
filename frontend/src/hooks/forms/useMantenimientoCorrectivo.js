@@ -28,6 +28,8 @@ const useMantenimientoCorrectivo = () => {
     sortByDate: 'desc',
   });
   const navigate = useNavigate();
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchMantenimientos = async () => {
@@ -39,8 +41,9 @@ const useMantenimientoCorrectivo = () => {
         : response.data;
       setMantenimientos(mantenimientoArray);
       setFilteredMantenimientos(mantenimientoArray);
+      setError(null);
     } catch (error) {
-      console.error('Error fetching mantenimientos:', error);
+      setError(error.response?.data?.detail || 'Error al cargar los mantenimientos');
     } finally {
       setIsLoading(false);
     }
@@ -113,13 +116,17 @@ const useMantenimientoCorrectivo = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm('¿Esta seguro de ELIMINAR este mantenimiento correctivo?')) return;
     setIsLoading(true);
     if (isUser) {
       try {
         await deleteMantenimientoCorrectivo(id);
         fetchMantenimientos();
+        setError(null);
+        setSuccess('Mantenimiento eliminado correctamente');
       } catch (error) {
-        console.error('Error deleting mantenimiento correctivo:', error);
+        setError(error.response?.data?.detail || 'Error al eliminar el mantenimiento');
+        setSuccess(null);
       } finally {
         setIsLoading(false);
       }
@@ -171,6 +178,8 @@ const useMantenimientoCorrectivo = () => {
     setShowForm,
     selectedMantenimiento,
     filters,
+    error,
+    success,
     isLoading,
     handleFilterChange,
     handleDelete,
@@ -181,7 +190,9 @@ const useMantenimientoCorrectivo = () => {
     getCuadrillaNombre,
     getZonaNombre,
     getClienteNombre,
-    isUser
+    isUser,
+    setError,
+    setSuccess
   };
 };
 

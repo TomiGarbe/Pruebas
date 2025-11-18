@@ -37,17 +37,12 @@ export const createMantenimientoPreventivo = (mantenimiento) => {
 };
 
 export const updateMantenimientoPreventivo = (id, mantenimiento) => {
-  if (mantenimiento instanceof FormData) {
-    return api.put(`/mantenimientos-preventivos/${id}`, mantenimiento, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  }
-  const payload = buildPreventivoPayload(mantenimiento);
-  return api.put(`/mantenimientos-preventivos/${id}`, payload);
+  return api.put(`/mantenimientos-preventivos/${id}`, mantenimiento, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
-
 export const deleteMantenimientoPreventivo = (id) => api.delete(`/mantenimientos-preventivos/${id}`);
-export const deleteMantenimientoPlanilla = (id, fileName) =>
-  api.delete(`/mantenimientos-preventivos/${id}/planillas/${fileName}`);
-export const deleteMantenimientoPhoto = (id, fileName) =>
-  api.delete(`/mantenimientos-preventivos/${id}/fotos/${fileName}`);
+export const deleteMantenimientoPlanilla = (id, fileName) => api.delete(`/mantenimientos-preventivos/${id}/planillas/${fileName}`);
+export const deleteMantenimientoPhoto = (id, fileName) => api.delete(`/mantenimientos-preventivos/${id}/fotos/${fileName}`);

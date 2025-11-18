@@ -7,7 +7,12 @@ import { getCuadrillas } from '../../services/cuadrillaService';
 import { getClientes } from '../../services/clienteService';
 import '../../styles/formularios.css';
 
-const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
+const MantenimientoCorrectivoForm = ({ 
+  mantenimiento, 
+  onClose,
+  setError,
+  setSuccess
+}) => {
   const [formData, setFormData] = useState({
     id_sucursal: '',
     id_cuadrilla: '',
@@ -22,7 +27,6 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
   const [clienteId, setClienteId] = useState('');
   const [sucursalesPorCliente, setSucursalesPorCliente] = useState({});
   const [cuadrillas, setCuadrillas] = useState([]);
-  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -58,6 +62,7 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             prioridad: mantenimiento.prioridad || 'Media',
           });
         }
+        setError(null);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError('Error al cargar los datos. Por favor, intenta de nuevo.');
@@ -113,10 +118,12 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
       } else {
         await createMantenimientoCorrectivo(payload);
       }
+      setError(null);
+      setSuccess(mantenimiento ? 'Mantenimiento correctivo actualizado correctamente.' : 'Mantenimiento correctivo creado correctamente.');
       onClose();
     } catch (error) {
-      console.error('Error saving mantenimiento correctivo:', error);
-      setError(error.response?.data?.detail || 'Error al guardar el mantenimiento correctivo. Por favor, intenta de nuevo.');
+      setError(error.message || 'Error al guardar el mantenimiento correctivo.');
+      setSuccess(null);
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +173,6 @@ const MantenimientoCorrectivoForm = ({ mantenimiento, onClose }) => {
             </div>
           ) : (
             <div>
-              {error && <div className="alert alert-danger">{error}</div>}
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3" controlId="cliente_id">
                   <Form.Label className="required required-asterisk">Cliente</Form.Label>

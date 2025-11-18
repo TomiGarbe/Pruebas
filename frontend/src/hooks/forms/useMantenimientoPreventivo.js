@@ -25,6 +25,8 @@ const useMantenimientoPreventivo = () => {
       sortByDate: 'desc',
     });
   const navigate = useNavigate();
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchMantenimientos = async () => {
@@ -36,8 +38,9 @@ const useMantenimientoPreventivo = () => {
         : response.data;
       setMantenimientos(mantenimientoArray);
       setFilteredMantenimientos(mantenimientoArray);
+      setError(null);
     } catch (error) {
-      console.error('Error fetching mantenimientos:', error);
+      setError(error.response?.data?.detail || 'Error al cargar los mantenimientos');
     } finally {
       setIsLoading(false);
     }
@@ -101,13 +104,17 @@ const useMantenimientoPreventivo = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm('¿Esta seguro de ELIMINAR este mantenimiento preventivo?')) return;
     setIsLoading(true);
     if (isUser) {
       try {
         await deleteMantenimientoPreventivo(id);
         fetchMantenimientos();
+        setError(null);
+        setSuccess('Mantenimiento eliminado correctamente');
       } catch (error) {
-        console.error('Error deleting mantenimiento:', error);
+        setError(error.response?.data?.detail || 'Error al eliminar el mantenimiento');
+        setSuccess(null);
       } finally {
         setIsLoading(false);
       }
@@ -159,6 +166,8 @@ const useMantenimientoPreventivo = () => {
     setShowForm,
     selectedMantenimiento,
     filters,
+    error,
+    success,
     isLoading,
     handleFilterChange,
     handleDelete,
@@ -169,7 +178,9 @@ const useMantenimientoPreventivo = () => {
     getCuadrillaNombre,
     getZonaNombre,
     getClienteNombre,
-    isUser
+    isUser,
+    setError,
+    setSuccess
   };
 };
 

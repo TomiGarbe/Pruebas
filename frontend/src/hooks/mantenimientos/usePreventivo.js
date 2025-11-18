@@ -121,6 +121,7 @@ const usePreventivo = (mantenimientoId) => {
   };
 
   const handleDeleteSelectedPhotos = async (photos) => {
+    if (!window.confirm('¿Esta seguro de ELIMINAR las fotos seleccionadas?')) return;
     setIsLoading(true);
     try {
       for (const photoUrl of photos) {

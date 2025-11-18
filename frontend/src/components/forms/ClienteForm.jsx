@@ -5,9 +5,15 @@ import '../../styles/formularios.css';
 
 const emptyCliente = { nombre: '', contacto: '', email: '' };
 
-const ClienteForm = ({ show, cliente, onClose, onSaved }) => {
+const ClienteForm = ({ 
+  show, 
+  cliente, 
+  onClose, 
+  onSaved,
+  setError,
+  setSuccess
+}) => {
   const [formData, setFormData] = useState(emptyCliente);
-  const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -43,11 +49,13 @@ const ClienteForm = ({ show, cliente, onClose, onSaved }) => {
       } else {
         await createCliente(formData);
       }
+      setError(null);
+      setSuccess(cliente ? 'Cliente actualizado correctamente.' : 'Cliente creado correctamente.');
       onSaved?.();
       onClose?.();
     } catch (err) {
-      console.error('Error guardando cliente', err);
-      setError(err.response?.data?.detail || 'No se pudo guardar el cliente.');
+      setError(err.response?.data?.detail || 'Error al crear el cliente.');
+      setSuccess(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -59,7 +67,6 @@ const ClienteForm = ({ show, cliente, onClose, onSaved }) => {
         <Modal.Title>{cliente ? 'Editar Cliente' : 'Nuevo Cliente'}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {error && <div className="alert alert-danger">{error}</div>}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3" controlId="clienteNombre">
             <Form.Label className="required required-asterisk">Nombre</Form.Label>

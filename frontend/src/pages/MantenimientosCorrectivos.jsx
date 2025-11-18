@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Container, Row, Col, Form, Collapse } from 'react-bootstrap';
+import { Button, Container, Row, Col, Form, Collapse, Alert } from 'react-bootstrap';
 import { FaPlus } from 'react-icons/fa';
 import { FiFilter } from 'react-icons/fi';
 import BackButton from '../components/BackButton';
@@ -21,6 +21,8 @@ const MantenimientosCorrectivos = () => {
     setShowForm,
     selectedMantenimiento,
     filters,
+    error,
+    success,
     isLoading,
     handleFilterChange,
     handleDelete,
@@ -31,7 +33,9 @@ const MantenimientosCorrectivos = () => {
     getClienteNombre,
     getCuadrillaNombre,
     getZonaNombre,
-    isUser
+    isUser,
+    setError,
+    setSuccess
   } = useMantenimientoCorrectivo();
 
   const availableColumns = isUser
@@ -230,22 +234,25 @@ const MantenimientosCorrectivos = () => {
               )}
             </Col>
           </Row>
-
-            {showForm && (
-              <MantenimientoCorrectivoForm
-                mantenimiento={selectedMantenimiento}
-                onClose={handleFormClose}
-              />
-            )}
-            <DataTable
-              columns={availableColumns}
-              data={tableData}
-              entityKey="mantenimientos_correctivos"
-              onEdit={isUser ? handleEdit : undefined}
-              onDelete={isUser ? handleDelete : undefined}
-              onRowClick={(row) => handleRowClick(row.id)}
-              filterContent={filterContent}
+          {error && <Alert variant="danger">{error}</Alert>}
+          {success && <Alert variant="success" className="mt-3">{success}</Alert>}
+          {showForm && (
+            <MantenimientoCorrectivoForm
+              mantenimiento={selectedMantenimiento}
+              onClose={handleFormClose}
+              setError={setError}
+              setSuccess={setSuccess}
             />
+          )}
+          <DataTable
+            columns={availableColumns}
+            data={tableData}
+            entityKey="mantenimientos_correctivos"
+            onEdit={isUser ? handleEdit : undefined}
+            onDelete={isUser ? handleDelete : undefined}
+            onRowClick={(row) => handleRowClick(row.id)}
+            filterContent={filterContent}
+          />
         </div>
       )}
     </Container>

@@ -1,6 +1,6 @@
 import os
 import json
-import hashlib
+import logging
 from datetime import date, datetime
 
 import gspread
@@ -16,10 +16,11 @@ from google.cloud import storage
 
 from api.models import MantenimientoCorrectivo, MantenimientoPreventivo
 
+logger = logging.getLogger(__name__)
+
 GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
 GOOGLE_CLOUD_BUCKET_NAME = os.getenv("GOOGLE_CLOUD_BUCKET_NAME")
 SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
-GOOGLE_SHEETS_TRACKING_SALT = os.getenv("GOOGLE_SHEETS_TRACKING_SALT", "inversur-sheet")
 GOOGLE_CREDENTIALS_DICT = json.loads(GOOGLE_CREDENTIALS) if GOOGLE_CREDENTIALS else None
 storage_client = (
     storage.Client.from_service_account_info(GOOGLE_CREDENTIALS_DICT)
@@ -27,7 +28,7 @@ storage_client = (
     else None
 )
 
-TRACKING_COLUMN_NAME = "_tracking_token"
+TRACKING_COLUMN_NAME = "_mantenimiento_id"
 
 CORRECTIVO_HEADER = [
     "cliente",
@@ -62,12 +63,18 @@ PREVENTIVO_HEADER = [
 PREVENTIVO_VISIBLE_COLUMNS = len(PREVENTIVO_HEADER) - 1
 
 def get_client():
+    if not GOOGLE_CREDENTIALS_DICT:
+        return None
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive",
     ]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_CREDENTIALS_DICT, scope)
-    return gspread.authorize(creds)
+    try:
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_CREDENTIALS_DICT, scope)
+        return gspread.authorize(creds)
+    except Exception as exc:
+        logger.warning("Failed to initialize Google Sheets client: %s", exc, exc_info=True)
+        return None
 
 def _blob_exists(path: str) -> bool:
     if not storage_client or not GOOGLE_CLOUD_BUCKET_NAME:
@@ -87,6 +94,20 @@ def get_planillas_gallery_url(mantenimiento_id):
         return None
     return f"https://storage.googleapis.com/{GOOGLE_CLOUD_BUCKET_NAME}/{blob_path}"
 
+def _get_worksheet(sheet_name: str):
+    if not SHEET_ID:
+        return None
+    client = get_client()
+    if not client:
+        return None
+    return client.open_by_key(SHEET_ID).worksheet(sheet_name)
+
+def _safe_sheet_operation(operation_name: str, callback):
+    try:
+        callback()
+    except Exception as exc:
+        logger.warning("Google Sheets %s failed: %s", operation_name, exc, exc_info=True)
+
 def _column_letter(index: int) -> str:
     if index <= 0:
         return "A"
@@ -100,12 +121,17 @@ def _apply_filters(worksheet, visible_columns: int):
     if visible_columns <= 0:
         return
     last_col_letter = _column_letter(visible_columns)
+    last_row = worksheet.row_count or 1
     try:
-        worksheet.set_basic_filter(f"A1:{last_col_letter}1")
+        worksheet.set_basic_filter(f"A1:{last_col_letter}{max(last_row, 1)}")
     except APIError:
         pass
     except Exception:
         pass
+
+def _append_row_with_filters(worksheet, row_values, visible_columns: int):
+    worksheet.append_row(row_values)
+    _apply_filters(worksheet, visible_columns)
 
 def _hide_column(worksheet, column_index: int):
     if column_index <= 0:
@@ -127,10 +153,9 @@ def _ensure_header(worksheet, header, visible_columns: int):
 
 def _tracking_token(source) -> str:
     mantenimiento_id = source if isinstance(source, int) else getattr(source, "id", None)
-    if not mantenimiento_id:
+    if mantenimiento_id is None:
         return ""
-    payload = f"{GOOGLE_SHEETS_TRACKING_SALT}:{mantenimiento_id}"
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return str(mantenimiento_id)
 
 def _format_datetime_value(value):
     if value is None:
@@ -187,67 +212,115 @@ def _build_preventivo_row(mantenimiento: MantenimientoPreventivo, include_links:
     ]
 
 def append_correctivo(mantenimiento: MantenimientoCorrectivo):
-    client = get_client()
-    worksheet = client.open_by_key(SHEET_ID).worksheet("MantenimientosCorrectivos")
-    _ensure_header(worksheet, CORRECTIVO_HEADER, CORRECTIVO_VISIBLE_COLUMNS)
-    worksheet.append_row(_build_correctivo_row(mantenimiento, include_links=False))
+    def _operation():
+        worksheet = _get_worksheet("MantenimientosCorrectivos")
+        if not worksheet:
+            return
+        _ensure_header(worksheet, CORRECTIVO_HEADER, CORRECTIVO_VISIBLE_COLUMNS)
+        _append_row_with_filters(
+            worksheet,
+            _build_correctivo_row(mantenimiento, include_links=False),
+            CORRECTIVO_VISIBLE_COLUMNS,
+        )
+    _safe_sheet_operation("append_correctivo", _operation)
 
 def update_correctivo(mantenimiento: MantenimientoCorrectivo):
-    client = get_client()
-    worksheet = client.open_by_key(SHEET_ID).worksheet("MantenimientosCorrectivos")
-    _ensure_header(worksheet, CORRECTIVO_HEADER, CORRECTIVO_VISIBLE_COLUMNS)
-    token = _tracking_token(mantenimiento)
-    if not token:
-        return append_correctivo(mantenimiento)
-    try:
-        cell = worksheet.find(token, in_column=len(CORRECTIVO_HEADER))
-    except CellNotFound:
-        return append_correctivo(mantenimiento)
-    row = _build_correctivo_row(mantenimiento, include_links=True)
-    worksheet.update(f"A{cell.row}:N{cell.row}", [row])
+    def _operation():
+        worksheet = _get_worksheet("MantenimientosCorrectivos")
+        if not worksheet:
+            return
+        _ensure_header(worksheet, CORRECTIVO_HEADER, CORRECTIVO_VISIBLE_COLUMNS)
+        token = _tracking_token(mantenimiento)
+        if not token:
+            _append_row_with_filters(
+                worksheet,
+                _build_correctivo_row(mantenimiento, include_links=False),
+                CORRECTIVO_VISIBLE_COLUMNS,
+            )
+            return
+        try:
+            cell = worksheet.find(token, in_column=len(CORRECTIVO_HEADER))
+        except CellNotFound:
+            _append_row_with_filters(
+                worksheet,
+                _build_correctivo_row(mantenimiento, include_links=False),
+                CORRECTIVO_VISIBLE_COLUMNS,
+            )
+            return
+        row = _build_correctivo_row(mantenimiento, include_links=True)
+        end_col = _column_letter(len(CORRECTIVO_HEADER))
+        worksheet.update(f"A{cell.row}:{end_col}{cell.row}", [row])
+    _safe_sheet_operation("update_correctivo", _operation)
 
 def delete_correctivo(mantenimiento_id: int):
-    client = get_client()
-    worksheet = client.open_by_key(SHEET_ID).worksheet("MantenimientosCorrectivos")
-    _ensure_header(worksheet, CORRECTIVO_HEADER, CORRECTIVO_VISIBLE_COLUMNS)
-    token = _tracking_token(mantenimiento_id)
-    if not token:
-        return
-    try:
-        cell = worksheet.find(token, in_column=len(CORRECTIVO_HEADER))
-    except CellNotFound:
-        return
-    worksheet.delete_rows(cell.row)
+    def _operation():
+        worksheet = _get_worksheet("MantenimientosCorrectivos")
+        if not worksheet:
+            return
+        _ensure_header(worksheet, CORRECTIVO_HEADER, CORRECTIVO_VISIBLE_COLUMNS)
+        token = _tracking_token(mantenimiento_id)
+        if not token:
+            return
+        try:
+            cell = worksheet.find(token, in_column=len(CORRECTIVO_HEADER))
+        except CellNotFound:
+            return
+        worksheet.delete_rows(cell.row)
+    _safe_sheet_operation("delete_correctivo", _operation)
 
 def append_preventivo(mantenimiento: MantenimientoPreventivo):
-    client = get_client()
-    worksheet = client.open_by_key(SHEET_ID).worksheet("MantenimientosPreventivos")
-    _ensure_header(worksheet, PREVENTIVO_HEADER, PREVENTIVO_VISIBLE_COLUMNS)
-    worksheet.append_row(_build_preventivo_row(mantenimiento, include_links=False))
+    def _operation():
+        worksheet = _get_worksheet("MantenimientosPreventivos")
+        if not worksheet:
+            return
+        _ensure_header(worksheet, PREVENTIVO_HEADER, PREVENTIVO_VISIBLE_COLUMNS)
+        _append_row_with_filters(
+            worksheet,
+            _build_preventivo_row(mantenimiento, include_links=False),
+            PREVENTIVO_VISIBLE_COLUMNS,
+        )
+    _safe_sheet_operation("append_preventivo", _operation)
 
 def update_preventivo(mantenimiento: MantenimientoPreventivo):
-    client = get_client()
-    worksheet = client.open_by_key(SHEET_ID).worksheet("MantenimientosPreventivos")
-    _ensure_header(worksheet, PREVENTIVO_HEADER, PREVENTIVO_VISIBLE_COLUMNS)
-    token = _tracking_token(mantenimiento)
-    if not token:
-        return append_preventivo(mantenimiento)
-    try:
-        cell = worksheet.find(token, in_column=len(PREVENTIVO_HEADER))
-    except CellNotFound:
-        return append_preventivo(mantenimiento)
-    row = _build_preventivo_row(mantenimiento, include_links=True)
-    worksheet.update(f"A{cell.row}:J{cell.row}", [row])
+    def _operation():
+        worksheet = _get_worksheet("MantenimientosPreventivos")
+        if not worksheet:
+            return
+        _ensure_header(worksheet, PREVENTIVO_HEADER, PREVENTIVO_VISIBLE_COLUMNS)
+        token = _tracking_token(mantenimiento)
+        if not token:
+            _append_row_with_filters(
+                worksheet,
+                _build_preventivo_row(mantenimiento, include_links=False),
+                PREVENTIVO_VISIBLE_COLUMNS,
+            )
+            return
+        try:
+            cell = worksheet.find(token, in_column=len(PREVENTIVO_HEADER))
+        except CellNotFound:
+            _append_row_with_filters(
+                worksheet,
+                _build_preventivo_row(mantenimiento, include_links=False),
+                PREVENTIVO_VISIBLE_COLUMNS,
+            )
+            return
+        row = _build_preventivo_row(mantenimiento, include_links=True)
+        end_col = _column_letter(len(PREVENTIVO_HEADER))
+        worksheet.update(f"A{cell.row}:{end_col}{cell.row}", [row])
+    _safe_sheet_operation("update_preventivo", _operation)
 
 def delete_preventivo(mantenimiento_id: int):
-    client = get_client()
-    worksheet = client.open_by_key(SHEET_ID).worksheet("MantenimientosPreventivos")
-    _ensure_header(worksheet, PREVENTIVO_HEADER, PREVENTIVO_VISIBLE_COLUMNS)
-    token = _tracking_token(mantenimiento_id)
-    if not token:
-        return
-    try:
-        cell = worksheet.find(token, in_column=len(PREVENTIVO_HEADER))
-    except CellNotFound:
-        return
-    worksheet.delete_rows(cell.row)
+    def _operation():
+        worksheet = _get_worksheet("MantenimientosPreventivos")
+        if not worksheet:
+            return
+        _ensure_header(worksheet, PREVENTIVO_HEADER, PREVENTIVO_VISIBLE_COLUMNS)
+        token = _tracking_token(mantenimiento_id)
+        if not token:
+            return
+        try:
+            cell = worksheet.find(token, in_column=len(PREVENTIVO_HEADER))
+        except CellNotFound:
+            return
+        worksheet.delete_rows(cell.row)
+    _safe_sheet_operation("delete_preventivo", _operation)

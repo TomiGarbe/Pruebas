@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Container, Row, Col, Form, Collapse } from 'react-bootstrap';
+import { Button, Container, Row, Col, Form, Collapse, Alert } from 'react-bootstrap';
 import { FaPlus } from 'react-icons/fa';
 import { FiFilter } from 'react-icons/fi';
 import BackButton from '../components/BackButton';
@@ -21,6 +21,8 @@ const MantenimientosPreventivos = () => {
     setShowForm,
     selectedMantenimiento,
     filters,
+    error,
+    success,
     isLoading,
     handleFilterChange,
     handleDelete,
@@ -31,7 +33,9 @@ const MantenimientosPreventivos = () => {
     getClienteNombre,
     getCuadrillaNombre,
     getZonaNombre,
-    isUser
+    isUser,
+    setError,
+    setSuccess
   } = useMantenimientoPreventivo();
 
   const availableColumns = isUser
@@ -172,10 +176,14 @@ const MantenimientosPreventivos = () => {
               )}
             </Col>
           </Row>
+          {error && <Alert variant="danger">{error}</Alert>}
+          {success && <Alert variant="success" className="mt-3">{success}</Alert>}
           {showForm && (
             <MantenimientoPreventivoForm
               mantenimiento={selectedMantenimiento}
               onClose={handleFormClose}
+              setError={setError}
+              setSuccess={setSuccess}
             />
           )}
           <DataTable

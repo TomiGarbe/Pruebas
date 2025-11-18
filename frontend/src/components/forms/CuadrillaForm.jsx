@@ -8,7 +8,13 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaPlus } from 'react-icons/fa';
 import '../../styles/formularios.css';
 
-const CuadrillaForm = ({ cuadrilla, onClose }) => {
+const CuadrillaForm = ({ 
+  cuadrilla, 
+  onClose,
+  error,
+  setError,
+  setSuccess
+}) => {
   const [formData, setFormData] = useState({
     nombre: '',
     zona: '',
@@ -17,7 +23,6 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
   const [newZona, setNewZona] = useState('');
   const [showNewZonaInput, setShowNewZonaInput] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [error, setError] = useState(null);
   const dropdownRef = useRef(null);
   const { signInWithGoogle } = useContext(AuthContext);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,9 +75,11 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
         setNewZona('');
         setShowNewZonaInput(false);
         setError(null);
+        setSuccess('Zona creada correctamente.');
       } catch (error) {
         console.error('Error creating zona:', error);
         setError('Error al crear la zona. Puede que ya exista.');
+        setSuccess(null);
       } finally {
         setIsLoading(false);
       }
@@ -88,10 +95,12 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
         setFormData({ ...formData, zona: '' });
       }
       setError(null);
+      setSuccess('Zona eliminada correctamente.');
     } catch (error) {
       console.error('Error deleting zona:', error);
       const errorMessage = error.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.';
       setError(errorMessage);
+      setSuccess(null);
     } finally {
       setIsLoading(false);
     }
@@ -108,10 +117,13 @@ const CuadrillaForm = ({ cuadrilla, onClose }) => {
         const payload = { ...formData, email: email, id_token: idToken };
         await createCuadrilla(payload);
       }
+      setError(null);
+      setSuccess(cuadrilla ? 'Cuadrilla actualizada correctamente.' : 'Cuadrilla creada correctamente.');
       onClose();
     } catch (error) {
       console.error('Error saving cuadrilla:', error);
       setError(error.message || 'Error al guardar la cuadrilla.');
+      setSuccess(null);
     } finally {
       setIsLoading(false);
     }

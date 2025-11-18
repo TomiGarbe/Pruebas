@@ -34,6 +34,8 @@ const SucursalForm = ({
   onClose,
   onSaved,
   title,
+  setError,
+  setSuccess
 }) => {
   const [formData, setFormData] = useState({
     nombre: '',
@@ -46,7 +48,6 @@ const SucursalForm = ({
   const [newZona, setNewZona] = useState('');
   const [showNewZonaInput, setShowNewZonaInput] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -56,8 +57,8 @@ const SucursalForm = ({
       try {
         const response = await getZonas();
         setZonas(response.data);
+        setError(null);
       } catch (err) {
-        console.error('Error fetching zonas:', err);
         setError('Error al cargar las zonas.');
       } finally {
         setIsLoading(false);
@@ -131,9 +132,10 @@ const SucursalForm = ({
       setNewZona('');
       setShowNewZonaInput(false);
       setError(null);
+      setSuccess('Zona creada correctamente.');
     } catch (err) {
-      console.error('Error creating zona:', err);
       setError('No se pudo crear la zona. Puede que ya exista.');
+      setSuccess(null);
     } finally {
       setIsLoading(false);
     }
@@ -145,9 +147,10 @@ const SucursalForm = ({
       await deleteZona(id);
       setZonas((prev) => prev.filter((zona) => zona.id !== id));
       setError(null);
+      setSuccess('Zona eliminada correctamente.');
     } catch (err) {
-      console.error('Error deleting zona:', err);
       setError(err.response?.data?.detail || 'No se pudo eliminar la zona. Puede estar en uso.');
+      setSuccess(null);
     } finally {
       setIsLoading(false);
     }
@@ -195,11 +198,13 @@ const SucursalForm = ({
         await createSucursal(clienteId, payload);
       }
 
+      setError(null);
+      setSuccess(sucursal ? 'Sucursal actualizada correctamente.' : 'Sucursal creada correctamente.');
       onSaved?.();
       onClose?.();
     } catch (err) {
-      console.error('Error saving sucursal:', err);
-      setError(err.response?.data?.detail || 'No se pudo guardar la sucursal.');
+      setError(err.response?.data?.detail || 'Error al crear la sucursal.');
+      setSuccess(null);
     } finally {
       setIsLoading(false);
     }
@@ -207,11 +212,6 @@ const SucursalForm = ({
 
   const formContent = (
     <>
-      {error && (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      )}
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="sucursalNombre">
           <Form.Label className="required required-asterisk">Nombre</Form.Label>

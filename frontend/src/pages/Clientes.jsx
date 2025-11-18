@@ -1,18 +1,13 @@
-import { Fragment, useEffect, useState } from 'react';
-import { Button, Container, Row, Col, Table, Collapse } from 'react-bootstrap';
+import { Fragment } from 'react';
+import { Button, Container, Row, Col, Table, Collapse, Alert } from 'react-bootstrap';
 import { FaPlus, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { FiEdit, FiTrash2, FiHome } from 'react-icons/fi';
 import ClienteForm from '../components/forms/ClienteForm';
 import SucursalForm from '../components/forms/SucursalForm';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { getClientes, deleteCliente } from '../services/clienteService';
-import { getSucursalesByCliente, deleteSucursal } from '../services/sucursalService';
 import ColumnSelector from '../components/ColumnSelector';
-import { getColumnPreferences, saveColumnPreferences } from '../services/preferencesService';
+import useClientes from '../hooks/forms/useClientes';
 import '../styles/botones_forms.css';
-
-const CLIENTS_PREF_KEY = 'clientes_table';
-const CLIENTS_SUCURSALES_PREF_KEY = 'clientes_sucursales_table';
 
 const clientColumns = [
   { key: 'nombre', label: 'Cliente' },
@@ -30,139 +25,37 @@ const sucursalColumns = [
 ];
 
 const Clientes = () => {
-  const [clientes, setClientes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showClienteForm, setShowClienteForm] = useState(false);
-  const [selectedCliente, setSelectedCliente] = useState(null);
-  const [expandedCliente, setExpandedCliente] = useState(null);
-  const [sucursalesMap, setSucursalesMap] = useState({});
-  const [activeSucursalForm, setActiveSucursalForm] = useState(null);
-  const [loadingSucursales, setLoadingSucursales] = useState(false);
-  const [selectedClientColumns, setSelectedClientColumns] = useState(clientColumns.map((c) => c.key));
-  const [selectedSucursalColumns, setSelectedSucursalColumns] = useState(sucursalColumns.map((c) => c.key));
-
-  useEffect(() => {
-    const loadPreferences = async () => {
-      try {
-        const [clientPrefs, sucursalPrefs] = await Promise.all([
-          getColumnPreferences(CLIENTS_PREF_KEY),
-          getColumnPreferences(CLIENTS_SUCURSALES_PREF_KEY),
-        ]);
-        const clientCols = clientPrefs.data?.columns?.length ? clientPrefs.data.columns : clientColumns.map((c) => c.key);
-        const sucCols = sucursalPrefs.data?.columns?.length ? sucursalPrefs.data.columns : sucursalColumns.map((c) => c.key);
-        setSelectedClientColumns(clientCols);
-        setSelectedSucursalColumns(sucCols);
-      } catch {
-        setSelectedClientColumns(clientColumns.map((c) => c.key));
-        setSelectedSucursalColumns(sucursalColumns.map((c) => c.key));
-      }
-    };
-    loadPreferences();
-  }, []);
-
-  const loadClientes = async () => {
-    setLoading(true);
-    try {
-      const response = await getClientes();
-      setClientes(response.data || []);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching clientes:', err);
-      setError('No se pudieron cargar los clientes.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadSucursales = async (clienteId) => {
-    setLoadingSucursales(true);
-    try {
-      const response = await getSucursalesByCliente(clienteId);
-      setSucursalesMap((prev) => ({ ...prev, [clienteId]: response.data || [] }));
-    } catch (err) {
-      console.error('Error fetching sucursales:', err);
-      setError('No se pudieron cargar las sucursales del cliente.');
-    } finally {
-      setLoadingSucursales(false);
-    }
-  };
-
-  useEffect(() => {
-    loadClientes();
-  }, []);
-
-  const handleDeleteCliente = async (clienteId) => {
-    if (!window.confirm('¿Eliminar este cliente y sus sucursales?')) return;
-    try {
-      await deleteCliente(clienteId);
-      setExpandedCliente(null);
-      await loadClientes();
-    } catch (err) {
-      console.error('Error deleting cliente:', err);
-      setError(err.response?.data?.detail || 'No se pudo eliminar el cliente.');
-    }
-  };
-
-  const handleDeleteSucursal = async (clienteId, sucursalId) => {
-    if (!window.confirm('¿Eliminar esta sucursal?')) return;
-    try {
-      await deleteSucursal(sucursalId);
-      await loadSucursales(clienteId);
-    } catch (err) {
-      console.error('Error deleting sucursal:', err);
-      setError(err.response?.data?.detail || 'No se pudo eliminar la sucursal.');
-    }
-  };
-
-  const toggleClienteRow = (clienteId) => {
-    if (expandedCliente === clienteId) {
-      setExpandedCliente(null);
-      return;
-    }
-    setExpandedCliente(clienteId);
-    if (!sucursalesMap[clienteId]) {
-      loadSucursales(clienteId);
-    }
-  };
-
-  const handleOpenClienteForm = (cliente) => {
-    setSelectedCliente(cliente || null);
-    setShowClienteForm(true);
-  };
-
-  const handleClienteSaved = () => {
-    setShowClienteForm(false);
-    setSelectedCliente(null);
-    loadClientes();
-  };
-
-  const handleOpenSucursalForm = (clienteId, sucursal = null) => {
-    setActiveSucursalForm({ clienteId, sucursal });
-  };
-
-  const handleSucursalSaved = async (clienteId) => {
-    setActiveSucursalForm(null);
-    await loadSucursales(clienteId);
-  };
-
-  const handleSaveClientColumns = async (columns) => {
-    setSelectedClientColumns(columns);
-    try {
-      await saveColumnPreferences(CLIENTS_PREF_KEY, columns);
-    } catch (err) {
-      console.error('Error guardando columnas de clientes', err);
-    }
-  };
-
-  const handleSaveSucursalColumns = async (columns) => {
-    setSelectedSucursalColumns(columns);
-    try {
-      await saveColumnPreferences(CLIENTS_SUCURSALES_PREF_KEY, columns);
-    } catch (err) {
-      console.error('Error guardando columnas de sucursales', err);
-    }
-  };
+  const {
+    clientes,
+    loading,
+    error_cliente,
+    error_sucursal,
+    success_cliente,
+    success_sucursal,
+    showClienteForm,
+    setShowClienteForm,
+    selectedCliente,
+    expandedCliente,
+    sucursalesMap,
+    activeSucursalForm,
+    setActiveSucursalForm,
+    loadingSucursales,
+    selectedClientColumns,
+    selectedSucursalColumns,
+    handleOpenClienteForm,
+    handleDeleteCliente,
+    handleClienteSaved,
+    toggleClienteRow,
+    handleOpenSucursalForm,
+    handleDeleteSucursal,
+    handleSucursalSaved,
+    handleSaveClientColumns,
+    handleSaveSucursalColumns,
+    setError_cliente,
+    setError_sucursal,
+    setSuccess_cliente,
+    setSuccess_sucursal
+  } = useClientes();
 
   const renderSucursales = (cliente) => {
     const sucursales = sucursalesMap[cliente.id] || [];
@@ -184,6 +77,8 @@ const Clientes = () => {
             </Button>
           </div>
         </div>
+        {error_sucursal && <Alert variant="danger">{error_sucursal}</Alert>}
+        {success_sucursal && <Alert variant="success" className="mt-3">{success_sucursal}</Alert>}
         {activeSucursalForm?.clienteId === cliente.id && (
           <SucursalForm
             inline
@@ -192,6 +87,8 @@ const Clientes = () => {
             onClose={() => setActiveSucursalForm(null)}
             onSaved={() => handleSucursalSaved(cliente.id)}
             title={activeSucursalForm.sucursal ? 'Editar sucursal' : 'Crear sucursal'}
+            setError={setError_sucursal}
+            setSuccess={setSuccess_sucursal}
           />
         )}
         <ColumnSelector
@@ -279,11 +176,8 @@ const Clientes = () => {
               </div>
             </Col>
           </Row>
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
+          {error_cliente && <Alert variant="danger">{error_cliente}</Alert>}
+          {success_cliente && <Alert variant="success" className="mt-3">{success_cliente}</Alert>}
           <ColumnSelector
             availableColumns={clientColumns}
             selectedColumns={selectedClientColumns}
@@ -368,6 +262,8 @@ const Clientes = () => {
           cliente={selectedCliente}
           onClose={() => setShowClienteForm(false)}
           onSaved={handleClienteSaved}
+          setError={setError_cliente}
+          setSuccess={setSuccess_cliente}
         />
       )}
     </Container>
