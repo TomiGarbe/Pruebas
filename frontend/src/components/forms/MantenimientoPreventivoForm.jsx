@@ -24,6 +24,7 @@ const MantenimientoPreventivoForm = ({
     estado: 'Pendiente',
   });
   const [frecuenciaSucursal, setFrecuenciaSucursal] = useState(null);
+  const [error_form, setError_form] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSucursalesForCliente = async (id) => {
@@ -110,13 +111,13 @@ const MantenimientoPreventivoForm = ({
     setError(null);
 
     if (!clienteId || !formData.id_sucursal || !formData.id_cuadrilla || !formData.fecha_apertura) {
-      setError('Completá todos los campos obligatorios.');
+      setError_form('Completá todos los campos obligatorios.');
       setIsLoading(false);
       return;
     }
 
     if (preventivoNoConfigurable) {
-      setError('Esta sucursal no tiene frecuencia configurada y no se puede crear el preventivo.');
+      setError_form('Esta sucursal no tiene frecuencia configurada y no se puede crear el preventivo.');
       setIsLoading(false);
       return;
     }
@@ -176,6 +177,7 @@ const MantenimientoPreventivoForm = ({
           </div>
         ) : (
           <div>
+            {error_form && <Alert variant="danger">{error_form}</Alert>}
             <Form onSubmit={handleSubmit}>
               <Form.Group className="mb-3" controlId="cliente">
                 <Form.Label className="required required-asterisk">Cliente</Form.Label>

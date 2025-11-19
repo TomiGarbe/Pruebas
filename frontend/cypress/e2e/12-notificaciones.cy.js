@@ -75,30 +75,8 @@ describe('Modulo de Notificaciones - Integracion', () => {
     cy.contains('.home-button', 'Mantenimiento').should('be.visible').click();
 
     cy.contains('.home-button', 'Mantenimiento Preventivo').should('be.visible').click();
-    cy.contains('tr', 'Sucursal E2E - Mensual', { timeout: 30000 }).within(() => {
+    cy.contains('tr', 'Cliente E2E', { timeout: 30000 }).within(() => {
       cy.get('button[aria-label="Eliminar"]').click();
-    });
-    cy.wait(5000);
-  });
-
-  it('Navega por la aplicacion y borra datos de preventivo test', () => {
-    cy.visit('/', {
-      onBeforeLoad: (win) => {
-        win.localStorage.clear();
-        win.sessionStorage.clear();
-        setSession(win);
-      },
-    });
-
-    cy.contains('.home-button', 'Mantenimiento').should('be.visible').click();
-
-    cy.contains('.home-button', 'Mantenimiento Preventivo').should('be.visible').click();
-
-    cy.contains('button', 'Agregar', { timeout: 30000 }).should('be.visible').click();
-    cy.get('div.modal.show', { timeout: 30000 }).should('be.visible');
-    cy.get('#dropdown-preventivo').click();
-    cy.contains('.custom-dropdown-item', 'Sucursal E2E - Mensual', { timeout: 30000 }).within(() => {
-      cy.get('.custom-delete-button').click();
     });
     cy.wait(5000);
   });
@@ -115,13 +93,13 @@ describe('Modulo de Notificaciones - Integracion', () => {
     cy.contains('.home-button', 'Mantenimiento').should('be.visible').click();
 
     cy.contains('.home-button', 'Mantenimiento Correctivo').should('be.visible').click();
-    cy.contains('tr', 'Sucursal E2E', { timeout: 30000 }).within(() => {
+    cy.contains('tr', 'Cliente E2E', { timeout: 30000 }).within(() => {
       cy.get('button[aria-label="Eliminar"]').click();
     });
     cy.wait(5000);
   });
 
-  it('Navega por la aplicacion y borra datos de sucursal test', () => {
+  it('Navega por la aplicacion y borra datos de cliente test', () => {
     cy.visit('/', {
       onBeforeLoad: (win) => {
         win.localStorage.clear();
@@ -132,9 +110,9 @@ describe('Modulo de Notificaciones - Integracion', () => {
 
     cy.contains('.home-button', 'Mantenimiento').should('be.visible').click();
 
-    cy.contains('.home-button', 'Sucursales').should('be.visible').click();
-    cy.contains('tr', 'Sucursal E2E', { timeout: 30000 }).within(() => {
-      cy.get('button[aria-label="Eliminar"]').click();
+    cy.contains('.home-button', 'Clientes').should('be.visible').click();
+    cy.contains('tr', 'Cliente E2E', { timeout: 30000 }).within(() => {
+      cy.get('button[aria-label="Eliminar cliente"]').click();
     });
     cy.wait(5000);
   });

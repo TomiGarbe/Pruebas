@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, Form, Button } from 'react-bootstrap';
+import { Modal, Form, Button, Alert } from 'react-bootstrap';
 import { createCliente, updateCliente } from '../../services/clienteService';
 import '../../styles/formularios.css';
 
@@ -14,6 +14,7 @@ const ClienteForm = ({
   setSuccess
 }) => {
   const [formData, setFormData] = useState(emptyCliente);
+  const [error_form, setError_form] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -36,11 +37,10 @@ const ClienteForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
 
     try {
       if (!formData.nombre || !formData.contacto || !formData.email) {
-        setError('Todos los campos son obligatorios.');
+        setError_form('Todos los campos son obligatorios.');
         return;
       }
 
@@ -67,6 +67,7 @@ const ClienteForm = ({
         <Modal.Title>{cliente ? 'Editar Cliente' : 'Nuevo Cliente'}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {error_form && <Alert variant="danger">{error_form}</Alert>}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3" controlId="clienteNombre">
             <Form.Label className="required required-asterisk">Nombre</Form.Label>

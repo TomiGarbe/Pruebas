@@ -10,6 +10,7 @@ import useClientes from '../hooks/forms/useClientes';
 import '../styles/botones_forms.css';
 
 const clientColumns = [
+  { key: 'id', label: 'ID' },
   { key: 'nombre', label: 'Cliente' },
   { key: 'contacto', label: 'Contacto' },
   { key: 'email', label: 'Email' },
@@ -17,6 +18,7 @@ const clientColumns = [
 ];
 
 const sucursalColumns = [
+  { key: 'id', label: 'ID' },
   { key: 'nombre', label: 'Nombre' },
   { key: 'zona', label: 'Zona' },
   { key: 'direccion', label: 'Dirección' },
@@ -68,6 +70,7 @@ const Clientes = () => {
           </h5>
           <div className="d-flex align-items-center gap-2">
             <Button
+              data-cy="btn-agregar-sucursal"
               size="sm"
               className="custom-button"
               onClick={() => handleOpenSucursalForm(cliente.id)}
@@ -119,6 +122,7 @@ const Clientes = () => {
               <tbody>
                 {sucursales.map((sucursal) => (
                   <tr key={sucursal.id}>
+                    {selectedSucursalColumns.includes('id') && <td>{sucursal.id}</td>}
                     {selectedSucursalColumns.includes('nombre') && <td>{sucursal.nombre}</td>}
                     {selectedSucursalColumns.includes('zona') && <td>{sucursal.zona || '—'}</td>}
                     {selectedSucursalColumns.includes('direccion') && (
@@ -204,6 +208,7 @@ const Clientes = () => {
                 {clientes.map((cliente) => (
                   <Fragment key={cliente.id}>
                     <tr>
+                      {selectedClientColumns.includes('id') && <td>{cliente.id}</td>}
                       {selectedClientColumns.includes('nombre') && <td>{cliente.nombre}</td>}
                       {selectedClientColumns.includes('contacto') && <td>{cliente.contacto}</td>}
                       {selectedClientColumns.includes('email') && <td>{cliente.email}</td>}
@@ -212,6 +217,7 @@ const Clientes = () => {
                           <button
                             className={`view-sucursales-btn ${expandedCliente === cliente.id ? 'active' : ''}`}
                             onClick={() => toggleClienteRow(cliente.id)}
+                            aria-label="Ver Sucursales"
                           >
                             {expandedCliente === cliente.id ? (
                               <>

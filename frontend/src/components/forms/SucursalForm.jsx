@@ -87,17 +87,9 @@ const SucursalForm = ({
     }
   }, [sucursal]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const toggleDropdown = () => setDropdownOpen((prev) => !prev);
+  const toggleDropdown = (isOpen) => {
+    setDropdownOpen(isOpen);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -114,10 +106,10 @@ const SucursalForm = ({
   const handleZonaSelect = (zonaNombre) => {
     if (zonaNombre === 'new') {
       setShowNewZonaInput(true);
-      setFormData((prev) => ({ ...prev, zona: '' }));
+      setFormData({ ...formData, zona: '' });
     } else {
       setShowNewZonaInput(false);
-      setFormData((prev) => ({ ...prev, zona: zonaNombre }));
+      setFormData({ ...formData, zona: zonaNombre });
     }
     setDropdownOpen(false);
   };
@@ -127,8 +119,8 @@ const SucursalForm = ({
     setIsLoading(true);
     try {
       const response = await createZona({ nombre: newZona.trim() });
-      setZonas((prev) => [...prev, response.data]);
-      setFormData((prev) => ({ ...prev, zona: newZona.trim() }));
+      setZonas([...zonas, response.data]);
+      setFormData({ ...formData, zona: newZona });
       setNewZona('');
       setShowNewZonaInput(false);
       setError(null);
@@ -145,7 +137,10 @@ const SucursalForm = ({
     setIsLoading(true);
     try {
       await deleteZona(id);
-      setZonas((prev) => prev.filter((zona) => zona.id !== id));
+      setZonas(zonas.filter((zona) => zona.id !== id));
+      if (formData.zona === zonas.find((z) => z.id === id)?.nombre) {
+        setFormData({ ...formData, zona: '' });
+      }
       setError(null);
       setSuccess('Zona eliminada correctamente.');
     } catch (err) {

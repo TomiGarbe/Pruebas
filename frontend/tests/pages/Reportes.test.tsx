@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -31,11 +31,24 @@ describe('Página de Reportes', () => {
         year: '2025',
         years: ['2025'],
         setYear: vi.fn(),
+        clientes: [{ id: '1', nombre: 'Cliente Uno' }],
+        zonas: [{ id: '1', nombre: 'Norte' }],
+        sucursales: [{ id: '1', nombre: 'Sucursal Centro', cliente_id: '1', zona: 'Norte' }],
+        cuadrillas: [{ id: '1', nombre: 'Cuadrilla Alfa' }],
+        isLoadingData: false,
         reportData: {}, // Por defecto, no hay datos de reporte.
         handleGenerateReports: vi.fn(),
-        generatePieChartData: vi.fn(() => [{ title: 'Gráfico Pie Test', data: {} }]), // Hacemos que devuelva algo para que el map no falle
+        generatePieChartData: vi.fn(() => [{ title: 'Gráfico Pie Test', labels: [], datasets: [] }]), // Hacemos que devuelva algo para que el map no falle
         generateBarChartData: vi.fn(() => ({})),
         handleDownloadReport: vi.fn(),
+    };
+
+    const defaultFilterPayload = {
+        preventivos: { cliente: '', zona: '', sucursal: '', cuadrilla: '' },
+        correctivos: { cliente: '', zona: '', sucursal: '', cuadrilla: '' },
+        rubros: { cliente: '', zona: '', sucursal: '', cuadrilla: '' },
+        zonas: { cliente: '', cuadrilla: '' },
+        sucursales: { cliente: '', zona: '', cuadrilla: '' },
     };
 
     beforeEach(() => {
@@ -57,9 +70,8 @@ describe('Página de Reportes', () => {
 
         // Verifico que los controles estén presentes.
         expect(screen.getByRole('heading', { name: /Reportes/i })).toBeInTheDocument();
-        expect(screen.getByLabelText('Mes:')).toBeInTheDocument();
-        expect(screen.getByLabelText('Año:')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Generar Reportes/i })).toBeInTheDocument();
+        expect(screen.getByLabelText('Mes')).toBeInTheDocument();
+        expect(screen.getByLabelText('Año')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Descargar Reporte/i })).toBeInTheDocument();
 
         // Verifico que las secciones de reportes NO estén visibles.
@@ -67,18 +79,41 @@ describe('Página de Reportes', () => {
         expect(screen.queryByRole('table')).toBeNull();
     });
 
-    it('Debería llamar a las funciones de control al interactuar con los filtros y botones', () => {
+    it('Debería actualizar automáticamente los reportes al modificar los filtros', async () => {
+        vi.mocked(useReportes).mockReturnValue({
+            ...mockUseReportesReturn,
+            reportData: {
+                preventivos: [],
+                correctivos: [],
+                rubros: { rubros: [], totalAvgDays: 0, totalCount: 0 },
+                zonas: [],
+                sucursales: [],
+            },
+        });
+
         renderPage();
 
+        await waitFor(() => {
+            expect(mockUseReportesReturn.handleGenerateReports).toHaveBeenCalledWith(defaultFilterPayload);
+        });
+
         // Simulo un cambio en el selector de mes.
-        const monthSelect = screen.getByLabelText('Mes:');
+        const monthSelect = screen.getByLabelText('Mes');
         fireEvent.change(monthSelect, { target: { value: '10' } });
         expect(mockUseReportesReturn.setMonth).toHaveBeenCalledWith('10');
 
-        // Simulo un clic en el botón de generar.
-        const generateButton = screen.getByRole('button', { name: /Generar Reportes/i });
-        fireEvent.click(generateButton);
-        expect(mockUseReportesReturn.handleGenerateReports).toHaveBeenCalledTimes(1);
+        // Cambio el filtro de cliente en la primera sección y espero un nuevo cálculo.
+        const preventivosSection = screen.getByRole('heading', { name: /Preventivos por Cuadrilla/i }).closest('section') as HTMLElement;
+        const clienteSelect = within(preventivosSection).getByLabelText('Cliente');
+        fireEvent.change(clienteSelect, { target: { value: '1' } });
+
+        await waitFor(() => {
+            expect(mockUseReportesReturn.handleGenerateReports).toHaveBeenLastCalledWith({
+                ...defaultFilterPayload,
+                preventivos: { cliente: '1', zona: '', sucursal: '', cuadrilla: '' },
+            });
+        });
+        expect(mockUseReportesReturn.handleGenerateReports).toHaveBeenCalledTimes(2);
 
         // Simulo un clic en el botón de descargar.
         const downloadButton = screen.getByRole('button', { name: /Descargar Reporte/i });
@@ -114,9 +149,9 @@ describe('Página de Reportes', () => {
         expect(screen.getAllByTestId('bar-chart')).toHaveLength(2); // Uno para zonas, uno para sucursales.
 
         // Verifico que los datos aparezcan en una de las tablas.
-        expect(screen.getByText('Cuadrilla Alfa')).toBeInTheDocument();
+        expect(screen.getAllByText('Cuadrilla Alfa')[0]).toBeInTheDocument();
         expect(screen.getByText('5/10')).toBeInTheDocument();
-        expect(screen.getByText('Electricidad')).toBeInTheDocument();
+        expect(screen.getAllByText('Electricidad')[0]).toBeInTheDocument();
         expect(screen.getByText('Total General')).toBeInTheDocument();
     });
 });

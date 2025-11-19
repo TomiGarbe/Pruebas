@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
+import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { createMantenimientoCorrectivo, updateMantenimientoCorrectivo } from '../../services/mantenimientoCorrectivoService';
 import { getSucursalesByCliente } from '../../services/sucursalService';
 import { getCuadrillas } from '../../services/cuadrillaService';
@@ -27,6 +27,7 @@ const MantenimientoCorrectivoForm = ({
   const [clienteId, setClienteId] = useState('');
   const [sucursalesPorCliente, setSucursalesPorCliente] = useState({});
   const [cuadrillas, setCuadrillas] = useState([]);
+  const [error_form, setError_form] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -103,7 +104,7 @@ const MantenimientoCorrectivoForm = ({
         !formData.estado ||
         !formData.prioridad
       ) {
-        setError('Por favor, completa todos los campos obligatorios.');
+        setError_form('Por favor, completa todos los campos obligatorios.');
         return;
       }
 
@@ -173,6 +174,7 @@ const MantenimientoCorrectivoForm = ({
             </div>
           ) : (
             <div>
+              {error_form && <Alert variant="danger">{error_form}</Alert>}
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3" controlId="cliente_id">
                   <Form.Label className="required required-asterisk">Cliente</Form.Label>

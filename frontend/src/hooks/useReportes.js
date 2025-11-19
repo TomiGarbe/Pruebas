@@ -19,12 +19,7 @@ const useReportes = () => {
   const [sucursales, setSucursales] = useState([]);
   const [reportData, setReportData] = useState({});
   const [clientes, setClientes] = useState([]);
-  const [clienteFilter, setClienteFilter] = useState('');
-  const [zonaFilter, setZonaFilter] = useState('');
-  const [sucursalFilter, setSucursalFilter] = useState('');
-  const [cuadrillaFilter, setCuadrillaFilter] = useState('');
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [shouldGenerateReports, setShouldGenerateReports] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,7 +63,7 @@ const useReportes = () => {
     return map;
   }, [sucursales]);
 
-  const filterByMonthYear = (items, dateField) => {
+  const filterByMonthYear = useCallback((items, dateField) => {
     return items.filter(item => {
       const rawDate = item[dateField];
       if (!rawDate) return false;
@@ -81,10 +76,18 @@ const useReportes = () => {
 
       return matchesMonth && matchesYear;
     });
-  };
+  }, [month, year]);
 
-  const applyFilters = useCallback((items, dateField = 'fecha_apertura') => {
+  const applyFilters = useCallback((items, filters = {}, dateField = 'fecha_apertura') => {
     let filtered = filterByMonthYear(items, dateField);
+    const {
+      cliente: clienteFilter,
+      zona: zonaFilter,
+      sucursal: sucursalFilter,
+      cuadrilla: cuadrillaFilter,
+      estado: estadoFilter,
+    } = filters;
+
     if (clienteFilter) {
       filtered = filtered.filter((item) => {
         const sucursal = sucursalMap[item.id_sucursal];
@@ -103,15 +106,18 @@ const useReportes = () => {
     if (cuadrillaFilter) {
       filtered = filtered.filter((item) => String(item.id_cuadrilla) === cuadrillaFilter);
     }
+    if (estadoFilter) {
+      filtered = filtered.filter((item) => item.estado === estadoFilter);
+    }
     return filtered;
-  }, [clienteFilter, cuadrillaFilter, month, sucursalFilter, sucursalMap, zonaFilter, year]);
+  }, [filterByMonthYear, sucursalMap]);
 
-  const generatePreventivoReport = useCallback(() => {
-    const filteredPreventivos = applyFilters(preventivos, 'fecha_apertura');
+  const generatePreventivoReport = useCallback((filters = {}) => {
+    const filteredPreventivos = applyFilters(preventivos, filters, 'fecha_apertura');
     if (filteredPreventivos.length === 0) return [];
 
-    const targetCuadrillas = cuadrillaFilter
-      ? cuadrillas.filter((cuadrilla) => String(cuadrilla.id) === cuadrillaFilter)
+    const targetCuadrillas = filters.cuadrilla
+      ? cuadrillas.filter((cuadrilla) => String(cuadrilla.id) === filters.cuadrilla)
       : cuadrillas.filter((cuadrilla) => filteredPreventivos.some((p) => p.id_cuadrilla === cuadrilla.id));
 
     return targetCuadrillas
@@ -129,14 +135,14 @@ const useReportes = () => {
         };
       })
       .filter(Boolean);
-  }, [applyFilters, cuadrillaFilter, cuadrillas, preventivos]);
+  }, [applyFilters, cuadrillas, preventivos]);
 
-  const generateCorrectivoReport = useCallback(() => {
-    const filteredCorrectivos = applyFilters(correctivos, 'fecha_apertura');
+  const generateCorrectivoReport = useCallback((filters = {}) => {
+    const filteredCorrectivos = applyFilters(correctivos, filters, 'fecha_apertura');
     if (filteredCorrectivos.length === 0) return [];
 
-    const targetCuadrillas = cuadrillaFilter
-      ? cuadrillas.filter((cuadrilla) => String(cuadrilla.id) === cuadrillaFilter)
+    const targetCuadrillas = filters.cuadrilla
+      ? cuadrillas.filter((cuadrilla) => String(cuadrilla.id) === filters.cuadrilla)
       : cuadrillas.filter((cuadrilla) => filteredCorrectivos.some((c) => c.id_cuadrilla === cuadrilla.id));
 
     return targetCuadrillas
@@ -154,11 +160,12 @@ const useReportes = () => {
         };
       })
       .filter(Boolean);
-  }, [applyFilters, cuadrillaFilter, cuadrillas, correctivos]);
+  }, [applyFilters, cuadrillas, correctivos]);
 
-  const generateRubroReport = useCallback(() => {
+  const generateRubroReport = useCallback((filters = {}) => {
     const filtered = applyFilters(
       correctivos.filter((c) => c.estado === 'Finalizado'),
+      filters,
       'fecha_apertura'
     );
     const rubros = [...new Set(filtered.map(c => c.rubro))];
@@ -176,8 +183,8 @@ const useReportes = () => {
     return { rubros: report, totalAvgDays, totalCount };
   }, [applyFilters, correctivos]);
 
-  const generateZonaReport = useCallback(() => {
-    const filtered = applyFilters(correctivos, 'fecha_apertura');
+  const generateZonaReport = useCallback((filters = {}) => {
+    const filtered = applyFilters(correctivos, filters, 'fecha_apertura');
     if (filtered.length === 0) return [];
 
     const zoneMap = new Map();
@@ -190,8 +197,8 @@ const useReportes = () => {
       if (!zoneMap.has(zoneName)) {
         const relevantSucursales = sucursales.filter((s) => {
           if (s.zona !== zoneName) return false;
-          if (clienteFilter && String(s.cliente_id) !== clienteFilter) return false;
-          if (sucursalFilter && String(s.id) !== sucursalFilter) return false;
+          if (filters.cliente && String(s.cliente_id) !== filters.cliente) return false;
+          if (filters.sucursal && String(s.id) !== filters.sucursal) return false;
           return true;
         });
 
@@ -206,8 +213,8 @@ const useReportes = () => {
       entry.totalCorrectivos += 1;
     });
 
-    if (zonaFilter) {
-      const filteredZone = zoneMap.get(zonaFilter);
+    if (filters.zona) {
+      const filteredZone = zoneMap.get(filters.zona);
       return filteredZone
         ? [{
           zona: filteredZone.zona,
@@ -222,10 +229,10 @@ const useReportes = () => {
       totalCorrectivos: entry.totalCorrectivos,
       avgCorrectivos: (entry.totalCorrectivos / entry.sucursalesCount).toFixed(2),
     }));
-  }, [applyFilters, clienteFilter, correctivos, sucursalFilter, sucursalMap, sucursales, zonaFilter]);
+  }, [applyFilters, correctivos, sucursalMap, sucursales]);
 
-  const generateSucursalReport = useCallback(() => {
-    const filtered = applyFilters(correctivos, 'fecha_apertura');
+  const generateSucursalReport = useCallback((filters = {}) => {
+    const filtered = applyFilters(correctivos, filters, 'fecha_apertura');
     if (filtered.length === 0) return [];
 
     const totals = {};
@@ -248,31 +255,33 @@ const useReportes = () => {
     return Object.values(totals);
   }, [applyFilters, correctivos, sucursalMap]);
 
-  const handleGenerateReports = () => {
-    setShouldGenerateReports(true);
-  };
-
-  useEffect(() => {
-    if (!shouldGenerateReports || isLoadingData) {
+  const handleGenerateReports = useCallback((filtersBySection = {}) => {
+    if (isLoadingData) {
       return;
     }
 
+    const normalizedFilters = {
+      preventivos: filtersBySection.preventivos || {},
+      correctivos: filtersBySection.correctivos || {},
+      rubros: filtersBySection.rubros || {},
+      zonas: filtersBySection.zonas || {},
+      sucursales: filtersBySection.sucursales || {},
+    };
+
     setReportData({
-      preventivos: generatePreventivoReport(),
-      correctivos: generateCorrectivoReport(),
-      rubros: generateRubroReport(),
-      zonas: generateZonaReport(),
-      sucursales: generateSucursalReport(),
+      preventivos: generatePreventivoReport(normalizedFilters.preventivos),
+      correctivos: generateCorrectivoReport(normalizedFilters.correctivos),
+      rubros: generateRubroReport(normalizedFilters.rubros),
+      zonas: generateZonaReport(normalizedFilters.zonas),
+      sucursales: generateSucursalReport(normalizedFilters.sucursales),
     });
-    setShouldGenerateReports(false);
   }, [
-    shouldGenerateReports,
-    isLoadingData,
     generatePreventivoReport,
     generateCorrectivoReport,
     generateRubroReport,
     generateZonaReport,
     generateSucursalReport,
+    isLoadingData,
   ]);
 
   const generatePieChartData = (report, type) => {
@@ -309,7 +318,7 @@ const useReportes = () => {
     const canvas = await html2canvas(reportElement, {
       scale: 2,
       useCORS: true,
-      scrollY: -window.scrollY, // para capturar correctamente desde el top
+      scrollY: -window.scrollY,
     });
 
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -333,7 +342,7 @@ const useReportes = () => {
     let currentYOffset;
 
     if (window.innerWidth > 1024) {
-      currentYOffset = canvas.height * 0.035; // offset para PC
+      currentYOffset = canvas.height * 0.025; // offset para PC
     } else {
       currentYOffset = 0; // offset para móvil/tablet
     }
@@ -403,14 +412,7 @@ const useReportes = () => {
     zonas,
     sucursales,
     cuadrillas,
-    clienteFilter,
-    setClienteFilter,
-    zonaFilter,
-    setZonaFilter,
-    sucursalFilter,
-    setSucursalFilter,
-    cuadrillaFilter,
-    setCuadrillaFilter,
+    isLoadingData,
     reportData,
     handleGenerateReports,
     generatePieChartData,

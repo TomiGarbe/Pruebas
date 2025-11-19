@@ -32,21 +32,54 @@ describe('Módulo de Reportes - Integración con datos reales', () => {
 
     cy.contains('Reportes', { timeout: 30000 }).should('be.visible');
 
-    cy.get('.filters-container', { timeout: 30000 }).within(() => {
-      cy.get('select').should('have.length.at.least', 2);
-      cy.get('.generate-button').should('be.visible');
-      cy.get('.download-button').should('be.visible');
-    });
+    cy.get('#preventivos-cliente', { timeout: 30000 }).select('Cliente E2E');
+    cy.get('#preventivos-zona', { timeout: 30000 }).select('Zona E2E');
+    cy.get('#preventivos-sucursal', { timeout: 30000 }).select('Sucursal E2E');
+    cy.get('#preventivos-cuadrilla', { timeout: 30000 }).select('Cuadrilla E2E');
 
-    cy.get('.generate-button').click();
-
-    cy.get('canvas', { timeout: 30000 })
+    cy.get(':nth-child(3) > .graph-grid > .chart-card > canvas', { timeout: 30000 })
       .should('exist')
-      .and('have.length.greaterThan', 0);
-
-    cy.get('.report-table', { timeout: 30000 })
+      .and('have.length', 1);
+    
+    cy.get(':nth-child(3) > .report-table', { timeout: 30000 })
       .should('exist')
-      .and('have.length.greaterThan', 0);
+      .and('have.length', 1);
+    
+    cy.get('#correctivos-cliente', { timeout: 30000 }).select('Cliente E2E');
+    cy.get('#correctivos-zona', { timeout: 30000 }).select('Zona E2E');
+    cy.get('#correctivos-sucursal', { timeout: 30000 }).select('Sucursal E2E');
+    cy.get('#correctivos-cuadrilla', { timeout: 30000 }).select('Cuadrilla E2E');
+
+    cy.get(':nth-child(4) > .graph-grid > .chart-card > canvas', { timeout: 30000 })
+      .should('exist')
+      .and('have.length', 1);
+    
+    cy.get(':nth-child(4) > .report-table', { timeout: 30000 })
+      .should('exist')
+      .and('have.length', 1);
+
+    cy.get('#zonas-cliente', { timeout: 30000 }).select('Cliente E2E');
+    cy.get('#zonas-cuadrilla', { timeout: 30000 }).select('Cuadrilla E2E1');
+
+    cy.get(':nth-child(6) > .graph-grid > .chart-card > canvas', { timeout: 30000 })
+      .should('exist')
+      .and('have.length', 1);
+    
+    cy.get(':nth-child(6) > .report-table', { timeout: 30000 })
+      .should('exist')
+      .and('have.length', 1);
+
+    cy.get('#sucursales-cliente', { timeout: 30000 }).select('Cliente E2E');
+    cy.get('#sucursales-zona', { timeout: 30000 }).select('Zona E2E');
+    cy.get('#sucursales-cuadrilla', { timeout: 30000 }).select('Cuadrilla E2E');
+
+    cy.get(':nth-child(7) > .graph-grid > .chart-card > canvas', { timeout: 30000 })
+      .should('exist')
+      .and('have.length', 1);
+    
+    cy.get(':nth-child(7) > .report-table', { timeout: 30000 })
+      .should('exist')
+      .and('have.length', 1);
 
     cy.window().then((win) => {
       const spy = cy.spy(win, 'alert').as('alertSpy');

@@ -66,15 +66,17 @@
     cy.window().then(() => {});
   });
 
-  it('carga la pagina y crea, edita y elimina una sucursal', () => {
+  it('carga la pagina y crea, edita y elimina un cliente y una sucursal', () => {
+    const baseClienteName = 'Cliente E2E';
     const baseSucursalName = 'Sucursal E2E';
+    const updatedClienteName = `${baseClienteName} Editada`;
     const updatedSucursalName = `${baseSucursalName} Editada`;
     const suggestionDescription = 'Universidad Católica de Córdoba - Campus Universitario, Avenida Armada Argentina, Córdoba, Argentina';
     const sucursalZone = 'Zona E2E';
 
     cy.stubGoogleGlobals();
 
-    cy.visit('/sucursales', {
+    cy.visit('/clientes', {
       onBeforeLoad: (win) => {
         win.localStorage.clear();
         win.sessionStorage.clear();
@@ -85,64 +87,105 @@
 
     cy.contains(/Sucursales/i, { timeout: 30000 }).should('be.visible');
 
-    cy.contains('button', 'Agregar').should('be.visible').click();
+    cy.contains('button', 'Nuevo Cliente').should('be.visible').click();
 
     cy.get('div.modal.show', { timeout: 30000 }).should('be.visible');
-    cy.get('#nombre').clear().type(baseSucursalName);
+    cy.get('#clienteNombre').clear().type(baseClienteName);
+    cy.get('#clienteContacto').clear().type('1234567891');
+    cy.get('#clienteEmail').clear().type('contacto@mail.com');
+    cy.contains('button', 'Guardar').should('be.enabled').click();
+
+    cy.contains('td', baseClienteName, { timeout: 30000 }).should('be.visible');
+    cy.contains('td', '1234567891', { timeout: 30000 }).should('be.visible');
+    cy.contains('td', 'contacto@mail.com', { timeout: 30000 }).should('be.visible');
+    cy.contains('tr', baseClienteName).within(() => {
+      cy.get('button[aria-label="Editar cliente"]').click();
+    });
+
+    cy.get('div.modal.show', { timeout: 30000 }).should('be.visible');
+    cy.get('#clienteNombre').clear().type(updatedClienteName);
+    cy.contains('button', 'Guardar').should('be.enabled').click();
+
+    cy.contains('td', updatedClienteName, { timeout: 30000 }).should('be.visible');
+    cy.contains('tr', updatedClienteName).within(() => {
+      cy.get('button[aria-label="Eliminar cliente"]').click();
+    });
+
+    cy.contains('td', updatedClienteName).should('not.exist');
+
+    cy.contains('button', 'Nuevo Cliente').should('be.visible').click();
+
+    cy.get('div.modal.show', { timeout: 30000 }).should('be.visible');
+    cy.get('#clienteNombre').clear().type(baseClienteName);
+    cy.get('#clienteContacto').clear().type('1234567891');
+    cy.get('#clienteEmail').clear().type('contacto@mail.com');
+    cy.contains('button', 'Guardar').should('be.enabled').click();
+
+    cy.contains('tr', baseClienteName, { timeout: 30000 }).within(() => {
+      cy.get('button[aria-label="Ver Sucursales"]').click();
+    });
+    cy.contains('td', baseClienteName, { timeout: 30000 })
+      .parent()
+      .next()
+      .find('.cliente-sucursales-wrapper .custom-button')
+      .contains('Agregar sucursal')
+      .click();
+
+    cy.get('#sucursalNombre', { timeout: 30000 }).clear().type(baseSucursalName);
     cy.get('#dropdown-zona').click();
     cy.contains('.custom-dropdown-item', sucursalZone).click();
-
     cy.get('.direccion-autocomplete-input').should('not.be.disabled').type('Universidad Católica de Córdoba');
     cy.contains('.direccion-autocomplete-item', suggestionDescription, { timeout: 30000 })
       .should('be.visible')
       .click();
-
-    cy.get('#superficie').clear().type('100');
-
+    cy.get('#sucursalSuperficie').clear().type('100');
+    cy.get('#sucursalFrecuencia').select('Mensual');
     cy.contains('button', 'Guardar').should('be.enabled').click();
 
     cy.contains('td', baseSucursalName, { timeout: 30000 }).should('be.visible');
-    cy.contains('td', sucursalZone).should('be.visible');
-    cy.contains('tr', baseSucursalName).within(() => {
-      cy.get('button[aria-label="Editar"]').click();
+    cy.contains('td', sucursalZone, { timeout: 30000 }).should('be.visible');
+    cy.contains('td', 'Mensual', { timeout: 30000 }).should('be.visible');
+    cy.contains('tr', baseSucursalName, { timeout: 30000 }).within(() => {
+      cy.get('button[aria-label="Editar sucursal"]').click();
     });
 
-    cy.get('div.modal.show', { timeout: 30000 }).should('be.visible');
-    cy.get('#nombre').clear().type(updatedSucursalName);
+    cy.get('#sucursalNombre', { timeout: 30000 }).clear().type(updatedSucursalName);
     cy.get('.direccion-autocomplete-input').should('not.be.disabled').type('Universidad Católica de Córdoba');
     cy.contains('.direccion-autocomplete-item', suggestionDescription, { timeout: 30000 })
       .should('be.visible')
       .click();
-
-    cy.contains('button', 'Guardar').should('be.enabled').click();
+    cy.contains('button', 'Guardar', { timeout: 30000 }).should('be.enabled').click();
 
     cy.contains('td', updatedSucursalName, { timeout: 30000 }).should('be.visible');
-    cy.contains('tr', updatedSucursalName).within(() => {
-      cy.get('button[aria-label="Eliminar"]').click();
+    cy.contains('tr', updatedSucursalName, { timeout: 30000 }).within(() => {
+      cy.get('button[aria-label="Eliminar sucursal"]').click();
     });
-    cy.contains('td', updatedSucursalName).should('not.exist');
 
-    cy.contains('button', 'Agregar').should('be.visible').click();
+    cy.contains('td', updatedSucursalName, { timeout: 30000 }).should('not.exist');
 
-    cy.get('div.modal.show', { timeout: 30000 }).should('be.visible');
-    cy.get('#nombre').clear().type(baseSucursalName);
+    cy.contains('td', baseClienteName, { timeout: 30000 })
+      .parent()
+      .next()
+      .find('.cliente-sucursales-wrapper .custom-button')
+      .contains('Agregar sucursal')
+      .click();
+
+    cy.get('#sucursalNombre', { timeout: 30000 }).clear().type(baseSucursalName);
     cy.get('#dropdown-zona').click();
     cy.contains('.custom-dropdown-item', sucursalZone).click();
-
     cy.get('.direccion-autocomplete-input').should('not.be.disabled').type('Universidad Católica de Córdoba');
     cy.contains('.direccion-autocomplete-item', suggestionDescription, { timeout: 30000 })
       .should('be.visible')
       .click();
-
-    cy.get('#superficie').clear().type('100');
-
-    cy.contains('button', 'Guardar').should('be.enabled').click();
+    cy.get('#sucursalSuperficie').clear().type('100');
+    cy.get('#sucursalFrecuencia').select('Mensual');
+    cy.contains('button', 'Guardar', { timeout: 30000 }).should('be.enabled').click();
   });
 
   it('permite ocultar columnas mediante el selector', () => {
     cy.stubGoogleGlobals();
 
-    cy.visit('/sucursales', {
+    cy.visit('/clientes', {
       onBeforeLoad: (win) => {
         win.localStorage.clear();
         win.sessionStorage.clear();
@@ -153,7 +196,7 @@
 
     cy.get('table thead th', { timeout: 30000 }).should('contain', 'ID');
 
-    cy.get('button[aria-label="Seleccionar columnas"]', { timeout: 30000 }).click();
+    cy.get('button[aria-label="Seleccionar columnas"]', { timeout: 30000 }).first().click();
 
     cy.get('.column-selector-modal', { timeout: 30000 }).should('be.visible');
     cy.get('input#col-id', { timeout: 30000 }).should('be.checked').uncheck({ force: true });
@@ -164,7 +207,7 @@
       expect(texts).to.not.include('ID');
     });
 
-    cy.get('button[aria-label="Seleccionar columnas"]', { timeout: 30000 }).click();
+    cy.get('button[aria-label="Seleccionar columnas"]', { timeout: 30000 }).first().click();
 
     cy.get('.column-selector-modal', { timeout: 30000 }).should('be.visible');
     cy.get('input#col-id', { timeout: 30000 }).check();

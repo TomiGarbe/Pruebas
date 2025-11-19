@@ -99,12 +99,14 @@ vi.mock('../../src/services/api');
 
 describe('CuadrillaForm', () => {
   const onClose = vi.fn();
+  const setError = vi.fn();
+  const setSuccess = vi.fn();
   const signInWithGoogle = vi.fn().mockResolvedValue({
     idToken: 'mock-token',
     email: 'test@example.com',
   });
 
-  const renderWithCtx = (ui: React.ReactNode) =>
+  const renderWithCtx = (props: Record<string, any> = {}) =>
     render(
       <AuthContext.Provider
         value={{
@@ -116,7 +118,12 @@ describe('CuadrillaForm', () => {
           verifyUser: vi.fn(),
         }}
       >
-        {ui}
+        <CuadrillaForm
+          onClose={onClose}
+          setError={setError}
+          setSuccess={setSuccess}
+          {...props}
+        />
       </AuthContext.Provider>
     );
 
@@ -129,7 +136,7 @@ describe('CuadrillaForm', () => {
 
   it('submitea creación correctamente (signIn + createCuadrilla + onClose)', async () => {
     cuadrillaService.createCuadrilla.mockResolvedValue({} as any);
-    renderWithCtx(<CuadrillaForm onClose={onClose} />);
+    renderWithCtx();
 
     // 1) Esperar a que termine el loading inicial
     //    (mientras está el spinner no existe el formulario)
@@ -165,7 +172,7 @@ describe('CuadrillaForm', () => {
   it('elimina una zona', async () => {
     zonaService.deleteZona.mockResolvedValue({} as any);
 
-    renderWithCtx(<CuadrillaForm onClose={onClose} />);
+    renderWithCtx();
 
     // esperar a que se vaya el spinner
     await waitForElementToBeRemoved(screen.getByRole('status'));
@@ -190,7 +197,7 @@ describe('CuadrillaForm', () => {
   it('agrega una nueva zona', async () => {
     zonaService.createZona.mockResolvedValue({ data: { id: 2, nombre: 'Nueva Zona' } } as any);
 
-    renderWithCtx(<CuadrillaForm onClose={onClose} />);
+    renderWithCtx();
 
     await waitForElementToBeRemoved(screen.getByRole('status'));
 
