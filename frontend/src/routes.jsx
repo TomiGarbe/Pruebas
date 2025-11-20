@@ -10,7 +10,7 @@ import Preventivo from './pages/Preventivo';
 import Correctivo from './pages/Correctivo';
 import Mapa from './pages/Mapa';
 import Ruta from './pages/Ruta';
-import Reportes from './pages/Reportes';
+import Estadisticas from './pages/Estadisticas';
 
 const routes = [
   { path: '/', element: <Home />, hideBackButton: true },
@@ -24,7 +24,7 @@ const routes = [
   { path: '/correctivo', element: <Correctivo />, hideBackButton: true },
   { path: '/mapa', element: <Mapa />, usersOnly: true, hideBackButton: true },
   { path: '/ruta', element: <Ruta />, hideBackButton: true },
-  { path: '/reportes', element: <Reportes />, adminOnly: true },
+  { path: '/estadisticas', element: <Estadisticas />, adminOnly: true },
 ];
 
 export default routes;

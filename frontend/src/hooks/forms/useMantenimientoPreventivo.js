@@ -6,6 +6,7 @@ import { getSucursales } from '../../services/sucursalService';
 import { getZonas } from '../../services/zonaService';
 import { useAuthRoles } from '../useAuthRoles';
 import { getClientes } from '../../services/clienteService';
+import { confirmDialog } from '../../components/ConfirmDialog';
 
 const useMantenimientoPreventivo = () => {
   const { id, isUser, isCuadrilla } = useAuthRoles();
@@ -104,7 +105,12 @@ const useMantenimientoPreventivo = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Esta seguro de ELIMINAR este mantenimiento preventivo?')) return;
+    const confirmed = await confirmDialog({
+      title: 'Eliminar preventivo',
+      message: '¿Seguro que querés eliminar este mantenimiento preventivo?',
+      confirmText: 'Eliminar',
+    });
+    if (!confirmed) return;
     setIsLoading(true);
     if (isUser) {
       try {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getClientes, deleteCliente } from '../../services/clienteService';
 import { getSucursalesByCliente, deleteSucursal } from '../../services/sucursalService';
 import { getColumnPreferences, saveColumnPreferences } from '../../services/preferencesService';
+import { confirmDialog } from '../../components/ConfirmDialog';
 import '../../styles/botones_forms.css';
 
 const CLIENTS_PREF_KEY = 'clientes_table';
@@ -90,7 +91,12 @@ const useClientes = () => {
   }, []);
 
   const handleDeleteCliente = async (clienteId) => {
-    if (!window.confirm('¿Esta seguro de ELIMINAR este cliente y sus sucursales?')) return;
+    const confirmed = await confirmDialog({
+      title: 'Eliminar cliente',
+      message: '¿Seguro que querés eliminar este cliente y todas sus sucursales?',
+      confirmText: 'Eliminar',
+    });
+    if (!confirmed) return;
     try {
       await deleteCliente(clienteId);
       setExpandedCliente(null);
@@ -104,7 +110,12 @@ const useClientes = () => {
   };
 
   const handleDeleteSucursal = async (clienteId, sucursalId) => {
-    if (!window.confirm('¿Esta seguro de ELIMINAR esta sucursal?')) return;
+    const confirmed = await confirmDialog({
+      title: 'Eliminar sucursal',
+      message: '¿Seguro que querés eliminar esta sucursal?',
+      confirmText: 'Eliminar',
+    });
+    if (!confirmed) return;
     try {
       await deleteSucursal(sucursalId);
       await loadSucursales(clienteId);

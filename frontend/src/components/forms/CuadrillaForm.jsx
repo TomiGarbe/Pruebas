@@ -120,13 +120,13 @@ const CuadrillaForm = ({
       }
       setError(null);
       setSuccess(cuadrilla ? 'Cuadrilla actualizada correctamente.' : 'Cuadrilla creada correctamente.');
-      onClose();
     } catch (error) {
       console.error('Error saving cuadrilla:', error);
       setError(error.message || 'Error al guardar la cuadrilla.');
       setSuccess(null);
     } finally {
       setIsLoading(false);
+      onClose();
     }
   };
 

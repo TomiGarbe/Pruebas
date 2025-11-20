@@ -7,13 +7,32 @@ const MapSidebar = ({
   clientes = [],
   clienteFilter = '',
   onClienteChange = () => {},
+  zonas = [],
+  zonaSucFilter = '',
+  zonaCuaFilter = '',
+  onZonaSucChange = () => {},
+  onZonaCuaChange = () => {},
   onSelectCuadrilla,
   onSelectEncargado,
   onSelectSucursal
 }) => (
   <>
     <div className="map-sidebar-left">
-      <h4>Cuadrillas</h4>
+      <div className="d-flex flex-column align-items-start gap-2">
+        <h4 className="mb-0">Cuadrillas</h4>
+        <select
+          value={zonaCuaFilter}
+          onChange={(e) => onZonaCuaChange(e.target.value)}
+          className="map-client-filter"
+        >
+          <option value="">Todas las zonas</option>
+          {zonas.map((zona) => (
+            <option key={zona} value={zona}>
+              {zona}
+            </option>
+          ))}
+        </select>
+      </div>
       {cuadrillas.length === 0 && <p>No hay cuadrillas activas.</p>}
       {cuadrillas.map(cuadrilla => (
         <div
@@ -55,6 +74,18 @@ const MapSidebar = ({
           {clientes.map((cliente) => (
             <option key={cliente.id} value={cliente.id}>
               {cliente.nombre}
+            </option>
+          ))}
+        </select>
+        <select
+          value={zonaSucFilter}
+          onChange={(e) => onZonaSucChange(e.target.value)}
+          className="map-client-filter"
+        >
+          <option value="">Todas las zonas</option>
+          {zonas.map((zona) => (
+            <option key={zona} value={zona}>
+              {zona}
             </option>
           ))}
         </select>

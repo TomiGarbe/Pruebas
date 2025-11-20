@@ -21,6 +21,11 @@ const Mapa = () => {
     clientes,
     clienteFilter,
     setClienteFilter,
+    zonasDisponibles,
+    zonaSucursalFilter,
+    setZonaSucursalFilter,
+    zonaCuadrillaFilter,
+    setZonaCuadrillaFilter,
     compassRef,
     showEncargados,
     showCuadrillas,
@@ -55,6 +60,11 @@ const Mapa = () => {
           clientes={clientes}
           clienteFilter={clienteFilter}
           onClienteChange={setClienteFilter}
+          zonas={zonasDisponibles}
+          zonaSucFilter={zonaSucursalFilter}
+          onZonaSucChange={setZonaSucursalFilter}
+          zonaCuaFilter={zonaCuadrillaFilter}
+          onZonaCuaChange={setZonaCuadrillaFilter}
           onSelectCuadrilla={handleCuadrillaSelection}
           onSelectEncargado={handleEncargadoSelection}
           onSelectSucursal={handleSucursalSelection}
@@ -80,6 +90,11 @@ const Mapa = () => {
           clientes={clientes}
           clienteFilter={clienteFilter}
           onClienteChange={setClienteFilter}
+          zonas={zonasDisponibles}
+          zonaSucFilter={zonaSucursalFilter}
+          onZonaSucChange={setZonaSucursalFilter}
+          zonaCuaFilter={zonaCuadrillaFilter}
+          onZonaCuaChange={setZonaCuadrillaFilter}
           onSelectCuadrilla={handleCuadrillaSelection}
           onSelectEncargado={handleEncargadoSelection}
           onSelectSucursal={handleSucursalSelection}

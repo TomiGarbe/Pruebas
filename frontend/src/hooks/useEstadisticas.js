@@ -9,15 +9,15 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import logoImg from '../assets/logo_inversur.png';
 
-const useReportes = () => {
-  const [month, setMonth] = useState('');
-  const [year, setYear] = useState('');
+const useEstadisticas = () => {
+  const [selectedMonths, setSelectedMonths] = useState([]);
+  const [selectedYears, setSelectedYears] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
   const [correctivos, setCorrectivos] = useState([]);
   const [preventivos, setPreventivos] = useState([]);
   const [zonas, setZonas] = useState([]);
   const [sucursales, setSucursales] = useState([]);
-  const [reportData, setReportData] = useState({});
+  const [estadisticasData, setEstadisticasData] = useState({});
   const [clientes, setClientes] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
@@ -47,7 +47,7 @@ const useReportes = () => {
         setSucursales(sucursalesRes.data);
         setClientes(clientesRes.data || []);
       } catch (error) {
-        console.error('Error al cargar datos de reportes', error);
+        console.error('Error al cargar datos de estadísticas', error);
       } finally {
         setIsLoadingData(false);
       }
@@ -71,12 +71,14 @@ const useReportes = () => {
       const date = new Date(rawDate);
       if (isNaN(date)) return false;
 
-      const matchesMonth = month ? date.getMonth() + 1 === parseInt(month) : true;
-      const matchesYear = year ? date.getFullYear() === parseInt(year) : true;
+      const monthValue = `${date.getMonth() + 1}`;
+      const yearValue = `${date.getFullYear()}`;
+      const matchesMonth = selectedMonths.length ? selectedMonths.includes(monthValue) : true;
+      const matchesYear = selectedYears.length ? selectedYears.includes(yearValue) : true;
 
       return matchesMonth && matchesYear;
     });
-  }, [month, year]);
+  }, [selectedMonths, selectedYears]);
 
   const applyFilters = useCallback((items, filters = {}, dateField = 'fecha_apertura') => {
     let filtered = filterByMonthYear(items, dateField);
@@ -255,7 +257,7 @@ const useReportes = () => {
     return Object.values(totals);
   }, [applyFilters, correctivos, sucursalMap]);
 
-  const handleGenerateReports = useCallback((filtersBySection = {}) => {
+  const handleGenerateEstadisticas = useCallback((filtersBySection = {}) => {
     if (isLoadingData) {
       return;
     }
@@ -268,7 +270,7 @@ const useReportes = () => {
       sucursales: filtersBySection.sucursales || {},
     };
 
-    setReportData({
+    setEstadisticasData({
       preventivos: generatePreventivoReport(normalizedFilters.preventivos),
       correctivos: generateCorrectivoReport(normalizedFilters.correctivos),
       rubros: generateRubroReport(normalizedFilters.rubros),
@@ -304,14 +306,26 @@ const useReportes = () => {
     }],
   });
 
-  const months = [...Array(12)].map((_, i) => ({ value: `${i + 1}`, label: new Date(0, i).toLocaleString('es-AR', { month: 'long' }) }));
-  const years = [...Array(10)].map((_, i) => new Date().getFullYear() - i);
+  const months = useMemo(
+    () => [...Array(12)].map((_, i) => ({ value: `${i + 1}`, label: new Date(0, i).toLocaleString('es-AR', { month: 'long' }) })),
+    []
+  );
 
-  const handleDownloadReport = async () => {
+  const years = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: currentYear - 2020 + 1 }, (_, i) => `${currentYear - i}`);
+  }, []);
+
+  useEffect(() => {
+    setSelectedMonths(months.map((m) => m.value));
+    setSelectedYears(years);
+  }, [months, years]);
+
+  const handleDownloadEstadisticas = async () => {
     const reportElement = document.querySelector('.reports-container');
 
     if (!reportElement) {
-      alert('No se encontró el contenido del reporte.');
+      alert('No se encontró el contenido de las estadísticas.');
       return;
     }
 
@@ -397,28 +411,28 @@ const useReportes = () => {
     }
 
     const now = new Date();
-    const fileName = `Reporte_${now.toLocaleDateString().replace(/\//g, '-')}_${now.toLocaleTimeString().replace(/:/g, '-')}.pdf`;
+    const fileName = `Estadisticas_${now.toLocaleDateString().replace(/\//g, '-')}_${now.toLocaleTimeString().replace(/:/g, '-')}.pdf`;
     pdf.save(fileName);
   };
 
   return { 
-    month,
+    selectedMonths,
     months, 
-    setMonth,
-    year,
+    setSelectedMonths,
+    selectedYears,
     years,
-    setYear, 
+    setSelectedYears, 
     clientes,
     zonas,
     sucursales,
     cuadrillas,
     isLoadingData,
-    reportData,
-    handleGenerateReports,
+    estadisticasData,
+    handleGenerateEstadisticas,
     generatePieChartData,
     generateBarChartData,
-    handleDownloadReport
+    handleDownloadEstadisticas
   };
 };
 
-export default useReportes;
+export default useEstadisticas;

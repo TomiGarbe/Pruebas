@@ -121,12 +121,12 @@ const MantenimientoCorrectivoForm = ({
       }
       setError(null);
       setSuccess(mantenimiento ? 'Mantenimiento correctivo actualizado correctamente.' : 'Mantenimiento correctivo creado correctamente.');
-      onClose();
     } catch (error) {
       setError(error.message || 'Error al guardar el mantenimiento correctivo.');
       setSuccess(null);
     } finally {
       setIsLoading(false);
+      onClose();
     }
   };
 

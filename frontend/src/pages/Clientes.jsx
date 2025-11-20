@@ -11,8 +11,8 @@ import '../styles/botones_forms.css';
 
 const clientColumns = [
   { key: 'id', label: 'ID' },
-  { key: 'nombre', label: 'Cliente' },
-  { key: 'contacto', label: 'Contacto' },
+  { key: 'nombre', label: 'Nombre' },
+  { key: 'contacto', label: 'Telefono' },
   { key: 'email', label: 'Email' },
   { key: 'acciones', label: 'Acciones' },
 ];

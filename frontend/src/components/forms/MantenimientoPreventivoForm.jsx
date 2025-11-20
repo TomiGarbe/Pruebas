@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { FaInfoCircle } from 'react-icons/fa';
-import { createMantenimientoPreventivo, updateMantenimientoPreventivo } from '../../services/mantenimientoPreventivoService';
+import {
+  createMantenimientoPreventivo,
+  updateMantenimientoPreventivo,
+  getMantenimientosPreventivos,
+} from '../../services/mantenimientoPreventivoService';
 import { getClientes } from '../../services/clienteService';
 import { getSucursalesByCliente } from '../../services/sucursalService';
 import { getCuadrillas } from '../../services/cuadrillaService';
@@ -25,6 +29,7 @@ const MantenimientoPreventivoForm = ({
   });
   const [frecuenciaSucursal, setFrecuenciaSucursal] = useState(null);
   const [error_form, setError_form] = useState(null);
+  const [preventivosExistentes, setPreventivosExistentes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSucursalesForCliente = async (id) => {
@@ -40,13 +45,19 @@ const MantenimientoPreventivoForm = ({
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [clientesResponse, cuadrillasResponse] = await Promise.all([
+        const preventivosPromise =
+          typeof getMantenimientosPreventivos === 'function'
+            ? getMantenimientosPreventivos()
+            : Promise.resolve({ data: [] });
+        const [clientesResponse, cuadrillasResponse, preventivosResponse] = await Promise.all([
           getClientes(),
           getCuadrillas(),
+          preventivosPromise,
         ]);
         const clientesData = clientesResponse.data || [];
         setClientes(clientesData);
         setCuadrillas(cuadrillasResponse.data || []);
+        setPreventivosExistentes(preventivosResponse.data || []);
 
         let initialClienteId = mantenimiento?.cliente_id || mantenimiento?.id_cliente;
         if (!initialClienteId && clientesData.length) {
@@ -77,13 +88,29 @@ const MantenimientoPreventivoForm = ({
   }, [mantenimiento]);
 
   useEffect(() => {
+    if (mantenimiento) {
+      setFormData({
+        id_sucursal: mantenimiento.id_sucursal || '',
+        id_cuadrilla: mantenimiento.id_cuadrilla || '',
+        fecha_apertura: mantenimiento.fecha_apertura?.split('T')[0] || '',
+        estado: mantenimiento.estado || 'Pendiente',
+      });
+      setFrecuenciaSucursal(mantenimiento.frecuencia || mantenimiento.frecuencia_preventivo || null);
+      if (mantenimiento.cliente_id || mantenimiento.id_cliente) {
+        setClienteId(String(mantenimiento.cliente_id || mantenimiento.id_cliente));
+      }
+    }
+  }, [mantenimiento]);
+
+  useEffect(() => {
     if (!clienteId || !formData.id_sucursal) {
-      setFrecuenciaSucursal(null);
       return;
     }
     const sucursales = sucursalesPorCliente[clienteId] || [];
     const selected = sucursales.find((s) => String(s.id) === String(formData.id_sucursal));
-    setFrecuenciaSucursal(selected?.frecuencia_preventivo || null);
+    if (selected) {
+      setFrecuenciaSucursal(selected.frecuencia_preventivo || null);
+    }
   }, [clienteId, formData.id_sucursal, sucursalesPorCliente]);
 
   const sucursales = clienteId ? sucursalesPorCliente[clienteId] || [] : [];
@@ -109,11 +136,54 @@ const MantenimientoPreventivoForm = ({
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setError_form(null);
 
     if (!clienteId || !formData.id_sucursal || !formData.id_cuadrilla || !formData.fecha_apertura) {
       setError_form('Completá todos los campos obligatorios.');
       setIsLoading(false);
       return;
+    }
+
+    const getVentanaFrecuencia = (fechaISO, frecuencia) => {
+      const targetDate = new Date(fechaISO);
+      if (Number.isNaN(targetDate.getTime()) || !frecuencia) return null;
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
+      const normalize = frecuencia.toLowerCase();
+      let startMonth = month;
+      let endMonth = month;
+
+      if (normalize === 'trimestral') {
+        startMonth = Math.floor(month / 3) * 3;
+        endMonth = startMonth + 2;
+      } else if (normalize === 'cuatrimestral') {
+        startMonth = Math.floor(month / 4) * 4;
+        endMonth = startMonth + 3;
+      } else if (normalize === 'semestral') {
+        startMonth = Math.floor(month / 6) * 6;
+        endMonth = startMonth + 5;
+      }
+
+      const start = new Date(year, startMonth, 1, 0, 0, 0, 0);
+      const end = new Date(year, endMonth + 1, 0, 23, 59, 59, 999);
+      return { start, end };
+    };
+
+    const ventana = getVentanaFrecuencia(formData.fecha_apertura, frecuenciaSucursal);
+    if (ventana) {
+      const conflicto = preventivosExistentes.some((prev) => {
+        if (Number(prev.id_sucursal) !== parseInt(formData.id_sucursal, 10)) return false;
+        if (mantenimiento && Number(prev.id) === Number(mantenimiento.id)) return false;
+        if ((prev.frecuencia || '').toLowerCase() !== (frecuenciaSucursal || '').toLowerCase()) return false;
+        const fechaPrev = new Date(prev.fecha_apertura);
+        if (Number.isNaN(fechaPrev.getTime())) return false;
+        return fechaPrev >= ventana.start && fechaPrev <= ventana.end;
+      });
+      if (conflicto) {
+        setError_form('Ya existe un preventivo en ese rango de frecuencia para la sucursal seleccionada.');
+        setIsLoading(false);
+        return;
+      }
     }
 
     if (preventivoNoConfigurable) {
@@ -139,12 +209,12 @@ const MantenimientoPreventivoForm = ({
       }
       setError(null);
       setSuccess(mantenimiento ? 'Mantenimiento preventivo actualizado correctamente.' : 'Mantenimiento preventivo creado correctamente.');
-      onClose();
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al guardar el mantenimiento preventivo.');
       setSuccess(null);
     } finally {
       setIsLoading(false);
+      onClose();
     }
   };
 

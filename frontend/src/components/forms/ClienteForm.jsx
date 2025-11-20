@@ -37,6 +37,7 @@ const ClienteForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError_form(null);
 
     try {
       if (!formData.nombre || !formData.contacto || !formData.email) {
@@ -54,7 +55,7 @@ const ClienteForm = ({
       onSaved?.();
       onClose?.();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al crear el cliente.');
+      setError(err.response?.data?.detail || 'Error al guardar');
       setSuccess(null);
     } finally {
       setIsSubmitting(false);

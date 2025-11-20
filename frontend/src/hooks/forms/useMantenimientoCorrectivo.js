@@ -6,6 +6,7 @@ import { getCuadrillas } from '../../services/cuadrillaService';
 import { getZonas } from '../../services/zonaService';
 import { useAuthRoles } from '../useAuthRoles';
 import { getClientes } from '../../services/clienteService';
+import { confirmDialog } from '../../components/ConfirmDialog';
 
 const useMantenimientoCorrectivo = () => {
   const { id, isUser, isCuadrilla } = useAuthRoles();
@@ -116,7 +117,12 @@ const useMantenimientoCorrectivo = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Esta seguro de ELIMINAR este mantenimiento correctivo?')) return;
+    const confirmed = await confirmDialog({
+      title: 'Eliminar correctivo',
+      message: '¿Seguro que querés eliminar este mantenimiento correctivo?',
+      confirmText: 'Eliminar',
+    });
+    if (!confirmed) return;
     setIsLoading(true);
     if (isUser) {
       try {

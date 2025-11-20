@@ -9,6 +9,7 @@ import useIsMobile from '../useIsMobile';
 import useChat from './useChat';
 import useMantenimientos from './useMantenimientos';
 import { getClientes } from '../../services/clienteService';
+import { confirmDialog } from '../../components/ConfirmDialog';
 
 const usePreventivo = (mantenimientoId) => {
   const { id, uid, nombre, isUser } = useAuthRoles();
@@ -121,7 +122,12 @@ const usePreventivo = (mantenimientoId) => {
   };
 
   const handleDeleteSelectedPhotos = async (photos) => {
-    if (!window.confirm('¿Esta seguro de ELIMINAR las fotos seleccionadas?')) return;
+    const confirmed = await confirmDialog({
+      title: 'Eliminar fotos',
+      message: '¿Seguro que querés eliminar las fotos seleccionadas?',
+      confirmText: 'Eliminar',
+    });
+    if (!confirmed) return;
     setIsLoading(true);
     try {
       for (const photoUrl of photos) {

@@ -21,6 +21,11 @@ const MapaMobile = ({
   clientes,
   clienteFilter,
   onClienteChange,
+  zonas = [],
+  zonaSucFilter = '',
+  onZonaSucChange = () => {},
+  zonaCuaFilter = '',
+  onZonaCuaChange = () => {},
   onSelectCuadrilla,
   onSelectEncargado,
   onSelectSucursal,
@@ -38,6 +43,11 @@ const MapaMobile = ({
             clientes={clientes}
             clienteFilter={clienteFilter}
             onClienteChange={onClienteChange}
+            zonas={zonas}
+            zonaSucFilter={zonaSucFilter}
+            onZonaSucChange={onZonaSucChange}
+            zonaCuaFilter={zonaCuaFilter}
+            onZonaCuaChange={onZonaCuaChange}
             onSelectCuadrilla={onSelectCuadrilla}
             onSelectEncargado={onSelectEncargado}
             onSelectSucursal={onSelectSucursal}

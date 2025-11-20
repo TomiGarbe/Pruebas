@@ -45,13 +45,13 @@ const UserForm = ({
       }
       setError(null);
       setSuccess(user ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.');
-      onClose();
     } catch (error) {
       console.error('Error saving user:', error);
       setError(error.message || 'Error al guardar el usuario.');
       setSuccess(null);
     } finally {
       setIsLoading(false);
+      onClose();
     }
   };
 

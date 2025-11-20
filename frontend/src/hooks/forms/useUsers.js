@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getUsers, deleteUser } from '../../services/userService';
+import { confirmDialog } from '../../components/ConfirmDialog';
 
 const useUsers = () => {
   const [users, setUsers] = useState([]);
@@ -27,7 +28,12 @@ const useUsers = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Esta seguro de ELIMINAR este usuario?')) return;
+    const confirmed = await confirmDialog({
+      title: 'Eliminar usuario',
+      message: '¿Seguro que querés eliminar este usuario?',
+      confirmText: 'Eliminar',
+    });
+    if (!confirmed) return;
     setIsLoading(true);
     try {
       await deleteUser(id);

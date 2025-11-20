@@ -1,4 +1,4 @@
-describe('Módulo de Reportes - Integración con datos reales', () => {
+describe('Módulo de Estadísticas - Integración con datos reales', () => {
   const adminEntity = {
     type: 'usuario',
     data: {
@@ -23,14 +23,14 @@ describe('Módulo de Reportes - Integración con datos reales', () => {
     cy.clearCookies();
   });
 
-  it('verifica que la página de reportes cargue y genere los gráficos con datos reales', () => {
-    cy.visit('/reportes', {
+  it('verifica que la página de estadísticas cargue y genere los gráficos con datos reales', () => {
+    cy.visit('/estadisticas', {
       onBeforeLoad: (win) => {
         setSession(win);
       },
     });
 
-    cy.contains('Reportes', { timeout: 30000 }).should('be.visible');
+    cy.contains('Estadísticas', { timeout: 30000 }).should('be.visible');
 
     cy.get('#preventivos-cliente', { timeout: 30000 }).select('Cliente E2E');
     cy.get('#preventivos-zona', { timeout: 30000 }).select('Zona E2E');

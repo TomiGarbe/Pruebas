@@ -2,30 +2,91 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Pie, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js';
 import { Form } from 'react-bootstrap';
-import useReportes from '../hooks/useReportes';
-import '../styles/reportes.css';
+import useEstadisticas from '../hooks/useEstadisticas';
+import '../styles/estadisticas.css';
 
 ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
-const Reportes = () => {
+const MultiSelectDropdown = ({ id, label, options, selectedValues, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const allSelected = selectedValues.length === options.length;
+
+  const toggleValue = (value) => {
+    const next = selectedValues.includes(value)
+      ? selectedValues.filter((v) => v !== value)
+      : [...selectedValues, value];
+    onChange(next);
+  };
+
+  const toggleAll = () => {
+    if (allSelected) {
+      onChange([]);
+    } else {
+      onChange(options.map((opt) => opt.value));
+    }
+  };
+
+  const selectedLabel = allSelected
+    ? 'Todos'
+    : `${selectedValues.length} seleccionados`;
+
+  return (
+    <div className="multi-select">
+      <button
+        type="button"
+        className="multi-select-toggle"
+        aria-expanded={isOpen}
+        aria-controls={`${id}-menu`}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        {label}: {selectedLabel}
+      </button>
+      {isOpen && (
+        <div className="multi-select-menu" id={`${id}-menu`}>
+          <label className="multi-select-option">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleAll}
+            />
+            <span>Todos</span>
+          </label>
+          <div className="multi-select-divider" />
+          {options.map((option) => (
+            <label key={option.value} className="multi-select-option">
+              <input
+                type="checkbox"
+                checked={allSelected || selectedValues.includes(option.value)}
+                onChange={() => toggleValue(option.value)}
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Estadisticas = () => {
   const {
-    month,
+    selectedMonths,
     months,
-    setMonth,
-    year,
+    setSelectedMonths,
+    selectedYears,
     years,
-    setYear,
+    setSelectedYears,
     clientes,
     zonas,
     sucursales,
     cuadrillas,
     isLoadingData,
-    reportData,
-    handleGenerateReports,
+    estadisticasData,
+    handleGenerateEstadisticas,
     generatePieChartData,
     generateBarChartData,
-    handleDownloadReport,
-  } = useReportes();
+    handleDownloadEstadisticas,
+  } = useEstadisticas();
 
   const [preventivoFilters, setPreventivoFilters] = useState({
     cliente: '',
@@ -141,61 +202,59 @@ const Reportes = () => {
 
   useEffect(() => {
     if (!isLoadingData) {
-      handleGenerateReports(filtersPayload);
+      handleGenerateEstadisticas(filtersPayload);
     }
-  }, [filtersPayload, handleGenerateReports, isLoadingData]);
+  }, [filtersPayload, handleGenerateEstadisticas, isLoadingData, selectedMonths, selectedYears]);
 
   return (
     <div className="reports-container">
-      <h1 className="report-header">Reportes</h1>
+      <h1 className="report-header">Estadísticas</h1>
 
       <div className="report-filter-panel">
         <div className="filter-panel-content">
           <div className="filter-panel-text">
             <h2 className="filter-panel-title">Periodo del reporte</h2>
             <p className="report-description">
-              Seleccioná el mes y el año a analizar; las estadísticas se actualizan automáticamente al cambiar cualquier filtro.
+              Seleccioná uno o más meses y años para analizar; las estadísticas se actualizan automáticamente al cambiar cualquier filtro.
             </p>
           </div>
           <div className="filter-panel-controls">
             <div className="maintenance-filters-row">
               <div className="maintenance-filter-item">
                 <Form.Group className="mb-0" controlId="month-select">
-                  <Form.Label>Mes</Form.Label>
-                  <Form.Select value={month} onChange={(e) => setMonth(e.target.value)}>
-                    <option value="">Todos</option>
-                    {months.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </Form.Select>
+                  <Form.Label className="mb-2">Meses</Form.Label>
+                  <MultiSelectDropdown
+                    id="months"
+                    label="Meses"
+                    options={months}
+                    selectedValues={selectedMonths}
+                    onChange={setSelectedMonths}
+                  />
                 </Form.Group>
               </div>
               <div className="maintenance-filter-item">
                 <Form.Group className="mb-0" controlId="year-select">
-                  <Form.Label>Año</Form.Label>
-                  <Form.Select value={year} onChange={(e) => setYear(e.target.value)}>
-                    <option value="">Todos</option>
-                    {years.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </Form.Select>
+                  <Form.Label className="mb-2">Años</Form.Label>
+                  <MultiSelectDropdown
+                    id="years"
+                    label="Años"
+                    options={years.map((y) => ({ value: y, label: y }))}
+                    selectedValues={selectedYears}
+                    onChange={setSelectedYears}
+                  />
                 </Form.Group>
               </div>
             </div>
             <div className="report-actions">
-              <button onClick={handleDownloadReport} className="download-button">
-                Descargar Reporte
+              <button onClick={handleDownloadEstadisticas} className="download-button">
+                Descargar Estadísticas
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {reportData.preventivos && (
+      {estadisticasData.preventivos && (
         <section className="report-section">
           <div className="section-header">
             <div>
@@ -271,12 +330,12 @@ const Reportes = () => {
               </div>
             </div>
           </div>
-          {reportData.preventivos.length === 0
+          {estadisticasData.preventivos.length === 0
             ? renderEmptyState('No se encontraron preventivos para los filtros aplicados.')
             : (
               <>
                 <div className="graph-grid">
-                  {generatePieChartData(reportData.preventivos, 'Preventivos').map((chart, idx) => (
+                  {generatePieChartData(estadisticasData.preventivos, 'Preventivos').map((chart, idx) => (
                     <div className="chart-card" key={idx}>
                       <h3>{chart.title}</h3>
                       <Pie data={chart} options={{ plugins: { legend: { position: 'bottom' } } }} />
@@ -291,7 +350,7 @@ const Reportes = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reportData.preventivos.map((r, i) => (
+                    {estadisticasData.preventivos.map((r, i) => (
                       <tr key={i}>
                         <td>{r.nombre}</td>
                         <td>{r.ratio}</td>
@@ -304,7 +363,7 @@ const Reportes = () => {
         </section>
       )}
 
-      {reportData.correctivos && (
+      {estadisticasData.correctivos && (
         <section className="report-section">
           <div className="section-header">
             <div>
@@ -380,12 +439,12 @@ const Reportes = () => {
               </div>
             </div>
           </div>
-          {reportData.correctivos.length === 0
+          {estadisticasData.correctivos.length === 0
             ? renderEmptyState('No se encontraron correctivos para los filtros aplicados.')
             : (
               <>
                 <div className="graph-grid">
-                  {generatePieChartData(reportData.correctivos, 'Correctivos').map((chart, idx) => (
+                  {generatePieChartData(estadisticasData.correctivos, 'Correctivos').map((chart, idx) => (
                     <div className="chart-card" key={idx}>
                       <h3>{chart.title}</h3>
                       <Pie data={chart} options={{ plugins: { legend: { position: 'bottom' } } }} />
@@ -400,7 +459,7 @@ const Reportes = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reportData.correctivos.map((r, i) => (
+                    {estadisticasData.correctivos.map((r, i) => (
                       <tr key={i}>
                         <td>{r.nombre}</td>
                         <td>{r.ratio}</td>
@@ -413,7 +472,7 @@ const Reportes = () => {
         </section>
       )}
 
-      {reportData.rubros && (
+      {estadisticasData.rubros && (
         <section className="report-section">
           <div className="section-header">
             <div>
@@ -489,7 +548,7 @@ const Reportes = () => {
               </div>
             </div>
           </div>
-          {reportData.rubros.rubros.length === 0
+          {estadisticasData.rubros.rubros.length === 0
             ? renderEmptyState('No se encontraron correctivos finalizados para los filtros seleccionados.')
             : (
               <table className="report-table">
@@ -501,7 +560,7 @@ const Reportes = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {reportData.rubros.rubros.map((r, i) => (
+                  {estadisticasData.rubros.rubros.map((r, i) => (
                     <tr key={i}>
                       <td>{r.rubro}</td>
                       <td>{r.avgDays}</td>
@@ -510,8 +569,8 @@ const Reportes = () => {
                   ))}
                   <tr className="total-row">
                     <td>Total General</td>
-                    <td>{reportData.rubros.totalAvgDays}</td>
-                    <td>{reportData.rubros.totalCount}</td>
+                    <td>{estadisticasData.rubros.totalAvgDays}</td>
+                    <td>{estadisticasData.rubros.totalCount}</td>
                   </tr>
                 </tbody>
               </table>
@@ -519,7 +578,7 @@ const Reportes = () => {
         </section>
       )}
 
-      {reportData.zonas && (
+      {estadisticasData.zonas && (
         <section className="report-section">
           <div className="section-header">
             <div>
@@ -563,14 +622,14 @@ const Reportes = () => {
               </div>
             </div>
           </div>
-          {reportData.zonas.length === 0
+          {estadisticasData.zonas.length === 0
             ? renderEmptyState('No hay correctivos para las zonas seleccionadas.')
             : (
               <>
                 <div className="chart-card">
                   <h3>Total Correctivos por Zona</h3>
                   <Bar
-                    data={generateBarChartData(reportData.zonas, 'zona', 'totalCorrectivos')}
+                    data={generateBarChartData(estadisticasData.zonas, 'zona', 'totalCorrectivos')}
                     options={{ plugins: { legend: { display: false } } }}
                   />
                 </div>
@@ -583,7 +642,7 @@ const Reportes = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reportData.zonas.map((z, i) => (
+                    {estadisticasData.zonas.map((z, i) => (
                       <tr key={i}>
                         <td>{z.zona}</td>
                         <td>{z.totalCorrectivos}</td>
@@ -597,7 +656,7 @@ const Reportes = () => {
         </section>
       )}
 
-      {reportData.sucursales && (
+      {estadisticasData.sucursales && (
         <section className="report-section">
           <div className="section-header">
             <div>
@@ -657,14 +716,14 @@ const Reportes = () => {
               </div>
             </div>
           </div>
-          {reportData.sucursales.length === 0
+          {estadisticasData.sucursales.length === 0
             ? renderEmptyState('No se encontraron sucursales para los filtros seleccionados.')
             : (
               <>
                 <div className="chart-card">
                   <h3>Total Correctivos por Sucursal</h3>
                   <Bar
-                    data={generateBarChartData(reportData.sucursales, 'sucursal', 'totalCorrectivos')}
+                    data={generateBarChartData(estadisticasData.sucursales, 'sucursal', 'totalCorrectivos')}
                     options={{ plugins: { legend: { display: false } } }}
                   />
                 </div>
@@ -677,7 +736,7 @@ const Reportes = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reportData.sucursales.map((s, i) => (
+                    {estadisticasData.sucursales.map((s, i) => (
                       <tr key={i}>
                         <td>{s.sucursal}</td>
                         <td>{s.zona}</td>
@@ -694,4 +753,4 @@ const Reportes = () => {
   );
 };
 
-export default Reportes;
+export default Estadisticas;

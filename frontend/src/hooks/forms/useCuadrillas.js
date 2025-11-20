@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getCuadrillas, deleteCuadrilla } from '../../services/cuadrillaService';
+import { confirmDialog } from '../../components/ConfirmDialog';
 
 const useCuadrillas = () => {
   const [cuadrillas, setCuadrillas] = useState([]);
@@ -27,7 +28,12 @@ const useCuadrillas = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Esta seguro de ELIMINAR esta cuadrilla?')) return;
+    const confirmed = await confirmDialog({
+      title: 'Eliminar cuadrilla',
+      message: '¿Seguro que querés eliminar esta cuadrilla?',
+      confirmText: 'Eliminar',
+    });
+    if (!confirmed) return;
     setIsLoading(true);
     try {
       await deleteCuadrilla(id);

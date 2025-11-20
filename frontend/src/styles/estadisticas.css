@@ -270,6 +270,59 @@
   }
 }
 
+.multi-select {
+  position: relative;
+  min-width: 180px;
+}
+
+.multi-select-toggle {
+  width: 100%;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background: #f8f9fa;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  color: #2c2c2c;
+  cursor: pointer;
+}
+
+.multi-select-toggle:hover {
+  background: #e9ecef;
+}
+
+.multi-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 0.25rem;
+  z-index: 5;
+}
+
+.multi-select-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.95rem;
+  color: #2c2c2c;
+}
+
+.multi-select-option:hover {
+  background: #f8f9fa;
+}
+
+.multi-select-divider {
+  border-bottom: 1px solid #e9ecef;
+  margin: 0.35rem 0;
+}
+
 @media (min-width: 992px) {
   .filter-panel-content {
     flex-direction: row;

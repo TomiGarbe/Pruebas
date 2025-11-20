@@ -196,12 +196,12 @@ const SucursalForm = ({
       setError(null);
       setSuccess(sucursal ? 'Sucursal actualizada correctamente.' : 'Sucursal creada correctamente.');
       onSaved?.();
-      onClose?.();
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al crear la sucursal.');
       setSuccess(null);
     } finally {
       setIsLoading(false);
+      onClose();
     }
   };
 
