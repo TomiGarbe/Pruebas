@@ -192,7 +192,7 @@ jobs:
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
           echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
-        #  echo "E2E_TESTING=true" >> env.config
+          echo "E2E_TESTING=true" >> env.config
       - name: Login to Azure
         uses: azure/login@v1
         with:
