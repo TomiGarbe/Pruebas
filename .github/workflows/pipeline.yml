@@ -286,17 +286,12 @@ jobs:
     #needs: integration-tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v1
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v4
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # ================================
-      # BACKEND - Crear y subir env.config a App Service
-      # ================================
-      - name: Create Backend env.config
+          name: backend-artifact
+          path: .
+      - name: Create Backend Test Environment File
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
           echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
@@ -310,17 +305,20 @@ jobs:
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
           echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
           echo "E2E_TESTING=false" >> env.config
-
-      - name: Upload env.config to Backend App Service (overwrite)
-        run: |
-          zip env.zip env.config
-
-          TOKEN=$(az account get-access-token --query accessToken -o tsv)
-
-          curl -X POST \
-            -H "Authorization: Bearer $TOKEN" \
-            --data-binary @"env.zip" \
-            "https://inversur-qa.scm.azurewebsites.net/api/zipdeploy/site/wwwroot/"
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'Inversur-QA'
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE_QA }}
+      - name: Start Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp start --name Inversur-QA --resource-group Inversur
 
   #=======================
   # STAGE: DEPLOY TO PROD
