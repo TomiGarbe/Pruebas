@@ -61,7 +61,7 @@ describe('Módulo de Reportes - Integración con datos reales', () => {
     cy.get('#zonas-cliente', { timeout: 30000 }).select('Cliente E2E');
     cy.get('#zonas-cuadrilla', { timeout: 30000 }).select('Cuadrilla E2E');
 
-    cy.get(':nth-child(6) > .graph-grid > .chart-card > canvas', { timeout: 30000 })
+    cy.get(':nth-child(6) > .chart-card > canvas', { timeout: 30000 })
       .should('exist')
       .and('have.length', 1);
     
@@ -73,7 +73,7 @@ describe('Módulo de Reportes - Integración con datos reales', () => {
     cy.get('#sucursales-zona', { timeout: 30000 }).select('Zona E2E');
     cy.get('#sucursales-cuadrilla', { timeout: 30000 }).select('Cuadrilla E2E');
 
-    cy.get(':nth-child(7) > .graph-grid > .chart-card > canvas', { timeout: 30000 })
+    cy.get(':nth-child(7) > .chart-card > canvas', { timeout: 30000 })
       .should('exist')
       .and('have.length', 1);
     
