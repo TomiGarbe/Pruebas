@@ -59,7 +59,7 @@ describe('Módulo de Reportes - Integración con datos reales', () => {
       .and('have.length', 1);
 
     cy.get('#zonas-cliente', { timeout: 30000 }).select('Cliente E2E');
-    cy.get('#zonas-cuadrilla', { timeout: 30000 }).select('Cuadrilla E2E1');
+    cy.get('#zonas-cuadrilla', { timeout: 30000 }).select('Cuadrilla E2E');
 
     cy.get(':nth-child(6) > .graph-grid > .chart-card > canvas', { timeout: 30000 })
       .should('exist')

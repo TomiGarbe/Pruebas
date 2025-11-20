@@ -265,6 +265,76 @@ jobs:
           name: Cypress Results
           path: frontend/cypress/results.xml
           reporter: java-junit
+  
+  update-env-files:
+    needs: integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # ================================
+      # BACKEND - Crear y subir env.config a App Service
+      # ================================
+      - name: Create Backend env.config
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_QA_URL }}" > env.config
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> env.config
+          echo "FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS_JSON_QA }}" >> env.config
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL_QA }}" >> env.config
+          echo "EMAIL_ADMIN=${{ secrets.EMAIL_ADMIN_QA }}" >> env.config
+          echo "NOMBRE_ADMIN=${{ secrets.NOMBRE_ADMIN_QA }}" >> env.config
+          echo "PASSWORD_ADMIN=${{ secrets.PASSWORD_ADMIN_QA }}" >> env.config
+          echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS_JSON_QA }}" >> env.config
+          echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
+          echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
+
+      - name: Upload env.config to Backend App Service (overwrite)
+        run: |
+          zip env.zip env.config
+
+          TOKEN=$(az account get-access-token --query accessToken -o tsv)
+
+          curl -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "file=@env.zip" \
+            "https://${{ secrets.BACKEND_QA_APP_NAME }}.scm.azurewebsites.net/api/zip/site/wwwroot/"
+      
+      # ================================
+      # FRONTEND - Crear y subir nuevo .env
+      # ================================
+      - name: Create Frontend .env File
+        run: |
+          cd frontend
+          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
+          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+          echo "VITE_FIREBASE_CONFIG_QA=${{ secrets.FIREBASE_CONFIG_QA }}" >> .env
+          echo "VITE_GOOGLE_CLIENT_ID_QA=${{ secrets.GOOGLE_CLIENT_ID_QA }}" >> .env
+          echo "VITE_FIREBASE_CONFIG_PROD=${{ secrets.FIREBASE_CONFIG_PROD }}" >> .env
+          echo "VITE_GOOGLE_CLIENT_ID_PROD=${{ secrets.GOOGLE_CLIENT_ID_PROD }}" >> .env
+          echo "VITE_GOOGLE_MAPS_API_KEY_QA=${{ secrets.GOOGLE_MAPS_API_KEY_QA }}" >> .env
+          echo "VITE_GOOGLE_MAPS_API_KEY_PROD=${{ secrets.GOOGLE_MAPS_API_KEY_PROD }}" >> .env
+          echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_QA=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_PROD=${{ secrets.VAPID_PRIVATE_KEY }}" >> .env
+          echo "VITE_NODE_ENV=notest" >> .env
+
+      - name: Upload .env to Static Web App (overwrite)
+        run: |
+          cd frontend
+          zip env.zip .env
+          az staticwebapp upload \
+            --name ${{ secrets.FRONTEND_QA_STATIC_APP_NAME }} \
+            --resource-group Inversur \
+            --app-location "." \
+            --output-location "." \
+            --config-file-location env.zip
 
   #=======================
   # STAGE: DEPLOY TO PROD
