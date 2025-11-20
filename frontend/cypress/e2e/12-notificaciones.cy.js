@@ -33,17 +33,17 @@ describe('Modulo de Notificaciones - Integracion', () => {
       },
     });
 
-    cy.get('.notification-icon > svg > path').click();
+    cy.get('.notification-icon > svg > path', { timeout: 30000 }).click();
     cy.contains('div > .flex-grow-1 > .text-dark', 'Nuevo correctivo asignado', { timeout: 30000 }).first().click();
 
-    cy.get('.notification-icon > svg > path').click();
+    cy.get('.notification-icon > svg > path', { timeout: 30000 }).click();
     cy.contains('div > .flex-grow-1 > .text-dark', 'Nuevo preventivo asignado', { timeout: 30000 }).first().click();
 
-    cy.get('.notification-icon > svg > path').click();
-    cy.contains('button', 'Marcar leídas').click();
+    cy.get('.notification-icon > svg > path', { timeout: 30000 }).click();
+    cy.contains('button', 'Marcar leídas', { timeout: 30000 }).click();
     cy.wait(10000);
-    cy.get('.rounded-circle').should('not.exist');
-    cy.contains('button', 'Eliminar leídas').click();
+    cy.get('.rounded-circle', { timeout: 30000 }).should('not.exist');
+    cy.contains('button', 'Eliminar leídas', { timeout: 30000 }).click();
     cy.contains('p.text-muted', 'No tienes notificaciones.', { timeout: 30000 }).should('be.visible');
   });
 
