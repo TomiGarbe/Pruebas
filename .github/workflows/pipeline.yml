@@ -320,7 +320,7 @@ jobs:
           curl -X POST \
             -H "Authorization: Bearer $TOKEN" \
             --data-binary @"env.zip" \
-            "https://inversur-qa.scm.azurewebsites.net/api/zipdeploy"
+            "https://inversur-qa.scm.azurewebsites.net/api/zipdeploy/site/wwwroot/"
 
   #=======================
   # STAGE: DEPLOY TO PROD
