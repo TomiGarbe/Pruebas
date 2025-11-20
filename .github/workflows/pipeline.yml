@@ -156,6 +156,22 @@ jobs:
             echo "| All files | N/A | ❌ |" >> $GITHUB_STEP_SUMMARY
             echo "| Summary | N/A | ❌ |" >> $GITHUB_STEP_SUMMARY
           fi
+      - name: Create Frontend .env File
+        run: |
+          cd frontend
+          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
+          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
+          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
+          echo "VITE_FIREBASE_CONFIG_QA=${{ secrets.FIREBASE_CONFIG_QA }}" >> .env
+          echo "VITE_GOOGLE_CLIENT_ID_QA=${{ secrets.GOOGLE_CLIENT_ID_QA }}" >> .env
+          echo "VITE_FIREBASE_CONFIG_PROD=${{ secrets.FIREBASE_CONFIG_PROD }}" >> .env
+          echo "VITE_GOOGLE_CLIENT_ID_PROD=${{ secrets.GOOGLE_CLIENT_ID_PROD }}" >> .env
+          echo "VITE_GOOGLE_MAPS_API_KEY_QA=${{ secrets.GOOGLE_MAPS_API_KEY_QA }}" >> .env
+          echo "VITE_GOOGLE_MAPS_API_KEY_PROD=${{ secrets.GOOGLE_MAPS_API_KEY_PROD }}" >> .env
+          echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_QA=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
+          echo "VITE_WEB_PUSH_PUBLIC_KEY_PROD=${{ secrets.VAPID_PRIVATE_KEY }}" >> .env
+          echo "VITE_NODE_ENV=notest" >> .env
       - name: Build Frontend
         run: |
           cd frontend
@@ -293,6 +309,7 @@ jobs:
           echo "GOOGLE_CLOUD_BUCKET_NAME=${{ secrets.GOOGLE_CLOUD_BUCKET_NAME_QA }}" >> env.config
           echo "GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}" >> env.config
           echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> env.config
+          echo "E2E_TESTING=false" >> env.config
 
       - name: Upload env.config to Backend App Service (overwrite)
         run: |
@@ -304,37 +321,6 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@env.zip" \
             "https://${{ secrets.BACKEND_QA_APP_NAME }}.scm.azurewebsites.net/api/zip/site/wwwroot/"
-      
-      # ================================
-      # FRONTEND - Crear y subir nuevo .env
-      # ================================
-      - name: Create Frontend .env File
-        run: |
-          cd frontend
-          echo "VITE_API_URL_QA=${{ secrets.BACKEND_QA_URL }}" > .env
-          echo "VITE_API_URL_PROD=${{ secrets.BACKEND_PROD_URL }}" >> .env
-          echo "VITE_FRONTEND_URL=${{ secrets.FRONTEND_QA_URL }}" >> .env
-          echo "VITE_FIREBASE_CONFIG_QA=${{ secrets.FIREBASE_CONFIG_QA }}" >> .env
-          echo "VITE_GOOGLE_CLIENT_ID_QA=${{ secrets.GOOGLE_CLIENT_ID_QA }}" >> .env
-          echo "VITE_FIREBASE_CONFIG_PROD=${{ secrets.FIREBASE_CONFIG_PROD }}" >> .env
-          echo "VITE_GOOGLE_CLIENT_ID_PROD=${{ secrets.GOOGLE_CLIENT_ID_PROD }}" >> .env
-          echo "VITE_GOOGLE_MAPS_API_KEY_QA=${{ secrets.GOOGLE_MAPS_API_KEY_QA }}" >> .env
-          echo "VITE_GOOGLE_MAPS_API_KEY_PROD=${{ secrets.GOOGLE_MAPS_API_KEY_PROD }}" >> .env
-          echo "VITE_OSRM_URL=${{ secrets.OSRM_URL }}" >> .env
-          echo "VITE_WEB_PUSH_PUBLIC_KEY_QA=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
-          echo "VITE_WEB_PUSH_PUBLIC_KEY_PROD=${{ secrets.VAPID_PRIVATE_KEY }}" >> .env
-          echo "VITE_NODE_ENV=notest" >> .env
-
-      - name: Upload .env to Static Web App (overwrite)
-        run: |
-          cd frontend
-          zip env.zip .env
-          az staticwebapp upload \
-            --name ${{ secrets.FRONTEND_QA_STATIC_APP_NAME }} \
-            --resource-group Inversur \
-            --app-location "." \
-            --output-location "." \
-            --config-file-location env.zip
 
   #=======================
   # STAGE: DEPLOY TO PROD
